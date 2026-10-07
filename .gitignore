@@ -1,0 +1,13 @@
+﻿node_modules
+out
+dist
+*.log
+.DS_Store
+.work/
+.env
+.env.*
+!.env.example
+agent-connection.json
+recordings.json
+recordings.backup.json
+e2e/os-out.txt

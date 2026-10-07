@@ -1,0 +1,93 @@
+{
+  "name": "floating-whiteboard",
+  "productName": "Floating Whiteboard",
+  "version": "1.4.0",
+  "description": "A fast, translucent, pen-first whiteboard for teaching and screen sharing",
+  "main": "./out/main/index.js",
+  "author": "SAMBHAV",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "e2e": "electron-vite build && node e2e/run.mjs",
+    "e2e:phase1": "electron-vite build && node e2e/phase1.mjs",
+    "e2e:phase2": "electron-vite build && node e2e/phase2.mjs",
+    "e2e:laser": "electron-vite build && node e2e/laser-audit.mjs",
+    "dist": "electron-vite build && electron-builder --win --publish never",
+    "dist:portable": "electron-vite build && electron-builder --win portable --publish never",
+    "dist:signed": "electron-vite build && electron-builder --win --publish never --config.forceCodeSigning=true",
+    "icon": "electron build/make-icon.cjs",
+    "dist:dir": "electron-vite build && electron-builder --win dir --publish never",
+    "e2e:agent": "electron-vite build && node e2e/agent.mjs",
+    "e2e:replay": "electron-vite build && node e2e/replay.mjs"
+  },
+  "dependencies": {
+    "@preact/signals": "^2.0.0",
+    "lucide-preact": "^1.0.0",
+    "mediabunny": "1.61.3",
+    "perfect-freehand": "^1.2.0",
+    "preact": "^10.27.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.0",
+    "@types/node": "^24.0.0",
+    "electron": "^44.0.0",
+    "electron-builder": "^26.0.0",
+    "electron-vite": "^5.0.0",
+    "playwright": "^1.50.0",
+    "typescript": "~5.9.0",
+    "vite": "^7.0.0",
+    "vitest": "^5.0.0"
+  },
+  "build": {
+    "appId": "com.sambhav.floating-whiteboard",
+    "productName": "Floating Whiteboard",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "icon": "build/icon.png",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "shortcutName": "Floating Whiteboard"
+    },
+    "portable": {
+      "artifactName": "Floating-Whiteboard-portable-${version}.exe"
+    },
+    "extraResources": [
+      {
+        "from": "mcp/whiteboard-mcp.cjs",
+        "to": "mcp/whiteboard-mcp.cjs"
+      }
+    ]
+  }
+}
