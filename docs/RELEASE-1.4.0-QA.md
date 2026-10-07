@@ -66,3 +66,13 @@ Record before drawing to capture its history. Previously unrecorded gestures can
 from a finished diagram. Text commits and permanent board edits are recorded; transient laser trails,
 uncommitted typing, audio, desktop windows and UI clicks are not. Video is silent WebM.
 The native board format remains version 2; the replay file format starts at version 1.
+
+## Development artifact
+
+Portable packaging completed. The archive's seven compiled renderer/main/preload files were compared
+with the verified build, and the bundled MCP adapter and packaged version were checked. No mismatches
+were found. This is static archive verification; Windows still blocks execution under its trust policy.
+
+`dist/1.4.0/Floating-Whiteboard-portable-1.4.0.exe` — **101,951,616 bytes**, Authenticode `NotSigned`.
+
+SHA256: `68E2FA7B77D362BDC129E7992A9AF34D3D3947061C1306EA578911E43F4311FE`.
