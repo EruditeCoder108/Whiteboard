@@ -12,6 +12,7 @@ Verified on Windows on 2026-10-07, using Electron 44.5.1 and an isolated test pr
 | Native agent and optional assistant integration | 40 passed |
 | Recording, playback, files and video | 30 passed |
 | Production dependency audit | No known vulnerabilities reported |
+| Signed-release guard | Correctly refuses unsigned output when credentials are missing |
 
 These are **278 distinct source checks**. Earlier repeated runs are not added to the total.
 The 1.3.0 packaged/Windows injection matrix is historical evidence, not a fresh 1.4.0 result.
