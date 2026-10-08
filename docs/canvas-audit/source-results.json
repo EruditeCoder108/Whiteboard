@@ -1,0 +1,362 @@
+{
+  "recordedAt": "2026-10-08T08:04:07.229Z",
+  "viewport": {
+    "width": 1098.666748046875,
+    "height": 610.6666870117188,
+    "dpr": 1.5
+  },
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) FloatingWhiteboard/1.4.0 Chrome/152.0.7977.130 Electron/44.5.1 Safari/537.36",
+  "isolatedHiddenWindow": true,
+  "anchorError": 0,
+  "distant": {
+    "x": 1000000,
+    "y": -1000000,
+    "zoom": 1
+  },
+  "baseDot": {
+    "alphaArea": 1.3263616557734206,
+    "nonzeroPixels": 16
+  },
+  "previewDot": {
+    "alphaArea": 2.9803921568627465,
+    "nonzeroPixels": 60
+  },
+  "settledDot": {
+    "alphaArea": 1.3263616557734206,
+    "nonzeroPixels": 16
+  },
+  "splitBaseDot": {
+    "alphaArea": 1.3263616557734206
+  },
+  "splitPreviewDot": {
+    "alphaArea": 1.3263616557734206
+  },
+  "gridThresholds": [
+    {
+      "zoom": 0.449,
+      "worldStep": 80,
+      "screenStep": 35.92
+    },
+    {
+      "zoom": 0.451,
+      "worldStep": 40,
+      "screenStep": 18.04
+    },
+    {
+      "zoom": 3.99,
+      "worldStep": 40,
+      "screenStep": 159.60000000000002
+    },
+    {
+      "zoom": 4.01,
+      "worldStep": 20,
+      "screenStep": 80.19999999999999
+    }
+  ],
+  "benchmarks": [
+    {
+      "count": 0,
+      "samples": 0,
+      "splitBackground": false,
+      "mode": "pan",
+      "frameIntervals": {
+        "meanMs": 16.666666666666668,
+        "p95Ms": 17.100000008940697,
+        "maxMs": 18.200000002980232
+      },
+      "renderCPU": {
+        "meanMs": 0.10666666726271311,
+        "p95Ms": 0.20000000298023224,
+        "maxMs": 2.1000000089406967
+      },
+      "rebuildCount": 1,
+      "rebuildCPU": {
+        "meanMs": 1.8999999910593033,
+        "p95Ms": 1.8999999910593033,
+        "maxMs": 1.8999999910593033
+      },
+      "previewFrames": 0,
+      "unexpectedCameraChanges": []
+    },
+    {
+      "count": 0,
+      "samples": 0,
+      "splitBackground": false,
+      "mode": "zoom",
+      "frameIntervals": {
+        "meanMs": 16.69222222218911,
+        "p95Ms": 17.899999991059303,
+        "maxMs": 18.900000005960464
+      },
+      "renderCPU": {
+        "meanMs": 0.8933333337306977,
+        "p95Ms": 1.9000000059604645,
+        "maxMs": 3.2999999970197678
+      },
+      "rebuildCount": 90,
+      "rebuildCPU": {
+        "meanMs": 0.6666666668322351,
+        "p95Ms": 1.300000011920929,
+        "maxMs": 2.4000000059604645
+      },
+      "previewFrames": 0,
+      "unexpectedCameraChanges": []
+    },
+    {
+      "count": 0,
+      "samples": 0,
+      "splitBackground": true,
+      "mode": "pan",
+      "frameIntervals": {
+        "meanMs": 16.84333333339956,
+        "p95Ms": 17.099999994039536,
+        "maxMs": 38.8999999910593
+      },
+      "renderCPU": {
+        "meanMs": 0.26555555644962525,
+        "p95Ms": 0.5,
+        "maxMs": 0.5
+      },
+      "rebuildCount": 1,
+      "rebuildCPU": {
+        "meanMs": 0,
+        "p95Ms": 0,
+        "maxMs": 0
+      },
+      "previewFrames": 0,
+      "unexpectedCameraChanges": []
+    },
+    {
+      "count": 0,
+      "samples": 0,
+      "splitBackground": true,
+      "mode": "zoom",
+      "frameIntervals": {
+        "meanMs": 16.668888888922,
+        "p95Ms": 17,
+        "maxMs": 17.200000002980232
+      },
+      "renderCPU": {
+        "meanMs": 0.36000000056293274,
+        "p95Ms": 0.5,
+        "maxMs": 0.7999999970197678
+      },
+      "rebuildCount": 90,
+      "rebuildCPU": {
+        "meanMs": 0.07777777744664086,
+        "p95Ms": 0.20000000298023224,
+        "maxMs": 0.29999999701976776
+      },
+      "previewFrames": 0,
+      "unexpectedCameraChanges": []
+    },
+    {
+      "count": 500,
+      "samples": 30000,
+      "splitBackground": false,
+      "mode": "pan",
+      "frameIntervals": {
+        "meanMs": 16.665555555621783,
+        "p95Ms": 17.099999994039536,
+        "maxMs": 18.399999991059303
+      },
+      "renderCPU": {
+        "meanMs": 0.09888888878954781,
+        "p95Ms": 0.20000000298023224,
+        "maxMs": 1.7000000029802322
+      },
+      "rebuildCount": 1,
+      "rebuildCPU": {
+        "meanMs": 1.5,
+        "p95Ms": 1.5,
+        "maxMs": 1.5
+      },
+      "previewFrames": 0,
+      "unexpectedCameraChanges": []
+    },
+    {
+      "count": 500,
+      "samples": 30000,
+      "splitBackground": false,
+      "mode": "zoom",
+      "frameIntervals": {
+        "meanMs": 16.718888888922002,
+        "p95Ms": 19.099999994039536,
+        "maxMs": 20.099999994039536
+      },
+      "renderCPU": {
+        "meanMs": 1.956666667262713,
+        "p95Ms": 4.0999999940395355,
+        "maxMs": 4.5999999940395355
+      },
+      "rebuildCount": 90,
+      "rebuildCPU": {
+        "meanMs": 1.4166666663355298,
+        "p95Ms": 2.9000000059604645,
+        "maxMs": 3.5999999940395355
+      },
+      "previewFrames": 0,
+      "unexpectedCameraChanges": []
+    },
+    {
+      "count": 500,
+      "samples": 30000,
+      "splitBackground": true,
+      "mode": "pan",
+      "frameIntervals": {
+        "meanMs": 16.67111111101177,
+        "p95Ms": 17.299999997019768,
+        "maxMs": 20.600000008940697
+      },
+      "renderCPU": {
+        "meanMs": 0.32888888915379844,
+        "p95Ms": 0.5,
+        "maxMs": 4.299999997019768
+      },
+      "rebuildCount": 1,
+      "rebuildCPU": {
+        "meanMs": 3.5,
+        "p95Ms": 3.5,
+        "maxMs": 3.5
+      },
+      "previewFrames": 0,
+      "unexpectedCameraChanges": []
+    },
+    {
+      "count": 500,
+      "samples": 30000,
+      "splitBackground": true,
+      "mode": "zoom",
+      "frameIntervals": {
+        "meanMs": 16.710000000066227,
+        "p95Ms": 18.299999997019768,
+        "maxMs": 20.799999997019768
+      },
+      "renderCPU": {
+        "meanMs": 1.823333332935969,
+        "p95Ms": 3.7999999970197678,
+        "maxMs": 5.600000008940697
+      },
+      "rebuildCount": 90,
+      "rebuildCPU": {
+        "meanMs": 1.1877777776784366,
+        "p95Ms": 2.2999999970197678,
+        "maxMs": 3.800000011920929
+      },
+      "previewFrames": 0,
+      "unexpectedCameraChanges": []
+    },
+    {
+      "count": 4000,
+      "samples": 240000,
+      "splitBackground": false,
+      "mode": "pan",
+      "frameIntervals": {
+        "meanMs": 17.771111111177337,
+        "p95Ms": 18.5,
+        "maxMs": 74.6000000089407
+      },
+      "renderCPU": {
+        "meanMs": 0.4588888886902067,
+        "p95Ms": 0.20000000298023224,
+        "maxMs": 34.599999994039536
+      },
+      "rebuildCount": 1,
+      "rebuildCPU": {
+        "meanMs": 32.20000000298023,
+        "p95Ms": 32.20000000298023,
+        "maxMs": 32.20000000298023
+      },
+      "previewFrames": 0,
+      "unexpectedCameraChanges": []
+    },
+    {
+      "count": 4000,
+      "samples": 240000,
+      "splitBackground": false,
+      "mode": "zoom",
+      "frameIntervals": {
+        "meanMs": 17.594444444444445,
+        "p95Ms": 16.900000005960464,
+        "maxMs": 104.3999999910593
+      },
+      "renderCPU": {
+        "meanMs": 0.09666666703091728,
+        "p95Ms": 0.20000000298023224,
+        "maxMs": 0.20000000298023224
+      },
+      "rebuildCount": 0,
+      "rebuildCPU": null,
+      "previewFrames": 90,
+      "unexpectedCameraChanges": []
+    },
+    {
+      "count": 4000,
+      "samples": 240000,
+      "splitBackground": true,
+      "mode": "pan",
+      "frameIntervals": {
+        "meanMs": 17.95,
+        "p95Ms": 18.799999997019768,
+        "maxMs": 77.5
+      },
+      "renderCPU": {
+        "meanMs": 1.0499999996688631,
+        "p95Ms": 0.7999999970197678,
+        "maxMs": 55.70000000298023
+      },
+      "rebuildCount": 1,
+      "rebuildCPU": {
+        "meanMs": 53.6000000089407,
+        "p95Ms": 53.6000000089407,
+        "maxMs": 53.6000000089407
+      },
+      "previewFrames": 0,
+      "unexpectedCameraChanges": []
+    },
+    {
+      "count": 4000,
+      "samples": 240000,
+      "splitBackground": true,
+      "mode": "zoom",
+      "frameIntervals": {
+        "meanMs": 17.969999999966888,
+        "p95Ms": 17.700000002980232,
+        "maxMs": 127
+      },
+      "renderCPU": {
+        "meanMs": 0.5888888877299097,
+        "p95Ms": 0.7000000029802322,
+        "maxMs": 12.200000002980232
+      },
+      "rebuildCount": 1,
+      "rebuildCPU": {
+        "meanMs": 11.700000002980232,
+        "p95Ms": 11.700000002980232,
+        "maxMs": 11.700000002980232
+      },
+      "previewFrames": 89,
+      "unexpectedCameraChanges": []
+    }
+  ],
+  "input": {
+    "error": 0,
+    "zoomed": {
+      "x": 174.9112026356429,
+      "y": -152.73616564961011,
+      "zoom": 1.2460767305873808
+    },
+    "panned": {
+      "x": 191.76409739285495,
+      "y": -124.64800772092337,
+      "zoom": 1.2460767305873808
+    },
+    "pinch": {
+      "x": 99.99999999999997,
+      "y": 80,
+      "zoom": 1.5
+    },
+    "note": "Synthetic renderer pointer events; physical trackpad and touchscreen feel not measured."
+  },
+  "pageErrors": []
+}

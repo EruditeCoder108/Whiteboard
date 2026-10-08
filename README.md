@@ -6,6 +6,8 @@ Electron + TypeScript + Preact, with a hand-written vector drawing engine.
 Current release: **1.4.0 — Record, replay and reuse lessons**. See [CHANGELOG.md](CHANGELOG.md).
 
 The proposed phases and finished 2.0 product are described in [ROADMAP.md](ROADMAP.md).
+The separate long-term teaching/science expansion is in [SCIENCE-ROADMAP.md](docs/SCIENCE-ROADMAP.md),
+with a measured [canvas audit](docs/CANVAS-AUDIT.md) as its first foundation milestone.
 
 ## Run it
 
