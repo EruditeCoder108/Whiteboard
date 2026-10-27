@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.0-beta.1 — 2026-10-27
+
+- Package the fourteen-experiment science preview for public Windows x64 downloads, as separate
+  installer and portable EXEs. Add a reproducible `dist:preview` command and direct README links.
+- Include the regenerated logo, GPLv3 licence and retained dependency notices in the packaged app.
+  Publish source, checksums and explicit unsigned-prerelease limitations with the release.
+- Add the README animation gallery, chemistry cover, editable repo card and 50+ lesson collection
+  plan. The historical implementation and QA notes below describe the included science work.
+
 ## Unreleased showcase preview — 2026-10-12
 
 - Add three separate native studios while preserving the original eleven models: finger-driven induction with saved hand-motion replay, illustrated glass apparatus with connected pouring streams and confined CO₂ bubbles, and a four-chamber heart cutaway with valve/contraction stages.

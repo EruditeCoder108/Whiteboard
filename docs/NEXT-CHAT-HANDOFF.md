@@ -2,6 +2,18 @@
 
 Updated **2026-10-27**. Work from the repository checkout containing `package.json`; paths below are repository-relative.
 
+## Windows prerelease publication
+
+The owner authorised public Windows executables. Release **v1.5.0-beta.1** provides installer and
+portable x64 EXEs, source, upstream Mediabunny source, checksums and validation evidence through
+[GitHub Releases](https://github.com/EruditeCoder108/Whiteboard/releases/tag/v1.5.0-beta.1).
+`npm run dist:preview` builds under ignored `dist/windows-preview/`; README links target this tag.
+The packaged runtime passed 30 disposable checks, with no external renderer requests or uncaught
+errors. Ten live profile data-file hashes remained unchanged. Both EXEs are unsigned; no installer
+was run on the owner's machine, and acceptance on another PC remains unverified. See
+[the versioned release scope](releases/v1.5.0-beta.1.md). Earlier local-only descriptions below are
+historical snapshots. Preserve their evidence and keep generated release binaries out of Git.
+
 ## Latest delivery — three deeper showcases
 
 Branding/gallery update, **2026-10-27**: regenerated the owner's supplied logo with transparent

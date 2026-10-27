@@ -133,6 +133,12 @@ See [editing and export instructions](docs/assets/social/README.md) and
 
 ### Use the app
 
+**[Download Windows installer](https://github.com/EruditeCoder108/Whiteboard/releases/download/v1.5.0-beta.1/Floating-Whiteboard-Setup-1.5.0-beta.1-x64.exe)** ·
+[Portable EXE](https://github.com/EruditeCoder108/Whiteboard/releases/download/v1.5.0-beta.1/Floating-Whiteboard-Portable-1.5.0-beta.1-x64.exe) ·
+[Release notes and checksums](https://github.com/EruditeCoder108/Whiteboard/releases/tag/v1.5.0-beta.1)
+
+Windows x64 science preview **1.5.0-beta.1**. These binaries are unsigned.
+
 The current Windows target is **Windows 10 or 11, x64**. Normal board and science use needs no separate
 Node.js, Python, Blender or API key. The runtime is bundled.
 
@@ -140,9 +146,9 @@ Node.js, Python, Blender or API key. The runtime is bundled.
 - **Portable:** run the portable `.exe` without an installation step. Its data still lives in your local AppData folder.
 - **Move your work:** save a native board file, copy it to the other PC, then open it there.
 
-This checkout includes an **unreleased science preview** on top of version 1.4.0. Published binaries
-may lag behind the source. Visit [Releases](https://github.com/EruditeCoder108/Whiteboard/releases),
-or build the preview below. Local builds are unsigned unless signing credentials are supplied;
+The downloadable preview corresponds to tag **v1.5.0-beta.1**. Later source commits may be newer
+than that build. Visit [Releases](https://github.com/EruditeCoder108/Whiteboard/releases) for available
+versions, or build from source below. Builds are unsigned unless signing credentials are supplied;
 Windows trust policies can warn or block them. [Installation and transfer details](docs/INSTALL-ON-ANOTHER-PC.md).
 
 ### Run from source

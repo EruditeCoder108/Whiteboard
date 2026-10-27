@@ -1,7 +1,7 @@
 {
   "name": "floating-whiteboard",
   "productName": "Floating Whiteboard",
-  "version": "1.4.0",
+  "version": "1.5.0-beta.1",
   "description": "A fast, translucent, pen-first whiteboard for teaching and screen sharing",
   "main": "./out/main/index.js",
   "author": "SAMBHAV",
@@ -30,7 +30,8 @@
     "e2e:science": "electron-vite build && node e2e/projectile.mjs",
     "e2e:library": "electron-vite build && node e2e/science-library.mjs",
     "e2e:showcases": "electron-vite build && node e2e/showcases.mjs",
-    "dist:showcase": "electron-vite build && electron-builder --win --publish never --config.directories.output=dist/showcase-preview --config.nsis.artifactName=Floating-Whiteboard-Setup-${version}-showcase.exe --config.portable.artifactName=Floating-Whiteboard-Portable-${version}-showcase.exe"
+    "dist:showcase": "electron-vite build && electron-builder --win --publish never --config.directories.output=dist/showcase-preview --config.nsis.artifactName=Floating-Whiteboard-Setup-${version}-showcase.exe --config.portable.artifactName=Floating-Whiteboard-Portable-${version}-showcase.exe",
+    "dist:preview": "electron-vite build && electron-builder --win --x64 --publish never --config.directories.output=dist/windows-preview --config.nsis.artifactName=Floating-Whiteboard-Setup-${version}-x64.exe --config.portable.artifactName=Floating-Whiteboard-Portable-${version}-x64.exe"
   },
   "dependencies": {
     "@preact/signals": "^2.0.0",
