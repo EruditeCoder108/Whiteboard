@@ -71,7 +71,33 @@ export interface TextItem extends ObjectMeta, TextStyle {
 }
 
 export type EditableItem = ShapeItem | TextItem
-export type Item = StrokeItem | ShapeItem | TextItem
+  export interface MagnetSample { t: number; x: number }
+  export interface LabItem extends ObjectMeta {
+  t: 'l'
+  id: string
+  c: string
+  w: number
+  p: Rect
+  angle?: number
+  labVersion: number
+  model: string
+  modelVersion: number
+  params: Record<string, number>
+    gesture?: MagnetSample[]
+  frozenTime: number
+  theme: 'paper' | 'blueprint'
+  reveal: LabReveal
+}
+export interface LabReveal {
+  trajectory: boolean
+  vectors: boolean
+  graphs: boolean
+  energy: boolean
+  strobes: boolean
+  equations: boolean
+  compare: boolean
+}
+export type Item = StrokeItem | ShapeItem | TextItem | LabItem
 
 export const MARKER_ALPHA = 0.4
 

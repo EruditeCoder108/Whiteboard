@@ -122,7 +122,7 @@ export function installShortcuts(cancelRadial: () => void): () => void {
     switch (e.key) {
       case 'Enter': {
         const selected = board.selection[0]
-        if (board.selection.length === 1 && selected.t !== 's') { e.preventDefault(); return board.editText(selected) }
+        if (board.selection.length === 1 && (selected.t === 't' || selected.t === 'h')) { e.preventDefault(); return board.editText(selected) }
         break
       }
       case 'PageUp': e.preventDefault(); return board.arrangeSelection('front')

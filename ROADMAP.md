@@ -3,9 +3,15 @@
 Planning date: 2026-10-06. Baseline: Electron app 1.1.0.
 Status: Phases 1 and 2 complete; native agent foundation delivered in 1.3.0; recording/replay delivered early in 1.4.0. Remaining work in Phases 3–6 is planned.
 
+2026-10-12 science preview: three deeper native studios now complement the eleven original experiments. Finger-driven induction, glass-apparatus chemistry and a guided heart cutaway share save/undo/PNG and offline playback; [delivery and limits](docs/SCIENCE-SHOWCASE-QA.md). Wider release still requires trusted signing and physical-device/teaching review.
+
 The separate [science and teaching roadmap](docs/SCIENCE-ROADMAP.md) describes the physics-first expansion beyond the editor/workspace scope here. Its first milestone is the [canvas quality improvement](docs/CANVAS-AUDIT.md); science milestone labels do not replace this roadmap's proposed release numbers.
 
 ## The final product
+
+The [collection expansion plan](docs/SCIENCE-COLLECTION-PLAN.md) sets an aspirational **50+ lesson**
+direction across physics, chemistry and biology, with quality gates and topic packs. Those additions
+are planned; the current source preview contains fourteen experiments.
 
 **A fast, offline Windows whiteboard for teaching, annotating and visual thinking: natural ink, editable content, connected diagrams and reusable lessons in one portable local workspace.**
 

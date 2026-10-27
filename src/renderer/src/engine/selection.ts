@@ -79,7 +79,7 @@ export function itemInLasso(item: Item, polygon: [number, number][]): boolean {
     }
   }
   // A lasso entirely inside a closed object selects that object as well.
-  const closed = item.t === 't' || (item.t === 'h' && item.k !== 'line' && item.k !== 'arrow')
+  const closed = item.t === 't' || item.t === 'l' || (item.t === 'h' && item.k !== 'line' && item.k !== 'arrow')
   return closed && paths.some(path => polygon.some(([x, y]) => pointInPolygon(x, y, path)))
 }
 

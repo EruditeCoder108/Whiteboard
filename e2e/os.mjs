@@ -204,7 +204,7 @@ const laserItems = await items()
 const [laX, laY] = phys(200, 140), [lbX, lbY] = phys(700, 140)
 await run(`t 1 ${laX} ${laY} d; w 30; t 1 ${laX} ${laY} u; w 40; t 1 ${lbX} ${lbY} d; w 30; t 1 ${lbX} ${lbY} u; w 40`)
 const laserAlpha = (x, y) => page.evaluate(([x, y]) => {
-  const c = document.querySelectorAll('.cv')[1], d = devicePixelRatio
+  const c = window.__fw.board.liveCv, d = devicePixelRatio
   return c.getContext('2d').getImageData(Math.round(x * d), Math.round(y * d), 1, 1).data[3]
 }, [x, y])
 check('real touch taps do not connect the laser across the board', await laserAlpha(450, 140) === 0)

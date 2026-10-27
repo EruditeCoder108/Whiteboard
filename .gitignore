@@ -11,3 +11,18 @@ agent-connection.json
 recordings.json
 recordings.backup.json
 e2e/os-out.txt
+
+# Local profiles and board data must never become repository examples.
+/board.json
+/board.backup-*.json
+/board-damaged-*.json
+/settings.json
+/window.json
+/assistant.json
+/docs/showcase-qa/live-data-check.json
+
+# Signing identities and private credentials stay outside source control.
+*.pfx
+*.p12
+*.pem
+*.key

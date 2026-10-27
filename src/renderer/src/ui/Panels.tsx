@@ -1,7 +1,7 @@
 import {
   Crosshair, Eraser, Eye, EyeOff, Hand, Highlighter, Menu, Minimize2,
   MousePointer2, MousePointerClick, Pen, Pin, PinOff, Redo2, Scan, SlidersHorizontal, Undo2, X, Minus, Plus,
-  Slash, ArrowUpRight, Square, Circle, Maximize2, Diamond, Triangle, Type, StickyNote, Lasso, Sparkles, Clapperboard
+  Slash, ArrowUpRight, Square, Circle, Maximize2, Diamond, Triangle, Type, StickyNote, Lasso, Sparkles, Clapperboard, FlaskConical
 } from 'lucide-preact'
 import type { JSX } from 'preact'
 import { board } from '@/engine/instance'
@@ -13,7 +13,7 @@ import { PropsPopover, ShapesPopover } from './Popovers'
 
 const SHAPE_ICON = { line: Slash, arrow: ArrowUpRight, rect: Square, ellipse: Circle, diamond: Diamond, triangle: Triangle }
 
-function toggle(name: 'props' | 'shapes' | 'menu' | 'settings' | 'agent' | 'replay'): void {
+function toggle(name: 'props' | 'shapes' | 'menu' | 'settings' | 'agent' | 'replay' | 'science'): void {
   S.popover.value = S.popover.value === name ? null : name
 }
 
@@ -23,6 +23,7 @@ export function TopBar(): JSX.Element {
       <Btn icon={Menu} title="Menu" keep onClick={() => toggle('menu')} active={S.popover.value === 'menu'} />
       <div class="grow" />
       <SaveIndicator />
+      <Btn icon={FlaskConical} title="Science labs" keep onClick={() => toggle('science')} active={S.popover.value === 'science'} />
       <Btn icon={Clapperboard} title="Record and replay" keep onClick={() => toggle('replay')} active={S.popover.value === 'replay' || S.replaying.value} />
       <Btn icon={Sparkles} title="Agent tools and assistant" keep onClick={() => toggle('agent')} active={S.popover.value === 'agent'} />
       <Btn icon={EyeOff} title="Hide interface  (Tab)  —  a small button stays to bring it back" onClick={actions.toggleUi} />

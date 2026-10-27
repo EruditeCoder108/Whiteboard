@@ -1,185 +1,270 @@
-# Floating Whiteboard
+<p align="center">
+  <img src="docs/assets/readme/cover.png" alt="Floating Whiteboard — your ideas, in motion. Chemistry laboratory cover illustration." width="100%" />
+</p>
 
-A fast, translucent, pen-first whiteboard for teaching, writing and screen sharing on Windows.
-Electron + TypeScript + Preact, with a hand-written vector drawing engine.
+<h1 align="center">Floating Whiteboard</h1>
 
-Current release: **1.4.0 — Record, replay and reuse lessons**. See [CHANGELOG.md](CHANGELOG.md).
+<p align="center">
+  <strong>A pen-first Windows whiteboard for the way you think, teach and explain.</strong><br />
+  Sketch on a canvas. Annotate your screen. Turn a scientific idea into something you can move.
+</p>
 
-The proposed phases and finished 2.0 product are described in [ROADMAP.md](ROADMAP.md).
-The separate long-term teaching/science expansion is in [SCIENCE-ROADMAP.md](docs/SCIENCE-ROADMAP.md),
-with a measured [canvas audit](docs/CANVAS-AUDIT.md) as its first foundation milestone.
+<p align="center">
+  <a href="LICENSE"><img alt="GPLv3 licence" src="docs/assets/readme/badges/license.svg" /></a>
+  <img alt="Windows 10 and 11, x64" src="docs/assets/readme/badges/windows.svg" />
+  <img alt="Core workflows work offline" src="docs/assets/readme/badges/offline.svg" />
+  <img alt="Science source preview" src="docs/assets/readme/badges/preview.svg" />
+</p>
 
-## Run it
+<p align="center">
+  <a href="#get-started">Get started</a> ·
+  <a href="#see-it-move">See it move</a> ·
+  <a href="docs/USER-GUIDE.md">User guide</a> ·
+  <a href="ROADMAP.md">Roadmap</a> ·
+  <a href="CONTRIBUTING.md">Contribute</a>
+</p>
+
+<p align="center">
+  <a href="https://www.electronjs.org/"><img src="docs/assets/readme/tech/electron.svg" alt="Electron" width="34" height="34" /></a>&nbsp;&nbsp;
+  <a href="https://www.typescriptlang.org/"><img src="docs/assets/readme/tech/typescript.svg" alt="TypeScript" width="34" height="34" /></a>&nbsp;&nbsp;
+  <a href="https://preactjs.com/"><img src="docs/assets/readme/tech/preact.png" alt="Preact" width="36" height="36" /></a><br />
+  <sub>Electron + TypeScript + Preact · a custom Canvas2D drawing engine</sub>
+</p>
+
+## A board that stays out of your way
+
+Use it for a quick explanation, a live lesson, a worked example or notes over another application.
+The core drawing and science workflows run locally, without an account, API key or model download.
+
+<p align="center">
+  <img src="docs/assets/readme/whiteboard.png" alt="The actual app showing editable Observe, Predict and Explain cards, arrows and pressure-sensitive ink on a clean canvas" width="100%" />
+</p>
+
+| Make your thinking visible | Keep the work yours |
+| --- | --- |
+| **Natural ink.** Pressure-sensitive pen strokes, mouse drawing, optional finger drawing and two-finger pan/zoom. | **Editable objects.** Text, notes, shapes, labels, groups, locks, transforms and object styling. |
+| **A floating canvas.** Adjust opacity, write over your screen and switch to pointer pass-through when you need the app underneath. | **Local files.** Native saves, visible save status, recovery snapshots and PNG export. |
+| **Tools within reach.** A press-and-hold radial menu, stroke/pixel erasers, a fading laser and keyboard shortcuts. | **Reusable explanations.** Record ink and edits, replay a lesson, keep an editable frame or export a silent WebM. |
+
+## See it move
+
+The animation library contains **14 native offline experiments**, with three deeper studios for physics,
+chemistry and biology. Their controls, diagrams, graphs and saved frames live on the same board as your ink.
+
+<p align="center">
+  <img src="docs/assets/readme/science-demo.gif" alt="Animated native induction, pouring chemistry and heart cutaway scenes with synchronised graphs" width="960" />
+</p>
+
+<p align="center"><sub>Actual offline lab rendering, with playback sped up for the demo. <a href="docs/showcase-qa/three-showcases.png">Prefer a still image?</a></sub></p>
+
+| Studio | Try this |
+| --- | --- |
+| **Induction** | Drag the magnet through the coil. Stop, reverse direction and replay your recorded movement against the voltage graph. |
+| **Colour chemistry** | Follow the flask pours, indicator colour and CO₂ bubbles. Change the reactant amounts and compare the final mixture. |
+| **Inside the heartbeat** | Pause at filling, atrial squeeze, ejection and relaxation. Follow the valve leaflets and either circulation route. |
+
+**Pause the moment. Draw the explanation.** Each lab supports play/pause, stepping, scrubbing,
+editable parameters and **Freeze & annotate**. Native files retain your deliberately frozen frame;
+PNG export captures the displayed scene. Parameter edits and recorded hand movements participate in undo.
+
+<details>
+<summary><strong>Explore the rest of the library</strong></summary>
+
+- **Physics:** projectile motion with a baseball and draggable launch vector; lenses and mirrors;
+  magnet and coil; circuits and bulbs; pendulum and spring; waves and superposition; forces and friction.
+- **Chemistry:** states of matter; atom-balanced reactions; a colour-change reaction apparatus.
+- **Biology:** a two-loop circulation overview.
+
+Use **Flask → Showcases** for the three deeper examples, **Browse all** for the complete set,
+or **On this board** to return to an experiment you have already inserted.
+
+</details>
+
+These are **2D teaching models with visible assumptions**. Projectile motion and induction use
+deterministic equations; fluid motion, indicator colours and heart timing include illustrative
+approximations. Teacher and subject-expert review remains important. Continuous scientific motion
+is not yet captured in lesson recordings; frozen edits, annotations and committed magnet traces are.
+See [the scientific scope and QA evidence](docs/SCIENCE-SHOWCASE-QA.md).
+
+### A closer look at the collection
+
+These are **actual native lab captures** from disposable QA boards. The chemistry artwork in the
+cover is a generated illustration; the scenes below show the app's current 2D teaching models.
+Select an image to inspect the full-size view.
+
+<table>
+  <tr>
+    <td width="50%"><a href="docs/assets/readme/gallery/chemistry.png"><img src="docs/assets/readme/gallery/chemistry.png" alt="Native colour chemistry studio with glass apparatus and a reaction graph" width="100%" /></a><br /><strong>Colour chemistry</strong><br />Follow the pour, mixture and reaction progress.</td>
+    <td width="50%"><a href="docs/assets/readme/gallery/heartbeat.png"><img src="docs/assets/readme/gallery/heartbeat.png" alt="Native heart cutaway studio showing chambers, circulation and heartbeat timing" width="100%" /></a><br /><strong>Inside the heartbeat</strong><br />Pause a cycle and explain the valves and flow.</td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="docs/assets/readme/gallery/induction.png"><img src="docs/assets/readme/gallery/induction.png" alt="Native electromagnetic induction studio with a magnet, coil and synchronised graphs" width="100%" /></a><br /><strong>Induction in your hands</strong><br />Move the magnet and compare motion with voltage.</td>
+    <td width="50%"><a href="docs/assets/readme/gallery/optics.png"><img src="docs/assets/readme/gallery/optics.png" alt="Native optics experiment with labelled rays and an optical element" width="100%" /></a><br /><strong>Light and images</strong><br />Explore the geometry of lenses and mirrors.</td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="docs/assets/readme/gallery/waves.png"><img src="docs/assets/readme/gallery/waves.png" alt="Native waves experiment displaying travelling waves and superposition" width="100%" /></a><br /><strong>Waves together</strong><br />Make superposition visible, then freeze it.</td>
+    <td width="50%"><a href="docs/assets/readme/gallery/circuits.png"><img src="docs/assets/readme/gallery/circuits.png" alt="Native circuits experiment with a source, components and electrical measurements" width="100%" /></a><br /><strong>Circuits that explain</strong><br />Connect the diagram to its measured quantities.</td>
+  </tr>
+</table>
+
+### A much bigger library, built with care
+
+The long-term direction is **50+ interactive lessons**, starting with a strong physics collection
+and expanding into chemistry and biology. That is a planning target, not a count of available labs
+or a release promise. First comes deeper interaction and scientific review of the existing scenes;
+then coherent topic packs, useful presets and a compact, searchable library.
+
+See the [collection expansion plan](docs/SCIENCE-COLLECTION-PLAN.md) for topic ideas, priorities and
+the quality checks each new lesson should pass. Contributions can improve a model, a diagram or a
+teaching sequence as well as add a new experiment.
+
+<details>
+<summary><strong>Project artwork and repo card</strong></summary>
+
+The [transparent logo](docs/assets/brand/floating-whiteboard-logo.png),
+[GitHub social card](docs/assets/social/repo-card.png) and
+[editable card template](docs/assets/social/repo-card.template.html) live in the repository.
+See [editing and export instructions](docs/assets/social/README.md) and
+[artwork sources and generation prompts](docs/assets/readme/GENERATION.md).
+
+</details>
+
+## Get started
+
+### Use the app
+
+The current Windows target is **Windows 10 or 11, x64**. Normal board and science use needs no separate
+Node.js, Python, Blender or API key. The runtime is bundled.
+
+- **Installer:** run the setup `.exe` and choose where to install.
+- **Portable:** run the portable `.exe` without an installation step. Its data still lives in your local AppData folder.
+- **Move your work:** save a native board file, copy it to the other PC, then open it there.
+
+This checkout includes an **unreleased science preview** on top of version 1.4.0. Published binaries
+may lag behind the source. Visit [Releases](https://github.com/EruditeCoder108/Whiteboard/releases),
+or build the preview below. Local builds are unsigned unless signing credentials are supplied;
+Windows trust policies can warn or block them. [Installation and transfer details](docs/INSTALL-ON-ANOTHER-PC.md).
+
+### Run from source
+
+Use **Node.js 22.12 or newer** and npm on Windows.
 
 ```bash
-npm install
-node node_modules/electron/install.js   # npm 11 skips Electron's download script; run once
-npm run dev                              # live-reloading dev build
-npm run build && npm start               # production build, run locally
-npm run dist                             # installer + portable .exe in dist/
-npm run dist:portable                    # portable executable only
-npm run dist:signed                      # release build; requires signing credentials
+git clone https://github.com/EruditeCoder108/Whiteboard.git
+cd Whiteboard
+npm ci
+node node_modules/electron/install.js
+npm run dev
 ```
 
-### Windows app trust
+The explicit Electron install step handles npm setups that skip dependency install scripts.
+Building dependencies initially needs network access; normal app use does not.
 
-Development executables are unsigned unless signing credentials are configured. On this machine,
-Windows blocked the new 1.4.0 executable under its app trust policy (Code Integrity events 3033/3077);
-the file's Authenticode status was `NotSigned`. No current Defender malware detection for Whiteboard
-was found during that investigation. This does not establish that an unsigned file is trusted.
+## A few shortcuts worth remembering
 
-For distribution, use a trusted Windows code-signing identity and `npm run dist:signed`.
-That command enables `forceCodeSigning`, so missing credentials fail the release build instead of
-silently producing unsigned output. Electron-builder supports `WIN_CSC_LINK` / `WIN_CSC_KEY_PASSWORD`
-or the corresponding certificate-store/cloud signing configuration. Keep credentials outside the repo.
-See [electron-builder's signing guide](https://www.electron.build/v26/docs/features/code-signing/code-signing-win/)
-and [Microsoft's Smart App Control guidance](https://learn.microsoft.com/windows/apps/develop/smart-app-control/overview).
+| Action | Shortcut |
+| --- | --- |
+| Select / lasso | `V` / `Q` |
+| Text / sticky note | `T` / `N` |
+| Eraser / switch eraser mode | `E` / press `E` again |
+| Laser pointer | `K` |
+| Undo / redo | `Ctrl+Z` / `Ctrl+Shift+Z` or `Ctrl+Y` |
+| Duplicate / group | `Ctrl+D` / `Ctrl+G` |
+| Hide the interface | `Tab` |
+| Toggle pointer pass-through | `Ctrl+Shift+Space` globally |
+| Hide/show the window | `Ctrl+Shift+H` globally |
+| More help | `F1` |
 
-The portable app stores data in `%APPDATA%/Floating Whiteboard/` (`board.json` autosave, `settings.json`, `window.json`, `recordings.json`). Development builds may use `%APPDATA%/floating-whiteboard/` instead.
+Press and hold on the canvas for the radial menu. See the [user guide](docs/USER-GUIDE.md)
+for pen buttons, touch settings, object editing, local recovery and native file formats.
 
-The top bar shows **Unsaved → Saving → Saved**, based on actual disk completion. A failed write shows
-**Retry save**, and closing keeps the window open until the board and settings are saved. Pan and zoom
-are autosaved too; pending settings are flushed on close.
+## Record an explanation once. Reuse it later.
 
-Up to five prior board snapshots are kept as `board.backup-1.json` through `board.backup-5.json`.
-Snapshots rotate at most once per minute during a session, so frequent strokes do not immediately
-erase the recovery history. Use **Menu → Recovery backups…** to restore a snapshot; **Ctrl+Z** undoes
-the restoration. Startup tries readable snapshots if the current autosave is damaged. Damaged originals
-are retained as `board-damaged-<timestamp>.json` before a repaired save replaces them. With no usable
-content, opening and closing alone preserves the damaged original.
+Open the **clapperboard → Start recording**, then draw and edit normally. Ink retains its sample
+timing and pressure; committed edits and camera changes become timed steps. Replay previews a
+separate canvas, preserving the working board and its undo history.
 
-## Using it
+Save a portable `.wbrp` lesson, keep an editable frame, or export a silent **1280 × 720 WebM**.
+Microphone audio, desktop apps and transient laser trails are outside the recording.
+[Recording and playback details](docs/USER-GUIDE.md#record-and-replay-a-lesson).
 
-| | |
-|---|---|
-| **Draw** | pen / mouse / finger. Pen pressure changes line width. Barrel button or the eraser end = eraser. |
-| **Radial menu** | press and hold anywhere (mouse, pen or finger). Inner ring: tools and actions. Outer ring: colours. Release over a slice. |
-| **Eraser** | `E` picks it, `E` again switches **Stroke** (whole line) ⇄ **Pixel** (only what you rub). |
-| **Hide interface** | `Tab` or the eye button. A faint pill stays top-right. |
-| **Pass-through** | `Ctrl+Shift+Space` (works from any app) or the toolbar button. The board ignores the pointer so you can use the apps underneath; a blue "Back to drawing" pill stays clickable by mouse, pen and touch. |
-| **Hide window** | `Ctrl+Shift+H` (global) |
-| **Touch** | one finger draws (Settings → *Draw with finger*), two fingers pan and pinch-zoom. Touch is ignored while a pen is near. |
-| **Laser pointer** | `K` |
-| **Selection styling** | `V` or `Ctrl+A`, then click the colour dot. Change colour or thickness without losing selection; Ctrl+Z undoes the change. |
-| **Text / notes** | `T` / `N`, click the board and type. Double-click or select and press `Enter` to edit. `Ctrl+Enter` finishes; `Esc` cancels. |
-| **Shape labels and styles** | Select a shape, press `Enter` to add its label. The selection palette controls text, fill, borders, rounded rectangle corners and opacity. |
-| **Resize / rotate** | Drag a selection handle. `Shift` keeps proportions or snaps rotation to 15°. Side resizing reflows text; text and notes grow to keep content visible. |
-| **Group / lock / order** | `Ctrl+G` / `Ctrl+Shift+G`, `Ctrl+L`, and `Page Up` / `Page Down`. Locked objects can be selected and unlocked; editing and erasing respect locks. |
-| **Lasso / nudge / fit** | `Q` for lasso, arrow keys to nudge (`Shift` for 10 units), `Ctrl+2` to fit selection. |
-| **Object clipboard** | `Ctrl+C` / `Ctrl+V` copies editable objects inside the running app. `Ctrl+Alt+C` / `Ctrl+Alt+V` copies their style. Native text clipboard works while typing. |
-| **Hold timing** | Settings → *Hold for menu* and *Hold delay*. Disable it or increase the delay for deliberate handwriting. |
-| **Everything else** | `F1` |
+## Optional agent tools
 
-Set the board **Opacity** to 0 in Settings to write directly over whatever is on screen.
+The sparkle menu offers offline diagram starters and arrangement tools. External agents can use a
+validated local MCP interface; access starts disabled, binds to loopback and uses a per-session token.
+The external adapter needs Node.js 22+.
 
-**Open board** also imports Python v10 `.wbd`/JSON files, including shapes and variable-width ink.
-Saving the imported board uses the current format; the original file is left intact. Ink appearance
-may differ slightly because the two versions use different stroke renderers. Unsupported formats are
-rejected; partially readable files report how many invalid objects were skipped. Board files are limited
-to 50 MB. Settings and coordinates are validated before use.
+An optional assistant can connect to a local or compatible inference server. A model/server is not
+bundled, and remote providers can have their own keys and costs. Drafts require review before being
+applied as ordinary undoable objects. [Setup, privacy boundaries and examples](docs/AGENT-INTEGRATION.md).
 
-Native saves now use **format version 2** for editable text, notes, transforms, groups and styles.
-This release reads Electron version 1 and Python boards; version 2 files need app 1.2 or later.
-Text drafts are included in autosave and flushed when closing. PNG and clipboard-image output include the new objects.
+## Build and test
 
-The laser uses continuous smoothed paths, a thin red core and a compact halo. Separate touch contacts and re-entry do not
-connect to an old trail; fast movement retains its final endpoint. Trails fade after 2.4 seconds
-and remain transient, outside saved board content and undo history.
-
-## Record and replay a lesson
-
-Open the **clapperboard button → Start recording**, then draw and edit normally. Pen and marker
-strokes replay progressively with their captured timing and pressure; object creation, text commits,
-edits, removal, grouping, layer changes, undo/redo and view changes become timed steps. Choose
-**Selected diagram + new objects** to exclude unrelated existing board content.
-
-The recording strip supports pause, resume and finish. Paused time is excluded; edits made while
-paused are included together at the resume boundary. Finishing saves the lesson to the local library;
-active recordings are checkpointed every two seconds and flushed on normal close.
-
-**Play lesson** previews on a separate canvas. Use play/pause, speed, the scrubber, previous/next step,
-or **Space / Left / Right / Esc**. Preview never changes the working board or its undo history.
-**Keep this frame** or **Add finished diagram** inserts fresh editable objects as one undo step,
-preserving your existing work and remapping object/group IDs.
-
-**Save steps** creates a portable `.wbrp` recording; **Open file** imports it into the library for
-later playback. **Export video** makes a silent 1280×720 WebM of the board at the selected playback
-speed. Export encodes frames directly with a progress bar and cancellation. Camera following is optional;
-the default fits the whole lesson. Export includes a brief initial and final hold. Limits: 100 local
-recordings, 10,000 steps/100,000 object entries per recording, eight recorded hours, 50 MB for reusable
-files/library and 256 MB for a video export. Transient laser trails, live typing, microphone audio,
-desktop apps and UI clicks are not captured. Start recording before creating the lesson; previous
-unrecorded gestures cannot be reconstructed from the final diagram.
-
-## Agent tools — no OpenAI key required
-
-Open the sparkle button in the top bar. **Planning board**, **Compare ideas** and **Arrange selection**
-work immediately offline and create ordinary editable objects in one undo step.
-
-**External agents:** enable the local connection and copy its MCP configuration into your agent client.
-The agent uses its own model connection; the whiteboard does not need a provider key. The adapter
-requires Node.js 22 or newer. Access starts off every session, binds only to `127.0.0.1`, and uses a
-random session token. Disabling closes the connection and revokes its file. Configuration contains
-paths, never the token. [Setup, examples and command contract](docs/AGENT-INTEGRATION.md).
-
-**Optional in-app assistant:** connect an existing local Ollama or compatible server, find/select a
-tool-capable model, and prepare a draft. Review its thumbnail and apply it as one undo step. A local
-model needs no OpenAI key; a model and inference server are not bundled with the app. HTTP is limited
-to localhost; remote endpoints require HTTPS. Chat Completions and Responses formats are available.
-Provider-specific features and model quality vary. Optional keys are encrypted by Electron safeStorage
-in the main process, bound to the exact endpoint, and omitted from renderer configuration.
-
-The assistant sends the prompt and a compact text/object snapshot to the configured endpoint only
-when requested. It makes at most four model requests per prompt, has a Stop button, and does not apply
-model output automatically. The external agent API validates complete batches before applying, respects
-locks, checks document revisions and supports safe retries for the last 100 successful transactions.
-
-## Layout
-
+```bash
+npm run typecheck
+npm test
+npm run build
+npm start
 ```
-src/main/         window, global hotkeys, pass-through pill, atomic autosave
-src/preload/      the only bridge between the page and Node
-src/shared/       the typed IPC contract
+
+| Command | What it does |
+| --- | --- |
+| `npm run e2e` | Build and exercise ordinary drawing and editing in a disposable profile. |
+| `npm run e2e:showcases` | Check the three studios, hand-motion recording, freeze, persistence and PNG export. |
+| `npm run e2e:library` | Exercise all fourteen experiments and responsive library navigation. |
+| `npm run e2e:replay` | Check lesson recording, replay and video export. |
+| `npm run dist` | Build a Windows installer and portable executable in `dist/`. |
+| `npm run dist:showcase` | Build preview packages separately in `dist/showcase-preview/`. |
+| `npm run dist:signed` | Require configured signing credentials for the release build. |
+
+The **12 October 2026 QA snapshot** records 495 source checks and 30 packaged-runtime checks.
+These are dated results, not a live CI badge or a guarantee about every pen, display or PC.
+[Read the evidence and limitations](docs/SCIENCE-SHOWCASE-QA.md).
+
+## Under the hood
+
+```text
+src/main/             Electron windows, local storage, hotkeys and agent service
+src/preload/          Narrow, typed bridge between renderer and main process
+src/shared/           Shared IPC and command contracts
 src/renderer/src/
-  engine/         pure TypeScript drawing engine (no DOM needed for most of it)
-    items.ts        stroke outlines (perfect-freehand), hit-testing, pixel-erase splitting
-    doc.ts          document + diff-based undo/redo
-    board.ts        render loop, offscreen cache, view, commands
-    tools.ts        pen, eraser, shapes, select, hand, laser
-    input.ts        pointer router: mouse / pen / touch / long-press
-    radial.ts       radial menu logic
-  state/          signals store, actions, shortcuts
-  ui/             Preact components
-tests/            unit tests (vitest)
-e2e/              Electron tests (playwright) + real OS-input tests (e2e/os/)
+  engine/             Ink geometry, hit testing, transforms, undo and rendering
+    science/          Versioned models, transient clocks and native lab scenes
+  state/              Signals, actions and shortcuts
+  ui/                 Preact controls, editors and the animation library
+tests/                Unit and reference checks
+e2e/                  Disposable-profile Electron and device-input checks
 ```
 
-## Tests
+Document items are immutable. Playback clocks stay transient until you deliberately freeze or
+commit an edit. Board rendering, lab thumbnails, frozen replay frames and PNGs share the same
+scene functions. [More design decisions](docs/USER-GUIDE.md#design-decisions-worth-knowing).
 
-```bash
-npm test                    # unit tests
-npm run e2e                 # build + UI tests
-npm run e2e:phase1           # recovery, real write failure, styling, import, small-window checks
-npm run e2e:phase2           # editable objects, transforms, groups, zoom, save/reopen and small windows
-npm run e2e:laser            # sharpness, fast/dense input, separate touch contacts and fading
-npm run e2e:agent            # local MCP, semantic edits, drafts, key storage and cancellation
-node e2e/agent.mjs "dist/win-unpacked/Floating Whiteboard.exe"
-node e2e/phase2.mjs packaged # same object workflow against dist/win-unpacked
-node e2e/laser-audit.mjs packaged
-node e2e/portable.mjs        # actual portable launcher, payload and save/close checks
-node e2e/window.mjs         # window behaviour + performance
-node e2e/os.mjs             # REAL mouse/touch/pen injected through Windows APIs over a backdrop window
-```
+## What is next
 
-`e2e/os.mjs` moves your real cursor and injects touch/pen input for ~40 seconds; don't touch the machine while it runs.
+The focus is thoughtful interaction and reliable teaching workflows: richer direct manipulation,
+teacher review, physical pen/touch testing and visible performance on everyday hardware.
+Connected diagrams, local pages/assets, PDF references and richer lesson presentation remain on
+the [product roadmap](ROADMAP.md). The [science roadmap](docs/SCIENCE-ROADMAP.md) tracks that work separately.
 
-## Design decisions worth knowing
+## Contributing
 
-- **No `desynchronized` canvas.** It lowers latency but uses a hardware overlay that screen-capture APIs
-  (Zoom, Teams, OBS) cannot see, so the board shows up black when shared. Found with the OS-level test.
-- **Items are immutable.** Every edit (draw, erase, move, recolour) is "remove these / add those", so
-  undo/redo is one small mechanism.
-- **Committed strokes live in an offscreen cache larger than the viewport.** Panning reuses the
-  cached bitmap until the viewport needs more content; `e2e/performance.mjs` measures a 4,000-stroke board.
-- **Pass-through uses a second tiny window** instead of hover tricks, because touch and pen never produce
-  the hover events a single click-through window would need.
+Bug reports, reproducible input issues, accessible UI improvements and scientific corrections are
+welcome. A useful report says what you expected, what happened and how to reproduce it using a
+synthetic board. Keep personal boards, credentials and signing keys out of issues and commits.
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing code and [SECURITY.md](SECURITY.md)
+before reporting a security issue.
+
+## Licence and credits
+
+Floating Whiteboard's own code is licensed under **GNU GPL version 3 only**.
+Copyright © 2026 Floating Whiteboard contributors.
+You may use, study, modify and redistribute it under [the licence terms](LICENSE).
+Distributed derivatives must meet GPLv3's source and licence obligations.
+
+The app builds on Preact and Signals, perfect-freehand, Lucide, Mediabunny and Electron.
+Those projects retain their own licences; see [third-party notices](THIRD_PARTY_NOTICES.md).
+The [media credits](docs/assets/readme/README.md) identify the official technology artwork.
+
+<p align="center"><sub>Made for the moment an explanation finally clicks.</sub></p>

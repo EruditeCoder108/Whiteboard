@@ -10,6 +10,7 @@ import {
 import { MARKER_ALPHA, newId } from './types'
 import type { Item, Rect, ShapeItem, StrokeItem } from './types'
 import { paintText } from './text'
+import { paintLab } from './science/scene'
 
 export function rotatePoint(x: number, y: number, cx: number, cy: number, angle: number): [number, number] {
   const c = Math.cos(angle), s = Math.sin(angle)
@@ -134,7 +135,7 @@ export function itemBounds(it: Item): Rect {
     const o = outlineOf(it)
     b = o.length ? boundsOfPoints(o) : boundsOfFlat(it.p, 3)
     b = inflate(b, 1)
-  } else if (it.t === 't') {
+  } else if (it.t === 't' || it.t === 'l') {
     b = [Math.min(it.p[0], it.p[2]), Math.min(it.p[1], it.p[3]), Math.max(it.p[0], it.p[2]), Math.max(it.p[1], it.p[3])]
   } else {
     let r: Rect | null = null
@@ -177,8 +178,8 @@ export function itemPath(it: Item): Path2D {
   } else {
     p = new Path2D()
     const [x0, y0, x1, y1] = it.p
-    if (it.t === 't' || it.k === 'rect') {
-      p.roundRect(Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0), Math.abs(y1 - y0), it.t === 't' ? (it.note ? 3 : 0) : Math.min(it.radius ?? 0, Math.abs(x1 - x0) / 2, Math.abs(y1 - y0) / 2))
+    if (it.t === 't' || it.t === 'l' || it.k === 'rect') {
+      p.roundRect(Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0), Math.abs(y1 - y0), it.t === 'l' ? 0 : it.t === 't' ? (it.note ? 3 : 0) : Math.min(it.radius ?? 0, Math.abs(x1 - x0) / 2, Math.abs(y1 - y0) / 2))
     } else if (it.k === 'ellipse') {
       p.ellipse((x0 + x1) / 2, (y0 + y1) / 2, Math.abs(x1 - x0) / 2, Math.abs(y1 - y0) / 2, 0, 0, Math.PI * 2)
     } else {
@@ -193,13 +194,14 @@ export function itemPath(it: Item): Path2D {
 }
 
 /** Paint one item.  The context must already carry the world→screen transform. */
-export function paintItem(ctx: CanvasRenderingContext2D, it: Item, alpha = 1): void {
+export function paintItem(ctx: CanvasRenderingContext2D, it: Item, alpha = 1, labTime?: number): void {
   ctx.save()
   alpha *= it.opacity ?? 1
   if (it.t !== 's' && it.angle) {
     const cx = (it.p[0] + it.p[2]) / 2, cy = (it.p[1] + it.p[3]) / 2
     ctx.translate(cx, cy); ctx.rotate(it.angle); ctx.translate(-cx, -cy)
   }
+  if (it.t === 'l') { ctx.globalAlpha = alpha; paintLab(ctx, it, labTime); ctx.restore(); return }
   const path = itemPath(it)
   if (it.t === 's') {
     ctx.globalAlpha = alpha * (it.m ? MARKER_ALPHA : 1)
@@ -237,7 +239,7 @@ export function denseOf(it: StrokeItem): number[] {
 
 export function hitCircle(it: Item, cx: number, cy: number, r: number): boolean {
   ;[cx, cy] = localPoint(it, cx, cy)
-  if (it.t === 't') return cx + r >= Math.min(it.p[0], it.p[2]) && cx - r <= Math.max(it.p[0], it.p[2]) && cy + r >= Math.min(it.p[1], it.p[3]) && cy - r <= Math.max(it.p[1], it.p[3])
+  if (it.t === 't' || it.t === 'l') return cx + r >= Math.min(it.p[0], it.p[2]) && cx - r <= Math.max(it.p[0], it.p[2]) && cy + r >= Math.min(it.p[1], it.p[3]) && cy - r <= Math.max(it.p[1], it.p[3])
   if (it.t === 's') {
     const d = denseOf(it)
     const n = d.length / 3
@@ -267,7 +269,7 @@ export function hitCircle(it: Item, cx: number, cy: number, r: number): boolean 
  * Returns the surviving pieces (strokes).  Shapes become ordinary strokes.
  */
 export function splitErase(it: Item, cx: number, cy: number, r: number): StrokeItem[] {
-  if (it.t === 't') return []
+  if (it.t === 't' || it.t === 'l') return []
   if (it.t === 'h' && it.angle) {
     const cX = (it.p[0] + it.p[2]) / 2, cY = (it.p[1] + it.p[3]) / 2
     const [lx, ly] = localPoint(it, cx, cy)

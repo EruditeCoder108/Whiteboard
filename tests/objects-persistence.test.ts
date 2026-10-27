@@ -126,7 +126,7 @@ describe('editable object validation', () => {
 
   it('enforces document count and format/version limits', () => {
     expect(parseBoard(board(new Array(100_001).fill(null)))).toBeNull()
-    expect(parseBoard(board([], 3))).toBeNull()
+    expect(parseBoard(board([], 4))).toBeNull()
     expect(parseBoard(board([], 0))).toBeNull()
     expect(parseBoard(board([], 2, 'another-app'))).toBeNull()
     expect(parseBoard(JSON.stringify({ version: 2, items: [] }))).toBeNull()

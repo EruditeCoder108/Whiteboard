@@ -40,6 +40,8 @@ export interface ToolHost {
   pruneSelection(): void
   createText(wx: number, wy: number, note?: boolean): void
   fitItem(it: Item): Item
+  pauseLab?(it: import('./types').LabItem): void
+  labTime?(it: import('./types').LabItem): number
 }
 
 export interface Tool {

@@ -3,6 +3,7 @@ import { rotatePoint } from './items'
 
 /** World-space transform with scale about an anchor followed by rotation and translation. */
 export function transformItem(it: Item, anchor: [number, number], sx = 1, sy = 1, angle = 0, dx = 0, dy = 0): Item {
+  if (it.t === 'l') { const k = Math.max(0.02, Math.min(Math.abs(sx), Math.abs(sy))); sx = sy = k }
   const point = (x: number, y: number): [number, number] => {
     const p = rotatePoint(anchor[0] + (x - anchor[0]) * sx, anchor[1] + (y - anchor[1]) * sy, ...anchor, angle)
     return [p[0] + dx, p[1] + dy]
@@ -24,7 +25,7 @@ export function transformItem(it: Item, anchor: [number, number], sx = 1, sy = 1
   const p: Rect = [center[0] - hw, center[1] - hh, center[0] + hw, center[1] + hh]
   // Side handles change wrapping; uniform scaling also scales the lettering.
   const fontScale = Math.abs(sx - sy) < 1e-8 ? scale : 1
-  return { ...it, p, angle: ((it.angle ?? 0) + angle) % (Math.PI * 2), w: width, ...(it.fontSize !== undefined ? { fontSize: fontScale === 1 ? it.fontSize : Math.max(1, Math.min(1000, it.fontSize * fontScale)) } : {}) }
+  return { ...it, p, angle: ((it.angle ?? 0) + angle) % (Math.PI * 2), w: width, ...(it.t !== 'l' && it.fontSize !== undefined ? { fontSize: fontScale === 1 ? it.fontSize : Math.max(1, Math.min(1000, it.fontSize * fontScale)) } : {}) }
 }
 
 export function expandGroups(items: Item[], selected: Item[]): Item[] {

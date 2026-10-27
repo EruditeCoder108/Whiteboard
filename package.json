@@ -5,7 +5,7 @@
   "description": "A fast, translucent, pen-first whiteboard for teaching and screen sharing",
   "main": "./out/main/index.js",
   "author": "SAMBHAV",
-  "license": "UNLICENSED",
+  "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
     "dev": "electron-vite dev",
@@ -21,9 +21,16 @@
     "dist:portable": "electron-vite build && electron-builder --win portable --publish never",
     "dist:signed": "electron-vite build && electron-builder --win --publish never --config.forceCodeSigning=true",
     "icon": "electron build/make-icon.cjs",
+    "branding": "electron build/make-icon.cjs && electron build/render-branding.cjs",
     "dist:dir": "electron-vite build && electron-builder --win dir --publish never",
     "e2e:agent": "electron-vite build && node e2e/agent.mjs",
-    "e2e:replay": "electron-vite build && node e2e/replay.mjs"
+    "e2e:replay": "electron-vite build && node e2e/replay.mjs",
+    "e2e:canvas": "electron-vite build && node e2e/canvas-audit.mjs",
+    "e2e:grid": "electron-vite build && node e2e/square-grid.mjs",
+    "e2e:science": "electron-vite build && node e2e/projectile.mjs",
+    "e2e:library": "electron-vite build && node e2e/science-library.mjs",
+    "e2e:showcases": "electron-vite build && node e2e/showcases.mjs",
+    "dist:showcase": "electron-vite build && electron-builder --win --publish never --config.directories.output=dist/showcase-preview --config.nsis.artifactName=Floating-Whiteboard-Setup-${version}-showcase.exe --config.portable.artifactName=Floating-Whiteboard-Portable-${version}-showcase.exe"
   },
   "dependencies": {
     "@preact/signals": "^2.0.0",
@@ -84,6 +91,18 @@
       "artifactName": "Floating-Whiteboard-portable-${version}.exe"
     },
     "extraResources": [
+      {
+        "from": "LICENSE",
+        "to": "LICENSE"
+      },
+      {
+        "from": "THIRD_PARTY_NOTICES.md",
+        "to": "THIRD_PARTY_NOTICES.md"
+      },
+      {
+        "from": "notices",
+        "to": "notices"
+      },
       {
         "from": "mcp/whiteboard-mcp.cjs",
         "to": "mcp/whiteboard-mcp.cjs"

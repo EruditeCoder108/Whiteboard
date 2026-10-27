@@ -3,7 +3,8 @@ import { promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve, sep } from 'node:path'
 import { DiskStore } from '../src/main/storage'
-import { serializeBoard } from '@/engine/serialize'
+import { serializeBoard, parseBoard } from '@/engine/serialize'
+import type { LabItem } from '@/engine/types'
 import { ReplayRecorder, serializeRecording } from '@/engine/replay'
 
 const folders: string[] = []
@@ -22,6 +23,17 @@ afterEach(async () => {
 })
 
 describe('confirmed disk saves and recovery', () => {
+  it('recovers a native projectile and its exact frozen instant from a validated backup', async () => {
+    const { dir, store } = await fixture()
+    const lab: LabItem = { t: 'l', id: 'science', c: '#007c88', w: 1, p: [0, 0, 1000, 640], labVersion: 1, model: 'projectile', modelVersion: 1,
+      params: { speed: 20, angle: 45, height: 0, gravity: 9.81, mass: 1 }, frozenTime: 1.23456789, theme: 'paper',
+      reveal: { trajectory: true, vectors: true, graphs: true, energy: true, strobes: true, equations: true, compare: false } }
+    const first = serializeBoard([lab]), second = serializeBoard([{ ...lab, frozenTime: 2 }])
+    expect((await store.saveBoard(first)).ok).toBe(true); expect((await store.saveBoard(second)).ok).toBe(true)
+    await fs.writeFile(join(dir, 'board.json'), '{damaged')
+    const recovered = await store.loadBoard()
+    expect(recovered.message).toMatch(/recover/i); expect(parseBoard(recovered.json!)?.items).toEqual([lab])
+  })
   const library = (title: string) => `[${serializeRecording(new ReplayRecorder([], { x: 0, y: 0, zoom: 1 }, { w: 900, h: 600 }, '#ffffff', title).snapshot())}]`
   it('saves overlapping recording-library writes atomically and retains a backup', async () => {
     const { dir, store } = await fixture(), first = library('First'), second = library('Second')
@@ -109,7 +121,7 @@ describe('confirmed disk saves and recovery', () => {
   it('rejects invalid new data and backup paths without replacing the current board', async () => {
     const { store } = await fixture()
     await store.saveBoard(board(1))
-    expect((await store.saveBoard('{"format":"floating-whiteboard","version":3,"items":[]}')).ok).toBe(false)
+    expect((await store.saveBoard('{"format":"floating-whiteboard","version":4,"items":[]}')).ok).toBe(false)
     expect((await store.loadBoard()).json).toBe(board(1))
     expect(await store.loadBackup('../board.json')).toBeNull()
   })

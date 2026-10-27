@@ -1,15 +1,23 @@
 # Floating Whiteboard: science and teaching roadmap
 
 Planning date: **2026-10-08**. Starting point: **1.4.0**, source commit `21693d4`.
-Status: **planned expansion**, with a completed canvas audit and an experimental rendering prototype. No science engine has been shipped.
+Status, 2026-10-12: **Fourteen native offline experiments**, including three deeper studios (finger-driven induction, pouring chemistry and heart cutaway). [Showcase delivery and limits](SCIENCE-SHOWCASE-QA.md), [original eleven-entry snapshot](SCIENCE-DEMO-QA.md). S1 projectile baseline: [workflow, reference checks and limits](PROJECTILE-LAB-QA.md). S0 decorative renderer work is preserved; [its checks and limits](SCIENCE-S0-QA.md) remain a separate snapshot. No model requires an AI provider.
+
+Square-grid follow-up: the user's screenshot comparison prompted a quieter four-way graph-paper lattice, intersection compensation and display-scale refresh. See [square-grid implementation and checks](SQUARE-GRID-QA.md); this supersedes S0's line-density description while dots keep the earlier implementation.
 
 This is the separate science-product track. [The whiteboard roadmap](../ROADMAP.md) remains the editor/workspace track. The tracks share milestones and release gates; the phase names below are planning milestones, not promised version numbers or dates.
 
 ## The eventual product
 
+The [collection expansion plan](SCIENCE-COLLECTION-PLAN.md), updated 2026-10-27, proposes topic packs
+and a long-term **50+ interactive lesson** target. It separates available scenes from future work
+and puts deeper interaction, scientific review and classroom testing ahead of catalogue size.
+
 An offline teaching whiteboard where a teacher can draw, insert a labelled scientific model, change its parameters, pause at an exact instant, annotate the result, and save the complete explanation for reuse. An agent can perform those same actions through native commands. Optional speech and AI can assemble explanations from tested models.
 
 The visual identity is paper, graph paper and blueprint: precise geometry, clear labels, restrained colours, readable equations, and purposeful animation. Start with 2D. Use projected depth or cutaway drawings when they clarify a concept. Full 3D is a later, selective option after an actual teaching need and performance budget are established.
+
+Child-friendly direction, requested after the first lab: use familiar objects and subtle visual quirks throughout the catalogue. Start by depicting the projectile as a stitched baseball; later models can use recognisable magnets, glowing bulbs, springs and ropes. Keep motion purposeful and the lesson readable. Decorative details do not change the scientific model or imply unmodelled spin, drag, bounce or forces. Offer a simple exploratory view first, with vectors, graphs and equations available as teaching reveals; retain the detailed view for older students. The first pass is implemented locally: stitched baseballs, Explore/Explain reveals and a structured compact Animation library. Subject-expert and teacher review remain.
 
 High-school physics is the first subject. Attractive short demonstrations help explain and share the product, but virality is not a delivery promise. Each demo must also work as a teacher-led lesson: predict, experiment, observe, explain, and reuse.
 
@@ -17,9 +25,9 @@ High-school physics is the first subject. Attractive short demonstrations help e
 
 The app already has pressure-sensitive ink, editable text/notes/shapes, selection and transforms, groups, local save/recovery, semantic agent/MCP operations, and timed editable recordings with replay and video export. These provide the board around the laboratory.
 
-The app does not yet have a scientific model runtime, simulation objects, calibrated scientific axes, a physics catalogue, lesson sequences for simulations, or voice-to-science control. Connected diagrams, local pages/assets, equations/PDF workflows and broader presentation tools remain on the editor roadmap. Their dependencies are scheduled below rather than assumed complete.
+The app now has a deterministic projectile model/runtime, a native versioned lab object, calibrated labelled axes, an eleven-entry Animation library and manual offline transport. Frozen lab edits participate in generic lesson recording. Continuously animated science lesson sequences, dedicated science MCP transport commands, voice control and expansion beyond the initial demo set remain planned. Optics, induction, circuits, oscillations, waves, forces, particles, stoichiometry, circulation and a colour-change apparatus are now implemented with explicit model assumptions; they are not yet reviewed curriculum packs. Connected diagrams, local pages/assets, equations/PDF workflows and broader presentation tools remain on the editor roadmap.
 
-Canvas quality needs attention first. The existing camera supports a large virtual world; the current dots/grid are cached with content and can grow/blur during zoom, while grid density changes abruptly. [The canvas audit](CANVAS-AUDIT.md) separates verified defects, prototype measurements and the implementation proposal. Trusted Windows signing also remains a release requirement for distribution on this machine.
+The existing camera supports a large virtual world. S0 now separates decorative grids from cached ink and blends compatible density levels. [The historical canvas audit](CANVAS-AUDIT.md) records the original defects and prototype; [S0 verification](SCIENCE-S0-QA.md) records current evidence. Trusted Windows signing remains a release requirement for distribution on this machine.
 
 ## Indian curriculum baseline
 
@@ -38,7 +46,7 @@ Two mapping precautions: Class IX has a distinct 2026–27 structure, including 
 
 ## Starter demonstrations
 
-Build three hero models first, one at a time. The next three expand shared capabilities after the hero workflow works reliably.
+The original six-model sequence below describes the long-term teaching direction. The eleven-entry baseline and three deeper showcases are implemented. Projectile and the induction studio have direct handles; broader direct apparatus manipulation, standing waves, sound and continuous scientific lesson recording remain future work. Subject review and physical touch/performance validation take priority over more catalogue breadth.
 
 | Order | Demonstration | Initial interaction and visual hook | Curriculum connection / starting simplification |
 |---|---|---|---|
@@ -79,13 +87,13 @@ Keep the scientific calculation independent of board pixels, UI, AI provider and
 | Agent adapter | Discover concepts and parameters; insert/read labs; change validated values; play/pause/seek; create comparisons and snapshots. |
 | Teacher UI | Catalogue, direct manipulation, compact controls, accessible labels and presentation mode. |
 
-Suggested future module boundary: `engine/science/{catalog,models,runtime,scene,board-adapter,lesson-adapter,agent-adapter}` and `ui/science/`. This is a design proposal, not an already-created code scaffold.
+Implemented boundary: `engine/science/projectile.ts` retains the projectile SI solver; `models.ts` registers fourteen model schemas; `showcase-models.ts` adds bounded hand traces and deeper pure state functions; `catalogue.ts` derives library metadata/search; `runtime.ts` manages transient clocks; `scene.ts`, `experiments.ts`, the three dedicated studio renderers and `props.ts` share board/PNG/frozen replay rendering. `ui/science/{Catalogue,Science,Inspector,Preview}.tsx` provides the library, transport and controls. The board adapter uses existing history, selection, serialization and recovery. Model-aware lesson and dedicated science command adapters remain future work.
 
 A persistent lab stores its model ID/version, parameters, starting conditions, board placement, reveal options and lesson references. Animation state is derived at time `t`; it must not create hundreds of document objects or undo entries per second. Commit intentional parameter/structure edits as transactions. Transport is transient until deliberately recorded or saved as a starting state.
 
 Separate **SI coordinates** from **board coordinates**. Moving/resizing a frame changes its presentation, not gravity, physical length or elapsed time. Preserve aspect ratio for geometry that needs it. Parameter changes never silently rescale the meaning of an axis.
 
-Replay requires model-aware events and stable versions; today's object-edit recording is a foundation, not complete simulation replay support. Reopening, seeking and exporting must reproduce the same scientific state. If an old model version is unavailable, show a saved static snapshot and an explicit compatibility message instead of silently recalculating with different rules.
+Replay requires model-aware events and stable versions; today's object-edit recording supports frozen parameter/time edits and annotations, not continuous scientific playback. Boards containing labs use format 3; ordinary boards retain format 2. Recordings containing labs use replay format 2; older recordings remain readable. Unsupported model/lab versions retain their validated settings and display an explicit placeholder with playback disabled. A saved raster fallback for unavailable future models remains planned; do not silently recalculate them.
 
 The AI selects and configures validated models and lesson steps. Use typed commands and compact state summaries through the existing semantic/MCP foundation. Imported lessons and AI output cannot execute arbitrary scripts. Add more providers through adapters; no OpenAI key is required for manual physics or an external MCP agent. Built-in conversational AI remains optional and depends on a configured local model or provider.
 
@@ -108,7 +116,7 @@ The editor roadmap continues alongside this track: attached connectors help circ
 - **Scientific correctness:** analytical reference values, units/dimensions, sign conventions, limiting cases and relevant conservation/error checks. Teacher or subject-expert review is a gate before calling a pack curriculum-ready.
 - **Teaching usefulness:** every model includes a learning question, a meaningful variable change, a readable result and an explanation. Show simplifications at a level appropriate to the lesson.
 - **Document integrity:** migration, undo/redo, clone, save/reopen, recovery, unsupported versions and portable lesson tests apply to every persistent lab feature.
-- **Performance:** target smooth input on the reference classroom device. Animate one active lab initially; pause/cull offscreen labs, bound particles/graph history, and keep simulation painting separate from cached ink. Measure 1080p/DPR variants and lower-end hardware before release claims. A larger world alone does not require a larger bitmap.
+- **Performance:** target smooth input on the reference classroom device. Animate one active lab initially; pause/cull offscreen labs and bound graph work. S1 repaints the lab's region in board order while retaining the cache outside that region; introduce separate animation/compositor layers only with a tested stacking contract and measured need. Measure 1080p/DPR variants and lower-end hardware before release claims. A larger world alone does not require a larger bitmap.
 - **AI/speech:** deterministic model actions come first. Show the interpreted command, provide immediate cancellation and one-step undo, and avoid changing a lesson on uncertain speech. Continuous drawing while listening is a later experiment, not a guarantee that a model understands any spoken concept instantly.
 - **Distribution:** source-app checks do not prove that the unsigned Windows executable is accepted. Ship through a trusted signing path and validate the actual package.
 
@@ -116,9 +124,14 @@ The editor roadmap continues alongside this track: attached connectors help circ
 
 ## Next implementation slice
 
-1. Finish the production canvas/background improvement and its regression/performance checks.
-2. Specify the lab schema, SI model interface and deterministic transport; implement one projectile model behind the real board UI.
-3. Complete its full teacher workflow and saved-document lifecycle before adding a second model.
-4. Extend agent commands to that lab; add optics and induction after the interaction and replay contracts are proven.
+The eleven-demo baseline and three deeper studios are implemented locally. Read [SCIENCE-SHOWCASE-QA.md](SCIENCE-SHOWCASE-QA.md) and [SCIENCE-DEMO-QA.md](SCIENCE-DEMO-QA.md), inspect the model assumptions and review the actual illustrations before adding more entries. The Animation library has search, subject/topic navigation, compact cards and an on-board list; it shows runnable entries only.
+
+1. Subject-expert/teacher review of all fourteen entries, especially the simplified flux envelope, particle views, stoichiometric checkpoints, circulation schematic and approximate apparatus chemistry. Refine learning questions and label clarity from actual lessons.
+2. Physical pen/touch and classroom display checks; measure visible animation and input latency on lower-end devices. Existing dense-board stalls remain independent work.
+3. Model-aware lesson events/seek/video and dedicated science MCP transport. Generic frozen edits/annotations and compact semantic model reads already work.
+4. Add richer direct manipulation to individual models when useful; only projectile currently has a direct scientific canvas handle. Expand reviewed concepts deliberately after this demo set is convincing.
+5. Keep decorative grid work closed unless a concrete regression is reproduced. Trusted signing and dense-board cache limits remain independent release work.
+
+S1 delivery includes direct launch-vector manipulation, numeric/range launch controls, gravity/angle presets, paper/blueprint frames, a travelled/future path and equal-time dots, component vectors, height and vertical-velocity graphs, energy/equations, complementary-angle comparison, play/pause/reset/30 Hz step/scrub/apex/impact, freeze-and-annotate, shared object lifecycle, exact frozen-time save/reopen/recovery and PNG snapshots. One lab plays at a time; offscreen labs pause. Scientific calculation is independent of frame geometry and rendering rate. The model has analytical reference tests and an automated instructor workflow; it is **implemented and analytically checked**, not yet teacher-tested or a reviewed curriculum pack.
 
 Track each future concept as **planned → implemented → scientifically checked → teacher tested**. Expand the catalogue deliberately without requiring this roadmap to list every diagram now.

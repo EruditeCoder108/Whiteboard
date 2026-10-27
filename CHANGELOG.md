@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased showcase preview — 2026-10-12
+
+- Add three separate native studios while preserving the original eleven models: finger-driven induction with saved hand-motion replay, illustrated glass apparatus with connected pouring streams and confined CO₂ bubbles, and a four-chamber heart cutaway with valve/contraction stages.
+- Feature the three showcases in the compact library; retain Browse all, search and on-board navigation. Add guided lesson stops, explicit approximations and shared paper/blueprint illustrations for the board, thumbnails, frozen frames and PNG.
+- Validate recorded position/time inputs and use item-aware clocks, freeze, parsing and semantic state. A hand movement is one undo transaction; playback is transient and offline.
+- Add scientific/reference and disposable workflow evidence in `docs/SCIENCE-SHOWCASE-QA.md`; build installer/portable previews separately with `npm run dist:showcase`. These previews remain unsigned; see `docs/INSTALL-ON-ANOTHER-PC.md`.
+
+## Unreleased — 2026-10-08
+
+- Expand to eleven native offline experiments: seven physics, three chemistry and one biology, including pouring flasks, cabbage-indicator colour changes and CO₂ bubbles. Model-specific controls, deterministic state, graphs and explicit assumptions share the existing transport, undo, freeze, save/reopen and PNG lifecycle.
+- Replace the single-entry Science panel with a searchable responsive Animation library, subject/topic filters and an On this board list. Fix the stretched insertion-button icon and keep actions accessible in compact windows.
+- Add native stitched baseball props and Explore/Explain views. New labs start with fewer technical details; existing saved reveals remain. Add 18 model/reference tests and a 78-check disposable offline library workflow; see `docs/SCIENCE-DEMO-QA.md`.
+- Add a native offline projectile lab with deterministic SI equations, a draggable launch vector, numeric/range controls, launch/gravity presets and labelled assumptions/units.
+- Render paper/blueprint frames with travelled/future trajectories, equal-time markers, velocity components, synchronized height/vertical-velocity graphs, conserved-energy readouts, equations and a complementary-angle comparison.
+- Add play/pause/reset, 1/30-second stepping, exact scrubbing, apex/impact checkpoints and deliberate freeze-and-annotate. Animation creates no document objects or undo entries; offscreen labs pause and one lab plays at a time.
+- Integrate select/move/uniform resize/duplicate/group/lock/order/undo, frozen-time save/reopen/recovery and current-frame PNG export. Lab-containing boards use format 3; ordinary boards retain format 2. Unsupported models display a compatibility placeholder without recalculation.
+- Include compact SI lab summaries in semantic reads and frozen lab edits in replay format 2. Continuous scientific animation recording and dedicated model transport commands remain future work.
+- Add analytical references and disposable Electron teacher-workflow checks; see `docs/PROJECTILE-LAB-QA.md`.
+- Refine square graph paper with neutral low-contrast lines, smooth four-way subdivisions and consistent density from 5% to 1600%. Compensate overlapping grid layers so intersections do not darken at density boundaries.
+- Refresh viewport canvases when display scale changes without a window-size change. Add square-grid pixel checks at 100%, 125%, 150% and 200% display scaling.
+- Render decorative dots and line grids on an independent viewport canvas, keeping their size sharp during expensive ink-cache zoom previews.
+- Fade compatible, world-anchored grid subdivisions smoothly in both directions; retain continuous subpixel pan positions and fractional-DPR rendering.
+- Background/theme changes no longer rebuild committed ink. Avoid redundant background painting during document edits and remove the forced minimum cache margin on large screens.
+- Add production grid pixel/gesture/performance checks in disposable Electron profiles.
+- Update pixel QA probes to identify the live canvas explicitly after adding the background layer.
+
 ## 1.4.0 — 2026-10-07
 
 - Record manual and agent board edits as compact, timed, editable steps; pen/highlighter strokes retain point timing and pressure.

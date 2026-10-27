@@ -4,7 +4,7 @@ import { join } from 'node:path'
 const executablePath = process.argv.includes('packaged') ? join(appDir, 'dist', 'win-unpacked', 'Floating Whiteboard.exe') : undefined
 const { app, page, logs } = await launch({ executablePath })
 const pixel = (x, y) => page.evaluate(([x, y]) => {
-  const cv = document.querySelectorAll('.cv')[1], ctx = cv.getContext('2d'), dpr = devicePixelRatio
+  const cv = window.__fw.board.liveCv, ctx = cv.getContext('2d'), dpr = devicePixelRatio
   return [...ctx.getImageData(Math.round(x * dpr), Math.round(y * dpr), 1, 1).data]
 }, [x, y])
 const leave = () => page.evaluate(() => document.querySelector('.stage').dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' })))
@@ -23,7 +23,7 @@ try {
   await page.waitForTimeout(40)
   check('fast movement reaches the final lifted endpoint', await fw(page, w => w.board.tools.laser.head?.[0] === 750))
   const thickness = await page.evaluate(() => {
-    const cv = document.querySelectorAll('.cv')[1], ctx = cv.getContext('2d'), dpr = devicePixelRatio
+    const cv = window.__fw.board.liveCv, ctx = cv.getContext('2d'), dpr = devicePixelRatio
     const data = ctx.getImageData(Math.round(350 * dpr), Math.round(250 * dpr), 1, Math.round(20 * dpr)).data
     let strong = 0, visible = 0
     for (let i = 3; i < data.length; i += 4) { if (data[i] > 100) strong++; if (data[i] > 8) visible++ }
@@ -40,7 +40,7 @@ try {
     }
   })
   const smoothness = await page.evaluate(() => {
-    const cv = document.querySelectorAll('.cv')[1], ctx = cv.getContext('2d'), dpr = devicePixelRatio
+    const cv = window.__fw.board.liveCv, ctx = cv.getContext('2d'), dpr = devicePixelRatio
     const trail = window.__fw.board.tools.laser.trail, head = trail.at(-1)
     // Probe the recent visible path, since a busy machine may have already expired its oldest end.
     const left = Math.max(head.x - 90, trail[0].x + 20), right = head.x - 10
@@ -56,14 +56,18 @@ try {
   check('average-speed motion has a continuous core without dark beads at sample joins', smoothness.min > 100 && smoothness.max > 200 && smoothness.spike <= 4, JSON.stringify(smoothness))
   await page.screenshot({ path: join(shotDir, 'laser-average.png') })
   await leave(); await page.waitForTimeout(2600)
-  await page.evaluate(async () => {
+  const slowMotion = await page.evaluate(async () => {
     const el = document.querySelector('.stage'), r = el.getBoundingClientRect()
     for (let i = 0; i < 75; i++) {
       el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerType: 'mouse', pointerId: 1, buttons: 0, clientX: r.left + 250 + i * 1.8, clientY: r.top + 250 + 55 * Math.sin(i * .065) }))
       await new Promise(res => setTimeout(res, 24))
     }
+    // Inspect the transient trail atomically; IPC scheduling on a busy host can
+    // otherwise expire it before the next evaluate call reaches the renderer.
+    const laser = window.__fw.board.tools.laser, trail = laser.trail
+    return { count: trail.length, contacts: new Set(trail.map(p => p.stroke)).size, head: laser.head?.[0] }
   })
-  check('slow curved motion retains a single smooth contact path to the pointer', await fw(page, w => { const t = w.board.tools.laser.trail; return t.length > 50 && new Set(t.map(p => p.stroke)).size === 1 && w.board.tools.laser.head[0] > 380 }))
+  check('slow curved motion retains a single smooth contact path to the pointer', slowMotion.count > 50 && slowMotion.contacts === 1 && slowMotion.head > 380, JSON.stringify(slowMotion))
   await page.screenshot({ path: join(shotDir, 'laser-slow.png') })
   await leave(); await page.waitForTimeout(2600)
   await page.evaluate(() => {
@@ -76,7 +80,7 @@ try {
   const dense = await fw(page, w => ({ count: w.board.tools.laser.trail.length, start: w.board.tools.laser.trail[0]?.x, end: w.board.tools.laser.trail.at(-1)?.x }))
   check('dense input retains more than 400 samples and the complete recent trail', dense.count > 800 && dense.start === 100 && dense.end === 775, JSON.stringify(dense))
   const stats = await page.evaluate(async () => {
-    const cv = document.querySelectorAll('.cv')[1], ctx = cv.getContext('2d'), values = []
+    const cv = window.__fw.board.liveCv, ctx = cv.getContext('2d'), values = []
     for (let i = 0; i < 30; i++) {
       await new Promise(r => requestAnimationFrame(r))
       const d = ctx.getImageData(Math.round(650 * devicePixelRatio), Math.round(350 * devicePixelRatio), Math.round(100 * devicePixelRatio), Math.round(100 * devicePixelRatio)).data

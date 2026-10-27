@@ -1,0 +1,547 @@
+{
+  "recordedAt": "2026-10-08T16:02:52.239Z",
+  "checks": [
+    {
+      "name": "All eleven offline experiments appear in the library",
+      "passed": true
+    },
+    {
+      "name": "Insertion button icon stays small and label stays on one aligned line",
+      "passed": true
+    },
+    {
+      "name": "Subject navigation filters three chemistry experiments",
+      "passed": true
+    },
+    {
+      "name": "Biology navigation reveals its circulation experiment",
+      "passed": true
+    },
+    {
+      "name": "Empty subjects have an honest roadmap state",
+      "passed": true
+    },
+    {
+      "name": "Search discovers the reaction apparatus by chemical name",
+      "passed": true
+    },
+    {
+      "name": "Escape clears search without losing the library",
+      "passed": true
+    },
+    {
+      "name": "Tab navigates library controls without hiding the interface",
+      "passed": true
+    },
+    {
+      "name": "Projectile motion: inserts a native editable object",
+      "passed": true
+    },
+    {
+      "name": "Projectile motion: play is transient and advances",
+      "passed": true
+    },
+    {
+      "name": "Projectile motion: parameter edit is one undo step and restarts time",
+      "passed": true
+    },
+    {
+      "name": "Projectile motion: undo restores its scientific parameters",
+      "passed": true
+    },
+    {
+      "name": "Projectile motion: scrub and freeze store its exact instant",
+      "passed": true
+    },
+    {
+      "name": "Lenses & mirrors: inserts a native editable object",
+      "passed": true
+    },
+    {
+      "name": "Lenses & mirrors: play is transient and advances",
+      "passed": true
+    },
+    {
+      "name": "Lenses & mirrors: parameter edit is one undo step and restarts time",
+      "passed": true
+    },
+    {
+      "name": "Lenses & mirrors: undo restores its scientific parameters",
+      "passed": true
+    },
+    {
+      "name": "Lenses & mirrors: scrub and freeze store its exact instant",
+      "passed": true
+    },
+    {
+      "name": "Magnet & coil: inserts a native editable object",
+      "passed": true
+    },
+    {
+      "name": "Magnet & coil: play is transient and advances",
+      "passed": true
+    },
+    {
+      "name": "Magnet & coil: parameter edit is one undo step and restarts time",
+      "passed": true
+    },
+    {
+      "name": "Magnet & coil: undo restores its scientific parameters",
+      "passed": true
+    },
+    {
+      "name": "Magnet & coil: scrub and freeze store its exact instant",
+      "passed": true
+    },
+    {
+      "name": "Circuits & bulbs: inserts a native editable object",
+      "passed": true
+    },
+    {
+      "name": "Circuits & bulbs: play is transient and advances",
+      "passed": true
+    },
+    {
+      "name": "Circuits & bulbs: parameter edit is one undo step and restarts time",
+      "passed": true
+    },
+    {
+      "name": "Circuits & bulbs: undo restores its scientific parameters",
+      "passed": true
+    },
+    {
+      "name": "Circuits & bulbs: scrub and freeze store its exact instant",
+      "passed": true
+    },
+    {
+      "name": "Pendulum & spring: inserts a native editable object",
+      "passed": true
+    },
+    {
+      "name": "Pendulum & spring: play is transient and advances",
+      "passed": true
+    },
+    {
+      "name": "Pendulum & spring: parameter edit is one undo step and restarts time",
+      "passed": true
+    },
+    {
+      "name": "Pendulum & spring: undo restores its scientific parameters",
+      "passed": true
+    },
+    {
+      "name": "Pendulum & spring: scrub and freeze store its exact instant",
+      "passed": true
+    },
+    {
+      "name": "Waves & superposition: inserts a native editable object",
+      "passed": true
+    },
+    {
+      "name": "Waves & superposition: play is transient and advances",
+      "passed": true
+    },
+    {
+      "name": "Waves & superposition: parameter edit is one undo step and restarts time",
+      "passed": true
+    },
+    {
+      "name": "Waves & superposition: undo restores its scientific parameters",
+      "passed": true
+    },
+    {
+      "name": "Waves & superposition: scrub and freeze store its exact instant",
+      "passed": true
+    },
+    {
+      "name": "Forces & friction: inserts a native editable object",
+      "passed": true
+    },
+    {
+      "name": "Forces & friction: play is transient and advances",
+      "passed": true
+    },
+    {
+      "name": "Forces & friction: parameter edit is one undo step and restarts time",
+      "passed": true
+    },
+    {
+      "name": "Forces & friction: undo restores its scientific parameters",
+      "passed": true
+    },
+    {
+      "name": "Forces & friction: scrub and freeze store its exact instant",
+      "passed": true
+    },
+    {
+      "name": "States of matter: inserts a native editable object",
+      "passed": true
+    },
+    {
+      "name": "States of matter: play is transient and advances",
+      "passed": true
+    },
+    {
+      "name": "States of matter: parameter edit is one undo step and restarts time",
+      "passed": true
+    },
+    {
+      "name": "States of matter: undo restores its scientific parameters",
+      "passed": true
+    },
+    {
+      "name": "Particle counts reject fractions with a visible validation error",
+      "passed": true
+    },
+    {
+      "name": "States of matter: scrub and freeze store its exact instant",
+      "passed": true
+    },
+    {
+      "name": "Atoms & reactions: inserts a native editable object",
+      "passed": true
+    },
+    {
+      "name": "Atoms & reactions: play is transient and advances",
+      "passed": true
+    },
+    {
+      "name": "Atoms & reactions: parameter edit is one undo step and restarts time",
+      "passed": true
+    },
+    {
+      "name": "Atoms & reactions: undo restores its scientific parameters",
+      "passed": true
+    },
+    {
+      "name": "Atoms & reactions: scrub and freeze store its exact instant",
+      "passed": true
+    },
+    {
+      "name": "Blood circulation: inserts a native editable object",
+      "passed": true
+    },
+    {
+      "name": "Blood circulation: play is transient and advances",
+      "passed": true
+    },
+    {
+      "name": "Blood circulation: parameter edit is one undo step and restarts time",
+      "passed": true
+    },
+    {
+      "name": "Blood circulation: undo restores its scientific parameters",
+      "passed": true
+    },
+    {
+      "name": "Blood circulation: scrub and freeze store its exact instant",
+      "passed": true
+    },
+    {
+      "name": "Colour-change reaction: inserts a native editable object",
+      "passed": true
+    },
+    {
+      "name": "Colour-change reaction: play is transient and advances",
+      "passed": true
+    },
+    {
+      "name": "Colour-change reaction: parameter edit is one undo step and restarts time",
+      "passed": true
+    },
+    {
+      "name": "Colour-change reaction: undo restores its scientific parameters",
+      "passed": true
+    },
+    {
+      "name": "Colour-change reaction: scrub and freeze store its exact instant",
+      "passed": true
+    },
+    {
+      "name": "Board PNG export decodes with the mixed eleven-model document",
+      "passed": true
+    },
+    {
+      "name": "The original pen stroke survives all eleven insertions",
+      "passed": true
+    },
+    {
+      "name": "On-board library lists all eleven editable labs",
+      "passed": true
+    },
+    {
+      "name": "On-board navigation focuses the existing apparatus without creating a duplicate",
+      "passed": true
+    },
+    {
+      "name": "Reaction apparatus accepts ordinary undoable ink annotations",
+      "passed": true
+    },
+    {
+      "name": "Library avoids overlapping active inspector and transport",
+      "passed": true
+    },
+    {
+      "name": "Library stays inside the minimum window without horizontal scrolling",
+      "passed": true
+    },
+    {
+      "name": "Compact insertion button is fully inside its scrollable content",
+      "passed": true
+    },
+    {
+      "name": "Compact library keeps the chemistry insertion action reachable",
+      "passed": true
+    },
+    {
+      "name": "Disk save contains eleven native labs with frozen parameters",
+      "passed": true
+    },
+    {
+      "name": "Restart restores all eleven native labs and annotations",
+      "passed": true
+    },
+    {
+      "name": "Reopened apparatus retains its exact saved chemistry and time",
+      "passed": true
+    },
+    {
+      "name": "Every demonstration operates with external renderer requests blocked",
+      "passed": true
+    },
+    {
+      "name": "No uncaught renderer exceptions",
+      "passed": true
+    }
+  ],
+  "models": [
+    {
+      "id": "projectile",
+      "params": {
+        "speed": 20,
+        "angle": 45,
+        "height": 0,
+        "gravity": 9.81,
+        "mass": 1
+      },
+      "frozenTime": 1.4416040391163047,
+      "state": {
+        "t": 1.4416040391163047,
+        "x": 20.38735983690112,
+        "y": 10.19367991845056,
+        "vx": 14.142135623730951,
+        "vy": -1.7763568394002505e-15,
+        "speed": 14.142135623730951,
+        "kinetic": 100.00000000000001,
+        "potential": 100,
+        "energy": 200,
+        "landed": 0
+      }
+    },
+    {
+      "id": "optics",
+      "params": {
+        "kind": 0,
+        "focal": 0.2,
+        "distance": 0.5,
+        "height": 0.1
+      },
+      "frozenTime": 3,
+      "state": {
+        "image": 0.33333333333333337,
+        "magnification": -0.6666666666666667,
+        "atFocus": 0
+      }
+    },
+    {
+      "id": "induction",
+      "params": {
+        "turns": 40,
+        "period": 4,
+        "flux": 2
+      },
+      "frozenTime": 1.4,
+      "state": {
+        "x": -0.1763355756877419,
+        "velocity": -0.3812402769236445,
+        "flux": 0.00023080670075899801,
+        "emf": 0.0862014605457017
+      }
+    },
+    {
+      "id": "circuits",
+      "params": {
+        "arrangement": 0,
+        "voltage": 6,
+        "r1": 10,
+        "r2": 10
+      },
+      "frozenTime": 1.4,
+      "state": {
+        "resistance": 20,
+        "current": 0.3,
+        "i1": 0.3,
+        "i2": 0.3,
+        "p1": 0.8999999999999999,
+        "p2": 0.8999999999999999,
+        "power": 1.7999999999999998
+      }
+    },
+    {
+      "id": "oscillations",
+      "params": {
+        "kind": 0,
+        "length": 1.5,
+        "angle": 12,
+        "mass": 1,
+        "stiffness": 12,
+        "amplitude": 0.2
+      },
+      "frozenTime": 1.4,
+      "state": {
+        "q": -0.2844116137228231,
+        "velocity": 0.34125027480969894,
+        "period": 2.456919878869914,
+        "kinetic": 0.058225875028847525,
+        "potential": 0.2645101888867744,
+        "energy": 0.32273606391562193
+      }
+    },
+    {
+      "id": "waves",
+      "params": {
+        "amplitude": 0.2,
+        "frequency": 0.5,
+        "wavelength": 2,
+        "phase": 90
+      },
+      "frozenTime": 1.4,
+      "state": {
+        "displacement": 0.12840790438404123,
+        "speed": 1,
+        "resultant": 0.28284271247461906
+      }
+    },
+    {
+      "id": "forces",
+      "params": {
+        "force": 4,
+        "mass": 1,
+        "friction": 0.15
+      },
+      "frozenTime": 1.4,
+      "state": {
+        "friction": 1.4715,
+        "acceleration": 2.5285,
+        "x": 2.4779299999999997,
+        "velocity": 3.5399,
+        "net": 2.5285
+      }
+    },
+    {
+      "id": "matter",
+      "params": {
+        "phase": 0,
+        "temperature": 300,
+        "count": 36
+      },
+      "frozenTime": 1.4,
+      "state": {
+        "temperature": 300,
+        "count": 36,
+        "rms": 432.8035807141999
+      }
+    },
+    {
+      "id": "reactions",
+      "params": {
+        "hydrogen": 6,
+        "oxygen": 3
+      },
+      "frozenTime": 3,
+      "state": {
+        "hydrogen": 4,
+        "oxygen": 2,
+        "water": 2,
+        "hAtoms": 12,
+        "oAtoms": 6
+      }
+    },
+    {
+      "id": "circulation",
+      "params": {
+        "bpm": 72,
+        "cells": 8
+      },
+      "frozenTime": 1.4,
+      "state": {
+        "bpm": 72,
+        "beats": 1.68
+      }
+    },
+    {
+      "id": "apparatus",
+      "params": {
+        "acid": 30,
+        "base": 50,
+        "concentration": 0.1
+      },
+      "frozenTime": 3.9,
+      "state": {
+        "acidPour": 1,
+        "basePour": 0.450074074074074,
+        "volume": 72.5037037037037,
+        "ph": 5.234695362730466,
+        "gas": 2.25037037037037,
+        "acidRemaining": 0.7496296296296301,
+        "baseRemaining": 0
+      }
+    }
+  ],
+  "network": [],
+  "errors": [],
+  "button": {
+    "r": {
+      "width": 113.375,
+      "height": 32
+    },
+    "icon": {
+      "width": 16,
+      "height": 16
+    },
+    "text": {
+      "height": 14.666666984558105
+    },
+    "aligned": true
+  },
+  "png": {
+    "magic": [
+      137,
+      80,
+      78,
+      71,
+      13,
+      10,
+      26,
+      10
+    ],
+    "bytes": 119015,
+    "width": 1295,
+    "height": 856
+  },
+  "compact": {
+    "left": 75.33333587646484,
+    "top": 40.66666793823242,
+    "right": 407.33333587646484,
+    "bottom": 266.6666679382324,
+    "w": 420,
+    "h": 320,
+    "noHorizontalScroll": true
+  },
+  "compactAction": {
+    "top": 208.5,
+    "bottom": 240.5,
+    "contentTop": 176.6666717529297,
+    "contentBottom": 240.3333396911621
+  }
+}

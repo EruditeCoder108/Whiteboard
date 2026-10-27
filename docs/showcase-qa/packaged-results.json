@@ -1,0 +1,143 @@
+{
+  "date": "2026-10-12T04:20:30.116Z",
+  "checks": [
+    {
+      "name": "Library opens on exactly three featured showcases",
+      "passed": true
+    },
+    {
+      "name": "All fourteen native experiments remain accessible",
+      "passed": true
+    },
+    {
+      "name": "Finger moves only the magnet, preserving the frame position",
+      "passed": true
+    },
+    {
+      "name": "Hand motion commits exactly one undo step",
+      "passed": true
+    },
+    {
+      "name": "Releasing the magnet stops the induced voltage",
+      "passed": true
+    },
+    {
+      "name": "Undo restores the complete automatic model",
+      "passed": true
+    },
+    {
+      "name": "Redo restores the exact recorded movement",
+      "passed": true
+    },
+    {
+      "name": "A coalesced pointer-up retains the final magnet position",
+      "passed": true
+    },
+    {
+      "name": "Replay of hand motion advances without document mutation",
+      "passed": true
+    },
+    {
+      "name": "Cancelling a hand movement leaves document and undo history unchanged",
+      "passed": true
+    },
+    {
+      "name": "indicator-studio: play advances without autosave or undo mutation",
+      "passed": true
+    },
+    {
+      "name": "indicator-studio: guided stop seeks to the selected scientific phase",
+      "passed": true
+    },
+    {
+      "name": "indicator-studio: single-step advances by 1/30 s",
+      "passed": true
+    },
+    {
+      "name": "indicator-studio: freeze persists the displayed time",
+      "passed": true
+    },
+    {
+      "name": "heart-studio: play advances without autosave or undo mutation",
+      "passed": true
+    },
+    {
+      "name": "heart-studio: guided stop seeks to the selected scientific phase",
+      "passed": true
+    },
+    {
+      "name": "heart-studio: single-step advances by 1/30 s",
+      "passed": true
+    },
+    {
+      "name": "heart-studio: freeze persists the displayed time",
+      "passed": true
+    },
+    {
+      "name": "flux-studio: arbitrary seeks reproduce identical rendered pixels",
+      "passed": true
+    },
+    {
+      "name": "indicator-studio: arbitrary seeks reproduce identical rendered pixels",
+      "passed": true
+    },
+    {
+      "name": "heart-studio: arbitrary seeks reproduce identical rendered pixels",
+      "passed": true
+    },
+    {
+      "name": "A frozen showcase supports ordinary pen annotations",
+      "passed": true
+    },
+    {
+      "name": "The pre-existing stroke is preserved exactly",
+      "passed": true
+    },
+    {
+      "name": "Board PNG decodes with three native labs and annotations",
+      "passed": true
+    },
+    {
+      "name": "Featured library fits the minimum window without horizontal scrolling",
+      "passed": true
+    },
+    {
+      "name": "A featured insertion action stays reachable in the minimum window",
+      "passed": true
+    },
+    {
+      "name": "Disk save includes the exact hand trace and all three models",
+      "passed": true
+    },
+    {
+      "name": "Fresh process reopens all serialised native labs and annotations exactly",
+      "passed": true
+    },
+    {
+      "name": "No external renderer requests are needed",
+      "passed": true
+    },
+    {
+      "name": "No uncaught renderer errors",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "network": [],
+  "packaged": true,
+  "png": {
+    "magic": [
+      137,
+      80,
+      78,
+      71,
+      13,
+      10,
+      26,
+      10
+    ],
+    "size": 423097,
+    "width": 1400,
+    "height": 899
+  }
+}

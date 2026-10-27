@@ -226,7 +226,7 @@ describe('serialization', () => {
     expect(parsed.skipped).toBe(1)
   })
   it('rejects unsupported versions and wholly damaged boards', () => {
-    expect(parseBoard('{"format":"floating-whiteboard","version":3,"items":[]}')).toBeNull()
+    expect(parseBoard('{"format":"floating-whiteboard","version":4,"items":[]}')).toBeNull()
     expect(parseBoard('{"format":"floating-whiteboard","version":1,"items":[{"t":"s","c":"#00000","w":-1,"p":[1,2,3]}]}')).toBeNull()
   })
   it('imports Python XY ink, width-based ink and shapes, with a bounded view', () => {

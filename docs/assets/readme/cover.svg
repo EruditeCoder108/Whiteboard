@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="440" viewBox="0 0 1440 440" role="img" aria-labelledby="title description">
+  <title id="title">Floating Whiteboard — your ideas, in motion.</title>
+  <desc id="description">A pen-first Windows whiteboard for drawing, explaining and interactive offline science. The blue wave and yellow pen are the app's own icon.</desc>
+  <defs>
+    <linearGradient id="background" x2="1" y2=".7"><stop stop-color="#101c36"/><stop offset="1" stop-color="#18203d"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#5871ff" stop-opacity=".24"/><stop offset="1" stop-color="#5871ff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="icon" x2="1" y2="1"><stop stop-color="#5b7cff"/><stop offset="1" stop-color="#3a2fd8"/></linearGradient>
+    <linearGradient id="card" y2="1"><stop stop-color="#233250"/><stop offset="1" stop-color="#17243d"/></linearGradient>
+  </defs>
+  <rect width="1440" height="440" rx="28" fill="url(#background)"/>
+  <ellipse cx="1215" cy="120" rx="475" ry="420" fill="url(#glow)"/>
+  <g transform="translate(68 55) scale(.145)">
+    <rect x="24" y="24" width="464" height="464" rx="108" fill="url(#icon)"/>
+    <path d="M108 330C150 200 205 190 232 280S300 360 332 230S392 150 408 196" fill="none" stroke="white" stroke-width="34" stroke-linecap="round"/>
+    <path d="m356 118 38 38" stroke="#ffd23f" stroke-width="30" stroke-linecap="round"/>
+  </g>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="165" y="88" fill="#eef2ff" font-size="25" font-weight="700" letter-spacing=".5">Floating Whiteboard</text>
+    <text x="165" y="116" fill="#9baecc" font-size="15">A little sketch. A clearer idea.</text>
+    <text x="76" y="214" fill="#f3f6ff" font-size="62" font-weight="750" letter-spacing="-1.8">Your ideas, in motion.</text>
+    <text x="79" y="261" fill="#b5c3df" font-size="22">Draw naturally. Explain visually. Bring lessons to life.</text>
+    <g font-size="12" font-weight="700" letter-spacing="1.4">
+      <rect x="79" y="314" width="150" height="34" rx="17" fill="#243656"/><text x="154" y="336" text-anchor="middle" fill="#c9d7ff">PEN + TOUCH</text>
+      <rect x="241" y="314" width="166" height="34" rx="17" fill="#183c43"/><text x="324" y="336" text-anchor="middle" fill="#83e2cd">OFFLINE FIRST</text>
+      <rect x="419" y="314" width="142" height="34" rx="17" fill="#34314c"/><text x="490" y="336" text-anchor="middle" fill="#dcccf6">WINDOWS x64</text>
+    </g>
+    <text x="80" y="396" fill="#7286aa" font-size="13">DRAW  /  ANNOTATE  /  SIMULATE  /  RECORD  /  REPLAY</text>
+    <g transform="translate(1065 216) rotate(-7)">
+      <rect x="-137" y="-112" width="338" height="234" rx="18" fill="#090f24" opacity=".32" transform="translate(8 15)"/>
+      <rect x="-137" y="-112" width="338" height="234" rx="18" fill="url(#card)" stroke="#43577c"/>
+      <circle cx="-112" cy="-88" r="4" fill="#6de0ce"/><text x="-98" y="-83" font-size="11" fill="#c6d1ea" letter-spacing="1.6">A MOMENT OF DISCOVERY</text>
+      <path d="M-95 74V-42M-95 74H158" fill="none" stroke="#506688" stroke-width="1.5"/>
+      <path d="M-95 74Q19-112 158 74" fill="none" stroke="#6ee1d6" stroke-width="3.5"/>
+      <path d="M-95 74Q19-112 158 74" fill="none" stroke="#a3eeec" stroke-width="2" stroke-dasharray="2 23"/>
+      <circle cx="24" cy="-18" r="9" fill="#ffd177"/>
+      <path d="M24-18H90m-9-7 9 7-9 7" fill="none" stroke="#ffd177" stroke-width="2.5"/>
+      <text x="-95" y="102" font-size="11" fill="#99b0d1">Pause the moment. Draw the explanation.</text>
+    </g>
+  </g>
+</svg>

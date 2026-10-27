@@ -15,6 +15,7 @@ import { BoardAgent } from '@/engine/agent'
 import { AgentPanel } from '@/ui/AgentPanel'
 import { replay } from '@/state/replay'
 import { ReplayPanel, ReplayCanvas, ReplayControls, RecordingControls } from '@/ui/Replay'
+import { ScienceUI } from '@/ui/science/Science'
 
 const agentForPanel = new BoardAgent(board, replay)
 
@@ -28,10 +29,11 @@ export function App(): JSX.Element {
   const stageRef = useRef<HTMLDivElement>(null)
   const boardRef = useRef<HTMLCanvasElement>(null)
   const liveRef = useRef<HTMLCanvasElement>(null)
+  const gridRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     const stage = stageRef.current!
-    const unmount = board.mount(stage, boardRef.current!, liveRef.current!)
+    const unmount = board.mount(stage, boardRef.current!, liveRef.current!, gridRef.current!)
     const router = new InputRouter(stage, board, actions.runRadial)
     router.attach()
     const offKeys = installShortcuts(() => router.abortAll())
@@ -169,6 +171,7 @@ export function App(): JSX.Element {
   return (
     <div class={cls} style={{ '--bg': `rgba(${r},${g},${b},${alpha})` } as never}>
       <div class="stage" ref={stageRef}>
+        <canvas ref={gridRef} class="cv grid-cv" aria-hidden="true" />
         <canvas ref={boardRef} class="cv" />
         <canvas ref={liveRef} class="cv" />
       </div>
@@ -184,6 +187,7 @@ export function App(): JSX.Element {
           <AgentPanel agent={agentForPanel} />
           <ReplayPanel />
           <SelectionToolbar />
+          <ScienceUI />
         </>
       )}
       {hidden && !S.passthrough.value && <MiniBar />}

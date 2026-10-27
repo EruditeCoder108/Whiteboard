@@ -1,0 +1,230 @@
+{
+  "recordedAt": "2026-10-12T04:08:01.639Z",
+  "isolatedHiddenWindow": true,
+  "offline": true,
+  "png": {
+    "magic": [
+      137,
+      80,
+      78,
+      71,
+      13,
+      10,
+      26,
+      10
+    ],
+    "size": 105747,
+    "width": 1130,
+    "height": 758
+  },
+  "scriptedAnimation": {
+    "frames": 90,
+    "strokes": 500,
+    "samples": 10000,
+    "cpuMedianMs": 1.399999976158142,
+    "cpuP95Ms": 3.600000023841858,
+    "cpuMaxMs": 3.9000000059604645,
+    "fullCacheRebuilds": 0,
+    "revisionStable": true,
+    "undoStable": true,
+    "progressed": true,
+    "viewport": {
+      "w": 1098.666748046875,
+      "h": 610.6666870117188
+    },
+    "dpr": 1.5
+  },
+  "compact": {
+    "width": 420,
+    "height": 320,
+    "rect": {
+      "left": 100.66667175292969,
+      "top": 172.33334350585938,
+      "right": 402.6666717529297,
+      "bottom": 272.3333435058594
+    },
+    "childrenInside": true
+  },
+  "frozenTime": 2.648395730227641,
+  "originalInkPreserved": true,
+  "errors": [],
+  "networkRequests": 0,
+  "checks": [
+    {
+      "name": "Science entry exposes offline projectile insertion",
+      "passed": true
+    },
+    {
+      "name": "Insert creates one native object and preserves existing ink",
+      "passed": true
+    },
+    {
+      "name": "Inspector and native transport are available without a provider",
+      "passed": true
+    },
+    {
+      "name": "Numeric launch edits commit with SI parameters",
+      "passed": true
+    },
+    {
+      "name": "A launch edit undoes in one step",
+      "passed": true
+    },
+    {
+      "name": "Redo restores edited launch",
+      "passed": true
+    },
+    {
+      "name": "Slider previews are transient until release",
+      "passed": true
+    },
+    {
+      "name": "Escape cancels a slider preview without a document edit",
+      "passed": true
+    },
+    {
+      "name": "Slider release creates one intentional edit",
+      "passed": true
+    },
+    {
+      "name": "Play advances and pause holds an analytical clock",
+      "passed": true
+    },
+    {
+      "name": "Animation changes neither board serialization nor undo history",
+      "passed": true
+    },
+    {
+      "name": "Step moves exactly 1/30 s",
+      "passed": true
+    },
+    {
+      "name": "Back-step returns to launch",
+      "passed": true
+    },
+    {
+      "name": "Scrub seeks the exact requested SI time",
+      "passed": true
+    },
+    {
+      "name": "Direct launch handle edits speed and angle in one undo step",
+      "passed": true
+    },
+    {
+      "name": "Invalid gravity is rejected without changing the model",
+      "passed": true
+    },
+    {
+      "name": "Gravity presets are model parameters, not presentation changes",
+      "passed": true
+    },
+    {
+      "name": "Apex checkpoint shows zero vertical velocity",
+      "passed": true
+    },
+    {
+      "name": "Paper/blueprint reveal edits retain the current instant",
+      "passed": true
+    },
+    {
+      "name": "Freeze persists the exact instant and activates the pen",
+      "passed": true
+    },
+    {
+      "name": "Frozen lab accepts ordinary editable ink above it",
+      "passed": true
+    },
+    {
+      "name": "Annotation undo/redo keeps the frozen scientific instant",
+      "passed": true
+    },
+    {
+      "name": "stroke erasing changes annotation ink while preserving the native frame",
+      "passed": true
+    },
+    {
+      "name": "pixel erasing changes annotation ink while preserving the native frame",
+      "passed": true
+    },
+    {
+      "name": "Generic recorder captures frozen lab edits and annotations",
+      "passed": true
+    },
+    {
+      "name": "Moving the frame leaves scientific time and parameters unchanged",
+      "passed": true
+    },
+    {
+      "name": "Frame handles enforce uniform resizing without changing physics",
+      "passed": true
+    },
+    {
+      "name": "Lock disables launch and transport controls",
+      "passed": true
+    },
+    {
+      "name": "Locked lab resists shared move edits",
+      "passed": true
+    },
+    {
+      "name": "Animated regional redraw retains ink above the lab",
+      "passed": true
+    },
+    {
+      "name": "Duplicate is an independent native lab with saved time",
+      "passed": true
+    },
+    {
+      "name": "Changing duplicate parameters preserves the original launch",
+      "passed": true
+    },
+    {
+      "name": "Playing another lab pauses the previous one",
+      "passed": true
+    },
+    {
+      "name": "PNG snapshot decodes with the native lab and annotations",
+      "passed": true
+    },
+    {
+      "name": "Semantic reads describe the native lab with units, version and frozen state",
+      "passed": true
+    },
+    {
+      "name": "Disk save stores frozen time instead of the transient preview",
+      "passed": true
+    },
+    {
+      "name": "Restart reopens editable labs and their saved exact scientific time",
+      "passed": true
+    },
+    {
+      "name": "Restart preserves the pre-existing ink and annotation",
+      "passed": true
+    },
+    {
+      "name": "A 500-stroke lesson animates with no full cache rebuilds or undo churn",
+      "passed": true
+    },
+    {
+      "name": "Panning away pauses an offscreen lab",
+      "passed": true
+    },
+    {
+      "name": "Transport controls stay inside the minimum window",
+      "passed": true
+    },
+    {
+      "name": "Unsupported model version displays a compatibility warning and disables playback",
+      "passed": true
+    },
+    {
+      "name": "Manual lab works with renderer HTTP(S) requests blocked",
+      "passed": true
+    },
+    {
+      "name": "The renderer raised no uncaught exceptions",
+      "passed": true
+    }
+  ]
+}

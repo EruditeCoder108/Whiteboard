@@ -2,9 +2,13 @@ import type { Item, ObjectMeta, ShapeItem, StrokeItem, TextItem, TextStyle, View
 import { newId } from './types'
 import { MAX_ZOOM, MIN_ZOOM } from './view'
 import { clamp } from './geometry'
+import { validModelParams, labDuration, getModel } from './science/models'
+import { validMagnetTrace } from './science/showcase-models'
+import type { LabItem, LabReveal } from './types'
 
 export const FORMAT = 'floating-whiteboard'
 export const VERSION = 2
+export const LAB_BOARD_VERSION = 3
 
 export const MAX_TEXT_LENGTH = 100_000
 const MAX_ID_LENGTH = 128
@@ -23,6 +27,7 @@ export interface BoardFile {
 
 export function itemToJson(it: Item): unknown {
   const meta: ObjectMeta = { group: it.group, locked: it.locked, opacity: it.opacity }
+  if (it.t === 'l') return { ...it, p: [...it.p], params: { ...it.params }, reveal: { ...it.reveal }, ...(it.gesture ? { gesture: it.gesture.map(p => ({ ...p })) } : {}) }
   if (it.t === 's') {
     const p: number[] = new Array(it.p.length)
     for (let i = 0; i + 2 < it.p.length; i += 3) {
@@ -90,6 +95,27 @@ export function itemFromJson(raw: unknown): Item | null {
   const id = typeof o.id === 'string' ? o.id : newId()
   const meta = objectMeta(o)
   if (!meta) return null
+  if (o.t === 'l') {
+    const p = o.p as number[]
+    if (p.length !== 4 || !p.every(isCoord) || p[2] <= p[0] || p[3] <= p[1] || p[2] - p[0] > 100000 || p[3] - p[1] > 100000) return null
+    if (Math.abs((p[3] - p[1]) / (p[2] - p[0]) - 0.64) > 1e-6) return null
+    if (!Number.isSafeInteger(o.labVersion) || (o.labVersion as number) < 1 || !Number.isSafeInteger(o.modelVersion) || (o.modelVersion as number) < 1) return null
+    if (typeof o.model !== 'string' || !/^[a-z][a-z0-9-]{0,63}$/.test(o.model) || !validModelParams(o.model, o.params)) return null
+    if (!isNum(o.frozenTime) || o.frozenTime < 0 || o.frozenTime > 10000) return null
+    if (o.gesture !== undefined && (o.model !== 'flux-studio' || !validMagnetTrace(o.gesture))) return null
+    if (o.theme !== 'paper' && o.theme !== 'blueprint') return null
+    if (o.angle !== undefined && (!isNum(o.angle) || Math.abs(o.angle) > 1e6)) return null
+    const reveal = o.reveal as Record<string, unknown>
+    const keys: (keyof LabReveal)[] = ['trajectory', 'vectors', 'graphs', 'energy', 'strobes', 'equations', 'compare']
+    if (!reveal || typeof reveal !== 'object' || Array.isArray(reveal) || keys.some(k => typeof reveal[k] !== 'boolean')) return null
+    const it: LabItem = { t: 'l', id, c: o.c, w: o.w, p: [...p] as LabItem['p'], ...meta,
+      labVersion: o.labVersion as number, model: o.model, modelVersion: o.modelVersion as number,
+      params: { ...o.params }, frozenTime: o.frozenTime, theme: o.theme, reveal: Object.fromEntries(keys.map(k => [k, reveal[k]])) as unknown as LabReveal }
+    if (o.angle !== undefined) it.angle = o.angle as number
+    if (o.gesture !== undefined) it.gesture = (o.gesture as LabItem['gesture'])!.map(p => ({ ...p }))
+    if (getModel(it.model) && it.modelVersion === 1 && it.labVersion === 1 && it.frozenTime > labDuration(it) + 1e-8) return null
+    return it
+  }
   if (o.t === 's') {
     const p = o.p as number[]
     if (p.length < 3 || p.length > 3_000_000 || p.length % 3 !== 0 || !isFlag(o.m) || !isFlag(o.v)) return null
@@ -131,7 +157,7 @@ export function itemFromJson(raw: unknown): Item | null {
 export function serializeBoard(items: Item[], view?: View): string {
   const file: BoardFile = {
     format: FORMAT,
-    version: VERSION,
+    version: items.some(it => it.t === 'l') ? LAB_BOARD_VERSION : VERSION,
     view: view ? { x: r2(view.x), y: r2(view.y), zoom: r3(view.zoom) } : undefined,
     items: items.map(itemToJson)
   }
@@ -170,7 +196,8 @@ export function parseBoard(json: string): ParsedBoard | null {
     if (!f || typeof f !== 'object' || !Array.isArray(f.items) || f.items.length > MAX_ITEMS) return null
     const legacy = f.format === undefined
     if (!legacy && f.format !== FORMAT) return null
-    if (legacy ? f.version !== 1 : f.version !== 1 && f.version !== VERSION) return null
+    if (legacy ? f.version !== 1 : f.version !== 1 && f.version !== VERSION && f.version !== LAB_BOARD_VERSION) return null
+    if (!legacy && f.version !== LAB_BOARD_VERSION && f.items.some(it => (it as { t?: string } | null)?.t === 'l')) return null
     // Recognise only the actual Python schema, rather than arbitrary JSON with an items array.
     if (legacy && f.items.some((it) => !it || typeof it !== 'object' || !['ink', 'shape'].includes((it as { t: string }).t))) return null
     const items: Item[] = []

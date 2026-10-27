@@ -6,6 +6,9 @@ import { itemBounds, translateItem } from './items'
 import { expandGroups } from './transforms'
 import { S, showToast } from '@/state/store'
 import type { replay } from '@/state/replay'
+import { evaluate, flight } from './science/projectile'
+import { supportedLab } from './science/runtime'
+import { getModel, labState } from './science/models'
 
 const styleKeys = ['color', 'fill', 'strokeWidth', 'opacity', 'fontSize', 'bold', 'italic', 'textColor', 'align', 'list', 'dash', 'radius', 'angle', 'text']
 const aliases: Record<string, string> = { color: 'c', strokeWidth: 'w' }
@@ -16,9 +19,13 @@ const num = (v: unknown, fallback?: number): number => v === undefined && fallba
 function only(o: JsonObject, keys: string[]): void { for (const k of Object.keys(o)) if (!keys.includes(k)) fail(`Unknown field: ${k}`) }
 function summary(it: Item, textLimit = 2000): JsonObject {
   const bounds = itemBounds(it)
-  const common = { id: it.id, kind: it.t === 's' ? 'ink' : it.t === 't' ? it.note ? 'note' : 'text' : it.k,
+  const common = { id: it.id, kind: it.t === 'l' ? 'lab' : it.t === 's' ? 'ink' : it.t === 't' ? it.note ? 'note' : 'text' : it.k,
     bounds, color: it.c, strokeWidth: it.w, group: it.group ?? null, locked: !!it.locked, opacity: it.opacity ?? 1 }
   if (it.t === 's') return { ...common, points: it.p.length / 3 }
+  if (it.t === 'l') return { ...common, model: it.model, modelVersion: it.modelVersion, labVersion: it.labVersion,
+    ...(it.model === 'projectile' ? { parametersSI: { ...it.params } } : { parameters: { ...it.params } }), parameterUnits: it.model === 'projectile' ? { speed: 'm/s', angle: 'deg', height: 'm', gravity: 'm/s²', mass: 'kg' } : Object.fromEntries(Object.entries(getModel(it.model)?.params ?? {}).map(([key, spec]) => [key, spec.unit])),
+    frozenTimeSeconds: it.frozenTime, reveal: { ...it.reveal }, theme: it.theme,
+    supported: supportedLab(it), ...(supportedLab(it) ? it.model === 'projectile' ? { frozenStateSI: evaluate(it.params, it.frozenTime), flightSI: flight(it.params) } : { frozenState: labState(it, it.frozenTime), assumptions: getModel(it.model)?.assumption, ...(it.gesture ? { recordedMotion: { samples: it.gesture.length, duration: it.gesture[it.gesture.length - 1].t } } : {}) } : {}) }
   return { ...common, x: it.p[0], y: it.p[1], width: it.p[2] - it.p[0], height: it.p[3] - it.p[1],
     text: (it.text ?? '').slice(0, textLimit), textTruncated: (it.text?.length ?? 0) > textLimit, fontSize: it.fontSize ?? 24,
     fill: it.fill ?? 'none', angle: it.angle ?? 0, bold: !!it.bold, italic: !!it.italic, align: it.align ?? 'left',
@@ -55,6 +62,7 @@ export function stageBatch(before: Item[], raw: unknown, revision: number, fit: 
     for (const key of styleKeys) if (key in op) {
       if (it.t === 's' && !['color', 'strokeWidth', 'opacity'].includes(key)) fail(`Ink does not support ${key}`)
       if (it.t === 't' && ['dash', 'radius'].includes(key)) fail(`Text does not support ${key}`)
+      if (it.t === 'l' && !['color', 'strokeWidth', 'opacity', 'angle'].includes(key)) fail(`Lab does not support ${key}`)
       patch[aliases[key] ?? key] = op[key]
     }
     return validate(fit(validate({ ...it, ...patch })))
@@ -79,7 +87,7 @@ export function stageBatch(before: Item[], raw: unknown, revision: number, fit: 
       replace(selected(op.ids).map(it => {
         if (!['x', 'y', 'width', 'height'].some(key => key in op)) return styled(it, op)
         if (it.t === 's') return fail('Use move for ink; resizing ink is not supported by this command')
-        const x = num(op.x, it.p[0]), y = num(op.y, it.p[1]), width = num(op.width, it.p[2] - it.p[0]), height = num(op.height, it.p[3] - it.p[1])
+        const x = num(op.x, it.p[0]), y = num(op.y, it.p[1]), width = num(op.width, it.p[2] - it.p[0]), height = num(op.height, it.t === 'l' && op.width !== undefined ? width * 0.64 : it.p[3] - it.p[1])
         const line = it.t === 'h' && (it.k === 'line' || it.k === 'arrow')
         if ((!line && (width < 1 || height < 1)) || Math.abs(width) > 100000 || Math.abs(height) > 100000) fail('Invalid object size')
         return styled({ ...it, p: [x, y, x + width, y + height] }, op)
@@ -169,7 +177,7 @@ export class BoardAgent {
         if (args.ids !== undefined && (!Array.isArray(args.ids) || !args.ids.length || args.ids.length > 500)) fail('Invalid ID filter')
         const ids = args.ids ? new Set((args.ids as unknown[]).map(v => str(v))) : null
         const query = (args.query as string | undefined)?.toLocaleLowerCase()
-        const all = this.board.doc.items.filter(it => (!ids || ids.has(it.id)) && (!query || (it.t !== 's' && it.text?.toLocaleLowerCase().includes(query))))
+        const all = this.board.doc.items.filter(it => (!ids || ids.has(it.id)) && (!query || (it.t === 'l' ? `${it.model} lab`.includes(query) : it.t !== 's' && it.text?.toLocaleLowerCase().includes(query))))
         const offset = num(args.offset, 0), limit = num(args.limit, 100)
         if (!Number.isInteger(offset) || offset < 0 || !Number.isInteger(limit) || limit < 1 || limit > 200) fail('Invalid pagination')
         const requestedText = num(args.textLimit, 2000)

@@ -1,0 +1,22 @@
+{
+  "generated": "2026-10-12T04:21:42.3233456Z",
+  "version": "1.4.0",
+  "electron": "44.5.1",
+  "arch": "x64",
+  "artifacts": [
+    {
+      "name": "Floating-Whiteboard-Portable-1.4.0-showcase.exe",
+      "bytes": 114101133,
+      "sha256": "13D3BEC1A657553A743BD417AD9AF7451E8890971907F8A5D5A0E9567AE4FAF4",
+      "signature": "NotSigned",
+      "modified": "2026-10-12T04:18:39.5130921Z"
+    },
+    {
+      "name": "Floating-Whiteboard-Setup-1.4.0-showcase.exe",
+      "bytes": 114384809,
+      "sha256": "5334676523A585094695A748256F1CF944887E43A9E9285EC720A273A4DC3042",
+      "signature": "NotSigned",
+      "modified": "2026-10-12T04:18:34.8029603Z"
+    }
+  ]
+}

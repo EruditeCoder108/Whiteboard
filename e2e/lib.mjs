@@ -10,7 +10,7 @@ export const shotDir = join(appDir, 'e2e', 'shots')
 mkdirSync(shotDir, { recursive: true })
 
 /** Launch the built app with a throw-away profile; returns { app, page, logs, userData }. */
-export async function launch({ userData, executablePath } = {}) {
+export async function launch({ userData, executablePath, inputIsolated = process.env.FW_QA_ISOLATE === '1' } = {}) {
   const dir = userData ?? mkdtempSync(join(tmpdir(), 'fw-e2e-'))
   const app = await electron.launch({
     ...(executablePath ? { executablePath } : {}),
@@ -18,12 +18,20 @@ export async function launch({ userData, executablePath } = {}) {
     cwd: appDir
   })
   const page = await app.firstWindow()
+  const isolate = () => app.evaluate(({ BrowserWindow }) => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.setFocusable(false); win.setIgnoreMouseEvents(true); win.setAlwaysOnTop(false)
+      win.setBounds({ x: 4000, y: 40 })
+    }
+  })
+  if (inputIsolated) await isolate()
   const logs = []
   page.on('console', (m) => logs.push(`[${m.type()}] ${m.text()}`))
   page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`))
   await page.waitForSelector('.stage', { timeout: 15000 })
   await page.waitForFunction(() => window.__fw?.S.ready.value)
   await page.waitForTimeout(600)
+  if (inputIsolated) await isolate()
   return { app, page, logs, userData: dir }
 }
 

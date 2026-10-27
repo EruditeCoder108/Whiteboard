@@ -5,9 +5,13 @@ import { handleCursor, HANDLE_ORDER, insideSelection, itemInLasso, pickSelection
 import type { SelectionHandle } from './selection'
 import { Smoother, smoothingToCutoff } from './smoother'
 import { newId } from './types'
-import type { Item, Rect, ShapeItem, ShapeKind, StrokeItem } from './types'
+import type { Item, Rect, ShapeItem, ShapeKind, StrokeItem, LabItem } from './types'
 import type { Ptr, Tool, ToolHost } from './tool-types'
 import { S, isDarkBg } from '@/state/store'
+import { launchHandle, labToWorld, worldToLab } from './science/scene'
+import { supportedLab } from './science/runtime'
+import { labState } from './science/models'
+import { magnetCenter, magnetPosition } from './science/showcase-models'
 
 // ── cursors ───────────────────────────────────────────────────────────────────
 const cursorCache = new Map<string, string>()
@@ -296,7 +300,7 @@ export class EraserTool implements Tool {
     const cands: Item[] = []
     const pixel = S.eraserMode.value === 'pixel'
     for (const it of doc.items) {
-      if (it.locked || it.t === 't' || (pixel && it.t === 'h' && (it.text || (it.fill && it.fill !== 'none')))) continue
+      if (it.locked || it.t === 't' || it.t === 'l' || (pixel && it.t === 'h' && (it.text || (it.fill && it.fill !== 'none')))) continue
       if (rectsHit(itemBounds(it), box)) cands.push(it)
     }
     if (!cands.length) return
@@ -367,7 +371,11 @@ export class EraserTool implements Tool {
 export class SelectTool implements Tool {
   readonly allowsRadial = true
   readonly animating = false
-  private mode: 'none' | 'move' | 'resize' | 'rotate' | 'marquee' | 'lasso' = 'none'
+  private mode: 'none' | 'move' | 'resize' | 'rotate' | 'marquee' | 'lasso' | 'launch' | 'magnet' = 'none'
+  private launch: LabItem | null = null
+  private magnetStart = 0
+  private magnetOffset = 0
+  private magnetTrace: { t: number; x: number }[] = []
   private origin: [number, number] = [0, 0]
   private originScreen: [number, number] = [0, 0]
   private started = false
@@ -384,6 +392,7 @@ export class SelectTool implements Tool {
   constructor(private host: ToolHost, readonly name: 'select' | 'lasso' = 'select') {}
 
   cursor(): string {
+    if (this.mode === 'magnet') return 'grabbing'
     if (this.mode === 'move' && this.started) return 'grabbing'
     if (this.mode === 'rotate' && this.started) return 'grabbing'
     if (this.handle) return handleCursor(this.handle)
@@ -409,6 +418,23 @@ export class SelectTool implements Tool {
     this.originScreen = [p.x, p.y]
     this.additive = p.shift
     const sel = this.host.selection
+    const candidate = this.hitTop(p.wx, p.wy, 0)
+    if (candidate?.t === 'l' && candidate.model === 'flux-studio' && !candidate.locked && supportedLab(candidate) && !p.shift) {
+      const [x, y] = worldToLab(candidate, p.wx, p.wy), state = labState(candidate, this.host.labTime?.(candidate) ?? candidate.frozenTime)
+      const center = magnetCenter(state.x)
+      if (Math.abs(x - center) <= 66 && Math.abs(y - 270) <= 32) {
+        this.host.setSelection([candidate]); this.host.pauseLab?.(candidate)
+        this.launch = candidate; this.mode = 'magnet'; this.magnetStart = performance.now(); this.magnetOffset = x - center
+        this.magnetTrace = [{ t: 0, x: state.x }]; this.host.requestOverlay(); return
+      }
+    }
+    const lab = sel.length === 1 && sel[0].t === 'l' && sel[0].model === 'projectile' && !sel[0].locked && supportedLab(sel[0]) ? sel[0] : null
+    if (lab) {
+      const tip = labToWorld(lab, launchHandle(lab).tip)
+      if (Math.hypot(p.wx - tip[0], p.wy - tip[1]) * this.host.view.zoom <= (p.type === 'touch' ? 19 : 13)) {
+        this.host.pauseLab?.(lab); this.launch = lab; this.mode = 'launch'; this.host.requestOverlay(); return
+      }
+    }
     const sb = this.host.doc.bounds(sel)
     const grip = sb && !sel.some(it => it.locked) ? pickSelectionHandle(sb, this.host.view.zoom, p.wx, p.wy, p.type === 'touch') : null
     if (grip) {
@@ -438,11 +464,35 @@ export class SelectTool implements Tool {
   }
 
   move(p: Ptr): void {
+    if (this.mode === 'magnet' && this.launch) {
+      if (!this.started && Math.hypot(p.x - this.originScreen[0], p.y - this.originScreen[1]) < 3) return
+      if (!this.started) { this.started = true; this.floating = [this.launch]; this.host.setExcluded(this.floating); this.host.refresh(itemBounds(this.launch)) }
+      const [x] = worldToLab(this.launch, p.wx, p.wy), t = Math.min(29.9, (performance.now() - this.magnetStart) / 1000)
+      const last = this.magnetTrace[this.magnetTrace.length - 1]
+      if (t > last.t + 0.004) {
+        if (this.magnetTrace.length >= 799) this.magnetTrace.pop()
+        this.magnetTrace.push({ t, x: magnetPosition(x - this.magnetOffset) })
+      }
+      this.preview = [{ ...this.launch, params: { ...this.launch.params, motion: 1 }, gesture: this.magnetTrace.map(p => ({ ...p })), frozenTime: this.magnetTrace[this.magnetTrace.length - 1].t }]
+      this.host.requestOverlay(); return
+    }
+    if (this.mode === 'launch' && this.launch) {
+      if (!this.started && Math.hypot(p.x - this.originScreen[0], p.y - this.originScreen[1]) < 3) return
+      if (!this.started) { this.started = true; this.floating = [this.launch]; this.host.setExcluded(this.floating); this.host.refresh(itemBounds(this.launch)) }
+      const lab = this.launch, h = launchHandle(lab), [x, y] = worldToLab(lab, p.wx, p.wy)
+      const vx = Math.max(0, (x - h.origin[0]) / h.gain), vy = Math.max(0, (h.origin[1] - y) / h.gain)
+      const speed = Math.round(clamp(Math.hypot(vx, vy), 0, 100) * 10) / 10
+      let angle = Math.atan2(vy, vx) * 180 / Math.PI
+      angle = Math.round(angle / (p.shift ? 5 : 0.1)) * (p.shift ? 5 : 0.1)
+      this.preview = [{ ...lab, params: { ...lab.params, speed, angle }, frozenTime: 0 }]
+      this.host.requestOverlay(); return
+    }
     if (this.mode === 'move' || this.mode === 'resize' || this.mode === 'rotate') {
       if (!this.started) {
         if (Math.hypot(p.x - this.originScreen[0], p.y - this.originScreen[1]) < 3) return
         this.started = true
         this.floating = this.host.selection.filter(it => !it.locked)
+        for (const it of this.floating) if (it.t === 'l') this.host.pauseLab?.(it)
         this.bounds ??= this.host.doc.bounds(this.floating)
         this.host.setExcluded(this.floating)
         this.host.refresh(this.host.doc.bounds(this.floating))
@@ -453,7 +503,7 @@ export class SelectTool implements Tool {
         const ty = p.shift && Math.abs(dx) >= Math.abs(dy) ? 0 : dy
         this.preview = this.floating.map(it => translateItem(it, tx, ty))
       } else if (this.bounds && this.mode === 'resize' && this.handle && this.handle !== 'rotate') {
-        const uniform = p.shift || this.floating.length > 1 || this.floating.some(it => it.t !== 's' && !!it.angle)
+        const uniform = p.shift || this.floating.length > 1 || this.floating.some(it => it.t === 'l' || (it.t !== 's' && !!it.angle))
         const { anchor, sx, sy } = resizeSelection(this.bounds, this.handle, dx, dy, uniform)
         this.preview = this.floating.map(it => this.host.fitItem(transformItem(it, anchor, sx, sy)))
       } else if (this.bounds && this.mode === 'rotate') {
@@ -478,6 +528,10 @@ export class SelectTool implements Tool {
     const handle = bounds && !sel.some(it => it.locked) ? pickSelectionHandle(bounds, this.host.view.zoom, p.wx, p.wy, p.type === 'touch') : null
     const hit = this.hitTop(p.wx, p.wy, 7 / this.host.view.zoom)
     this.hoverCursor = handle ? handleCursor(handle) : hit ? hit.locked ? 'default' : 'move' : this.name === 'lasso' ? 'crosshair' : 'default'
+    if (hit?.t === 'l' && hit.model === 'flux-studio' && !hit.locked && supportedLab(hit)) {
+      const [x, y] = worldToLab(hit, p.wx, p.wy), s = labState(hit, this.host.labTime?.(hit) ?? hit.frozenTime)
+      if (Math.abs(x - magnetCenter(s.x)) <= 66 && Math.abs(y - 270) <= 32) this.hoverCursor = 'grab'
+    }
   }
 
   leave(): void { this.hoverCursor = this.name === 'lasso' ? 'crosshair' : 'default' }
@@ -485,13 +539,25 @@ export class SelectTool implements Tool {
   up(p: Ptr): void {
     // Include the final pointer position even if the browser coalesced the last move.
     this.move(p)
+    if (this.mode === 'magnet' && this.started && this.preview[0]?.t === 'l') {
+      const it = this.preview[0], [x] = worldToLab(it, p.wx, p.wy), finalX = magnetPosition(x - this.magnetOffset)
+      let last = this.magnetTrace[this.magnetTrace.length - 1]
+      // A coalesced pointer-up must retain its final position even inside the
+      // sampling interval. Bound the trace before adding the stationary tail.
+      if (Math.abs(last.x - finalX) > 1e-9) {
+        if (this.magnetTrace.length >= 799) this.magnetTrace.pop()
+        last = { t: Math.max(last.t + 0.005, Math.min(29.95, (performance.now() - this.magnetStart) / 1000)), x: finalX }
+        this.magnetTrace.push(last)
+      }
+      it.gesture = [...this.magnetTrace, { t: last.t + 0.05, x: last.x }]; it.frozenTime = last.t + 0.05
+    }
     const host = this.host
     if (this.started && this.floating.length && this.preview.length) {
       const moving = this.floating
       host.setExcluded([])
       const changed = moving.some((it, i) => {
         const next = this.preview[i]
-        return it.w !== next.w || it.p.some((v, j) => Math.abs(v - next.p[j]) > 1e-6) || (it.t !== 's' && next.t !== 's' && (it.angle ?? 0) !== (next.angle ?? 0))
+        return it.w !== next.w || it.p.some((v, j) => Math.abs(v - next.p[j]) > 1e-6) || (it.t !== 's' && next.t !== 's' && (it.angle ?? 0) !== (next.angle ?? 0)) || (it.t === 'l' && next.t === 'l' && (JSON.stringify(it.params) !== JSON.stringify(next.params) || JSON.stringify(it.gesture) !== JSON.stringify(next.gesture) || it.frozenTime !== next.frozenTime))
       })
       if (changed) {
         const before = host.doc.snapshot()
@@ -537,6 +603,8 @@ export class SelectTool implements Tool {
     this.bounds = null
     this.floating = []
     this.preview = []
+    this.launch = null
+    this.magnetTrace = []
   }
 
   paintOverlay(ctx: CanvasRenderingContext2D): void {
@@ -544,10 +612,21 @@ export class SelectTool implements Tool {
     const z = host.view.zoom
     if (this.preview.length) {
       host.withWorld(ctx, () => {
-        for (const it of this.preview) paintItem(ctx, it)
+        for (const it of this.preview) {
+          const original = this.floating.find(x => x.id === it.id)
+          const time = this.mode === 'launch' ? 0 : this.mode === 'magnet' && it.t === 'l' ? it.frozenTime : original?.t === 'l' ? this.host.labTime?.(original) : undefined
+          paintItem(ctx, it, 1, time)
+        }
       })
     }
     const sel = host.selection
+    const shownLab = this.preview.find((it): it is LabItem => it.t === 'l') ?? (sel.length === 1 && sel[0].t === 'l' ? sel[0] : null)
+    if (shownLab && shownLab.model === 'projectile' && !shownLab.locked && supportedLab(shownLab)) {
+      const [wx, wy] = labToWorld(shownLab, launchHandle(shownLab).tip), x = (wx - host.view.x) * z, y = (wy - host.view.y) * z
+      ctx.save(); ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#007c88'; ctx.lineWidth = 2
+      ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(x - 4, y); ctx.lineTo(x + 4, y); ctx.moveTo(x, y - 4); ctx.lineTo(x, y + 4); ctx.stroke(); ctx.restore()
+    }
     if (sel.length) {
       const map = new Map(this.floating.map((it, i) => [it, this.preview[i]]))
       const b = host.doc.bounds(sel.map(it => map.get(it) ?? it))

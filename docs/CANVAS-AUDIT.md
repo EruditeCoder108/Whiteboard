@@ -2,6 +2,8 @@
 
 Date: **2026-10-08**. Target: Floating Whiteboard **1.4.0**, source commit `21693d4`. Reference: the user's open anonymous [Miro Lite board](https://miro.com/online-whiteboard/).
 
+**Implementation update:** the working tree now contains the production S0 background split and smooth hierarchical density transitions. The measurements below remain the historical pre-change audit. `e2e/canvas-audit.mjs` now runs the production checks and writes separate [S0 evidence](science-qa/s0-results.json); the original prototype harness is retained in Git at `5cb4c02`. See [current verification](SCIENCE-S0-QA.md).
+
 **Recommendation: improve our existing camera/background renderer. A full whiteboard-engine replacement is not justified by these defects.** The dot-size fix is feasible at low measured drawing cost; completely smooth dense-board navigation still needs cache/performance work and physical-device validation.
 
 This audit adds documentation, screenshots and a repeatable source-app test. The proposed background split exists only as an in-memory prototype inside an isolated test profile. The shipped renderer, the user's board and the current release version are unchanged.

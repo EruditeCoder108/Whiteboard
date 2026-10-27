@@ -146,7 +146,7 @@ function TextStyles({ items }: { items: EditableItem[] }): JSX.Element {
 
 function ObjectStyles({ items }: { items: Item[] }): JSX.Element {
   const unlocked = items.filter(it => !it.locked), text = unlocked.filter(editable), fill = unlocked.filter(filled)
-  const bordered = unlocked.filter(it => it.t !== 't'), shapes = unlocked.filter(it => it.t === 'h')
+  const bordered = unlocked.filter(it => it.t !== 't' && it.t !== 'l'), shapes = unlocked.filter(it => it.t === 'h')
   const rounded = shapes.filter(it => it.t === 'h' && it.k === 'rect')
   return <div class="object-style-content">
     {unlocked.length < items.length && <div class="pop-hint">Locked objects keep their style. Unlock them to edit.</div>}
@@ -198,7 +198,7 @@ export function SelectionToolbar(): JSX.Element | null {
   const run = (fn: () => void): void => { setPanel(null); fn() }
   return <div class="selection-tools ui nodrag" ref={ref} data-testid="selection-toolbar" data-popover-keep="" style={{ left, top: toolbarTop, width }}>
     <div class="selection-actions panel" role="toolbar" aria-label="Selection actions">
-      <span class="selection-caption" title={locked ? 'Selection includes locked objects' : `${items.length} selected`}>{allLocked ? <LockKeyhole size={13} /> : items.length === 1 ? items[0].t === 's' ? 'Stroke' : items[0].t === 't' ? items[0].note ? 'Note' : 'Text' : 'Shape' : `${items.length} selected`}</span>
+      <span class="selection-caption" title={locked ? 'Selection includes locked objects' : `${items.length} selected`}>{allLocked ? <LockKeyhole size={13} /> : items.length === 1 ? items[0].t === 'l' ? 'Lab' : items[0].t === 's' ? 'Stroke' : items[0].t === 't' ? items[0].note ? 'Note' : 'Text' : 'Shape' : `${items.length} selected`}</span>
       <div class="grow" />
       <Btn icon={Palette} title="Object style" active={panel === 'style'} disabled={allLocked} onClick={() => setPanel(panel === 'style' ? null : 'style')} />
       {single && <Btn icon={Pencil} title={single.text ? 'Edit text  (Enter)' : 'Add text  (Enter)'} disabled={locked} onClick={() => board.editText(single)} />}

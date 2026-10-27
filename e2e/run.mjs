@@ -76,7 +76,7 @@ await key('Control+z')
 // ── eraser ghosting: pixels must be clean after a drag ───────────────────────────────
 await key('Control+z')   // drop the ellipse etc. so the test area is empty
 const probe = async () => page.evaluate(() => {
-  const cv = document.querySelectorAll('.cv')[1]
+  const cv = window.__fw.board.liveCv
   const ctx = cv.getContext('2d')
   const d = ctx.getImageData(0, 0, cv.width, cv.height).data
   let nonEmpty = 0
@@ -168,6 +168,8 @@ await key('Control+1'); await sleep(400)
 check('Ctrl+1 fits all content', (await state('zoom')) > 0.05)
 await key('Control+0'); await page.waitForFunction(() => Math.abs(window.__fw.S.zoom.value - 1) < 0.001, null, { timeout: 3000 }).catch(() => {})
 
+// A near-target zoom is not an idle camera; avoid racing the reset animation.
+await page.waitForFunction(() => !window.__fw.board.anim, null, { timeout: 3000 })
 // two-finger pinch
 const zb = await state('zoom')
 const countBeforePinch = await itemCount(page)

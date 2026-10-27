@@ -1,3 +1,5 @@
+import { getModel, labDuration, EXPLORE_REVEAL } from './science/models'
+import { isShowcase } from './science/showcase-models'
 import { effect } from '@preact/signals'
 import { Doc, History, opBounds, restyleItems } from './doc'
 import type { EditOp } from './doc'
@@ -5,28 +7,32 @@ import { clamp, inflate, lerp, rectsHit, unionRect } from './geometry'
 import { cloneItem, itemBounds, paintItem, hitObject, translateItem } from './items'
 import { fitTextHeight, textAlign, textColor } from './text'
 import { transformItem } from './transforms'
-import { parseBoard, serializeBoard, MAX_TEXT_LENGTH } from './serialize'
+import { parseBoard, serializeBoard, MAX_TEXT_LENGTH, itemFromJson } from './serialize'
 import type { ParsedBoard } from './serialize'
 import { EraserTool, HandTool, LaserTool, PenTool, SelectTool, ShapeTool, TextTool } from './tools'
 import type { Tool, ToolHost } from './tool-types'
 import { newId } from './types'
-import type { Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem } from './types'
+import type { Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, LabItem } from './types'
 import { MAX_ZOOM, MIN_ZOOM, fitRect, panBy as panView, toWorld, zoomAboutCentre, zoomAt } from './view'
 import { S, SHAPE_TOOLS, activeTool, isDarkBg, showToast } from '@/state/store'
 import type { ToolName } from '@/state/store'
 import type { InkTiming } from './replay'
-
-const GRID_WORLD = 40
+import { paintGrid } from './grid'
+import { LabRuntime, supportedLab } from './science/runtime'
+import { activeLabId, scienceInspector } from '@/state/science'
 
 /**
- * Owns the document, the two canvases and the render loop.
+ * Owns the document, the viewport canvases and the render loop.
  *
- *   board canvas – committed items + grid (redrawn only when something changed)
+ *   background   – crisp camera-driven grid, independent of cached ink
+ *   board canvas – committed items (redrawn only when something changed)
  *   live  canvas – whatever is being drawn right now, selection, cursors
  */
 export class Board implements ToolHost {
   readonly doc = new Doc()
   readonly history = new History(this.doc)
+  readonly labs = new LabRuntime()
+  private labDraft = new Map<string, LabItem>()
   view: View = { x: -80, y: -80, zoom: 1 }
   selection: Item[] = []
 
@@ -38,6 +44,9 @@ export class Board implements ToolHost {
   private stage!: HTMLElement
   private boardCv!: HTMLCanvasElement
   private liveCv!: HTMLCanvasElement
+  private gridCv!: HTMLCanvasElement
+  private gctx!: CanvasRenderingContext2D
+  private gridKey = ''
   private bctx!: CanvasRenderingContext2D
   private lctx!: CanvasRenderingContext2D
   private w = 0
@@ -85,10 +94,12 @@ export class Board implements ToolHost {
   }
 
   // ── mounting ────────────────────────────────────────────────────────────────
-  mount(stage: HTMLElement, board: HTMLCanvasElement, live: HTMLCanvasElement): () => void {
+  mount(stage: HTMLElement, board: HTMLCanvasElement, live: HTMLCanvasElement, grid: HTMLCanvasElement): () => void {
     this.stage = stage
     this.boardCv = board
     this.liveCv = live
+    this.gridCv = grid
+    this.gctx = grid.getContext('2d', { alpha: true })!
     this.bctx = board.getContext('2d', { alpha: true })!
     // NOTE: deliberately NOT `desynchronized`: that path uses a hardware overlay which screen-capture
     // APIs (Zoom, Teams, OBS, Windows capture) cannot see, so the board would appear black when shared.
@@ -97,6 +108,18 @@ export class Board implements ToolHost {
     const ro = new ResizeObserver(() => this.resize())
     ro.observe(stage)
     this.resize()
+
+    // A move between displays can change DPR without changing the CSS size.
+    // Re-arm the query after each change so every canvas gets a fresh backing
+    // bitmap even when ResizeObserver has no geometry change to report.
+    let resolution: MediaQueryList
+    const watchResolution = (): void => {
+      resolution?.removeEventListener('change', onResolution)
+      resolution = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`)
+      resolution.addEventListener('change', onResolution)
+    }
+    const onResolution = (): void => { this.resize(); watchResolution() }
+    watchResolution()
 
     const stop = effect(() => {
       // re-evaluate cursor and repaint whenever style or tool changes
@@ -109,13 +132,16 @@ export class Board implements ToolHost {
     const stopGrid = effect(() => {
       S.grid.value
       isDarkBg.value
-      this.refresh(null)
+      this.dirtyBlit = true
+      this.schedule()
     })
     return () => {
       ro.disconnect()
+      resolution.removeEventListener('change', onResolution)
       stop()
       stopGrid()
       cancelAnimationFrame(this.raf)
+      this.labs.clear()
       if (this.anim) cancelAnimationFrame(this.anim.raf)
       window.clearTimeout(this.zoomTimer)
     }
@@ -128,13 +154,14 @@ export class Board implements ToolHost {
     this.w = r.width
     this.h = r.height
     this.dpr = dpr
-    for (const cv of [this.boardCv, this.liveCv]) {
+    for (const cv of [this.gridCv, this.boardCv, this.liveCv]) {
       cv.width = Math.max(1, Math.round(this.w * dpr))
       cv.height = Math.max(1, Math.round(this.h * dpr))
       cv.style.width = this.w + 'px'
       cv.style.height = this.h + 'px'
     }
     this.cv0 = null
+    this.gridKey = ''
     S.viewRevision.value++
     this.refresh(null)
     this.requestOverlay()
@@ -177,6 +204,7 @@ export class Board implements ToolHost {
   }
 
   setSelection(items: Item[]): void {
+    if (items.length === 1 && items[0].t === 'l') { activeLabId.value = items[0].id; scienceInspector.value = true }
     this.selection = items
     S.selection.value = items
     S.selectionCount.value = items.length
@@ -228,6 +256,9 @@ export class Board implements ToolHost {
   }
 
   private afterEdit(label = 'Edit objects', timing?: InkTiming): void {
+    const drafts = [...this.labDraft.values()]
+    this.labDraft.clear()
+    for (const it of drafts) this.refresh(itemBounds(it))
     S.canUndo.value = this.history.canUndo
     S.canRedo.value = this.history.canRedo
     this.onChange?.()
@@ -316,12 +347,17 @@ export class Board implements ToolHost {
   private frame(): void {
     this.raf = 0
     if (!this.boardCv) return
+    const labs = this.doc.items.filter((it): it is LabItem => it.t === 'l')
+    const visible: Rect = [this.view.x, this.view.y, this.view.x + this.w / this.view.zoom, this.view.y + this.h / this.view.zoom]
+    for (const it of labs) if (this.labs.playing(it) && (S.replaying.value || S.passthrough.value || !rectsHit(itemBounds(it), visible))) this.labs.pause(it)
+    const changed = this.labs.tick(labs)
+    for (const it of changed) this.refresh(itemBounds(it))
     if (this.dirtyBlit || this.dirtyAll || this.dirtyRegion) this.renderCommitted()
     const tool = this.currentTool()
     const animating = tool.animating || this.tools.laser.animating
     if (this.dirtyLive || animating) this.renderLive()
     this.dirtyLive = false
-    if (animating) this.schedule()
+    if (animating || labs.some(it => this.labs.playing(it))) this.schedule()
   }
 
   /** Bring the cache up to date, then blit it to the visible canvas. */
@@ -372,7 +408,7 @@ export class Board implements ToolHost {
     const { dpr, view } = this
     // margin around the viewport, bounded by a pixel budget (big 4K screens)
     const base = this.w * dpr * this.h * dpr
-    const f = clamp((Math.sqrt(40e6 / Math.max(base, 1)) - 1) / 2, 0.15, 0.5)
+    const f = clamp((Math.sqrt(40e6 / Math.max(base, 1)) - 1) / 2, 0, 0.5)
     const mx = this.w * f
     const my = this.h * f
     const pw = Math.max(1, Math.round((this.w + 2 * mx) * dpr))
@@ -400,7 +436,7 @@ export class Board implements ToolHost {
     if (x1 > x0 && y1 > y0) this.paintCache([x0, y0, x1, y1])
   }
 
-  /** Draw grid + items into the cache, optionally limited to a device-pixel rectangle. */
+  /** Draw items into the cache, optionally limited to a device-pixel rectangle. */
   private paintCache(clip: [number, number, number, number] | null): void {
     const ctx = this.cctx
     const c = this.cv0!
@@ -419,7 +455,6 @@ export class Board implements ToolHost {
       ctx.clearRect(0, 0, this.cache.width, this.cache.height)
       vis = [c.x, c.y, c.x + this.cw / z, c.y + this.ch / z]
     }
-    if (S.grid.value !== 'none') this.drawGrid(ctx, c)
     ctx.setTransform(z * dpr, 0, 0, z * dpr, -c.x * z * dpr, -c.y * z * dpr)
     const cull = inflate(vis, 2)
     const tiny = 0.6 / z // skip things smaller than ~half a pixel
@@ -428,12 +463,18 @@ export class Board implements ToolHost {
       const b = itemBounds(it)
       if (!rectsHit(b, cull)) continue
       if (b[2] - b[0] < tiny && b[3] - b[1] < tiny) continue
-      paintItem(ctx, it)
+      const draft = this.labDraft.get(it.id)
+      paintItem(ctx, draft ?? it, 1, it.t === 'l' ? draft ? draft.frozenTime : this.labs.time(it) : undefined)
     }
     ctx.restore()
   }
 
   private blit(preview: boolean): void {
+    const gridKey = `${this.view.x},${this.view.y},${this.view.zoom},${S.grid.value},${isDarkBg.value}`
+    if (gridKey !== this.gridKey) {
+      paintGrid(this.gctx, this.view, this.w, this.h, this.dpr, S.grid.value, isDarkBg.value)
+      this.gridKey = gridKey
+    }
     const ctx = this.bctx
     const c = this.cv0!
     const { dpr, view } = this
@@ -447,54 +488,6 @@ export class Board implements ToolHost {
       const k = view.zoom / c.zoom
       ctx.imageSmoothingEnabled = true
       ctx.drawImage(this.cache, dx, dy, this.cache.width * k, this.cache.height * k)
-    }
-  }
-
-  private drawGrid(ctx: CanvasRenderingContext2D, origin: View): void {
-    const { x: ox, y: oy, zoom: z } = origin
-    const dpr = this.dpr
-    const W = this.cw
-    const H = this.ch
-    let step = GRID_WORLD
-    while (step * z < 18) step *= 2
-    while (step * z > 160) step /= 2
-    const dark = isDarkBg.value
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    const wx0 = Math.floor(ox / step) * step
-    const wy0 = Math.floor(oy / step) * step
-    if (S.grid.value === 'dots') {
-      ctx.fillStyle = dark ? 'rgba(255,255,255,0.38)' : 'rgba(20,30,60,0.32)'
-      ctx.beginPath()
-      for (let wx = wx0; (wx - ox) * z <= W + 4; wx += step) {
-        for (let wy = wy0; (wy - oy) * z <= H + 4; wy += step) {
-          const sx = (wx - ox) * z
-          const sy = (wy - oy) * z
-          ctx.moveTo(sx + 1.2, sy)
-          ctx.arc(sx, sy, 1.2, 0, Math.PI * 2)
-        }
-      }
-      ctx.fill()
-    } else {
-      const minor = dark ? 'rgba(255,255,255,0.11)' : 'rgba(20,30,60,0.10)'
-      const major = dark ? 'rgba(255,255,255,0.22)' : 'rgba(20,30,60,0.20)'
-      ctx.lineWidth = 1
-      for (const [color, isMajor] of [[minor, false], [major, true]] as const) {
-        ctx.strokeStyle = color
-        ctx.beginPath()
-        for (let wx = wx0; (wx - ox) * z <= W + 4; wx += step) {
-          if ((Math.round(wx / step) % 5 === 0) !== isMajor) continue
-          const sx = Math.round((wx - ox) * z) + 0.5
-          ctx.moveTo(sx, 0)
-          ctx.lineTo(sx, H)
-        }
-        for (let wy = wy0; (wy - oy) * z <= H + 4; wy += step) {
-          if ((Math.round(wy / step) % 5 === 0) !== isMajor) continue
-          const sy = Math.round((wy - oy) * z) + 0.5
-          ctx.moveTo(0, sy)
-          ctx.lineTo(W, sy)
-        }
-        ctx.stroke()
-      }
     }
   }
 
@@ -704,7 +697,7 @@ export class Board implements ToolHost {
     const it = this.selection[0]
     if (!it) return
     this.copiedStyle = { c: it.c, w: it.w, opacity: it.opacity ?? 1 }
-    if (it.t !== 's' && !(it.t === 'h' && ['line', 'arrow'].includes(it.k))) {
+    if ((it.t === 't' || it.t === 'h') && !(it.t === 'h' && ['line', 'arrow'].includes(it.k))) {
       Object.assign(this.copiedStyle, { fill: it.fill ?? 'none', fontSize: it.fontSize ?? 24,
         bold: it.bold ?? false, italic: it.italic ?? false, align: textAlign(it),
         list: it.list ?? 'none', textColor: textColor(it) })
@@ -732,7 +725,7 @@ export class Board implements ToolHost {
 
   editTextAt(wx: number, wy: number): void {
     const it = [...this.doc.items].reverse().find(it => hitObject(it, wx, wy, 6 / this.view.zoom))
-    if (it && it.t !== 's') this.editText(it)
+    if (it && (it.t === 't' || it.t === 'h')) this.editText(it)
   }
 
   updateTextDraft(text: string): void {
@@ -764,6 +757,71 @@ export class Board implements ToolHost {
   }
 
   // ── persistence / export ────────────────────────────────────────────────────
+  insertProjectile(): LabItem { return this.insertLab('projectile')! }
+
+  insertLab(model: string): LabItem | null {
+    const definition = getModel(model)
+    if (!definition) return null
+    this.commitText(); this.setTool('select')
+    const width = 1000, height = 640, x = this.view.x + 90 / this.view.zoom, y = this.view.y + 120 / this.view.zoom
+    const it: LabItem = { t: 'l', id: newId(), c: '#007c88', w: 1, p: [x, y, x + width, y + height],
+      labVersion: 1, model, modelVersion: 1, params: { ...definition.defaults }, frozenTime: 0, theme: 'blueprint',
+      reveal: { ...EXPLORE_REVEAL, ...(isShowcase(model) ? { graphs: true, vectors: true } : {}) } }
+    this.commitAdd(it); this.setSelection([it]); scienceInspector.value = this.w >= 880
+    this.focusLab(it)
+    return it
+  }
+
+  focusLab(it: LabItem): void {
+    const available = Math.max(210, this.w - (this.w >= 880 && scienceInspector.value ? 310 : 0))
+    const v = fitRect(itemBounds(it), available, Math.max(200, this.h - 106), 65, 1.4)
+    this.setView({ ...v, y: v.y - 50 / v.zoom })
+  }
+
+  /** A gesture preview lives outside Doc/history/autosave. */
+  previewLab(it: LabItem, patch: Partial<Pick<LabItem, 'params' | 'reveal' | 'theme' | 'frozenTime' | 'gesture'>> | null): void {
+    if (it.locked || !supportedLab(it)) return
+    if (patch) {
+      const next = itemFromJson({ ...it, ...patch })
+      if (!next || next.t !== 'l') return
+      this.labDraft.set(it.id, next)
+    } else this.labDraft.delete(it.id)
+    this.refresh(itemBounds(it))
+  }
+
+  editLab(it: LabItem, patch: Partial<Pick<LabItem, 'params' | 'reveal' | 'theme' | 'frozenTime' | 'gesture'>>, label = 'Edit science lab'): LabItem | null {
+    this.labDraft.delete(it.id)
+    const current = this.doc.items.find(x => x.id === it.id)
+    if (!current || current.t !== 'l' || current.locked || !supportedLab(current) || this.currentTool().underway()) { this.refresh(itemBounds(it)); return null }
+    const next = itemFromJson({ ...current, ...patch })
+    if (!next || next.t !== 'l') { this.refresh(itemBounds(current)); return null }
+    if (JSON.stringify(next) === JSON.stringify(current)) { this.refresh(itemBounds(current)); return current }
+    const before = this.doc.snapshot()
+    this.doc.replaceAll(before.map(x => x === current ? next : x)); this.commit(this.doc.diff(before), label)
+    this.setSelection(this.selection.map(x => x.id === next.id ? next : x)); this.refresh(itemBounds(next))
+    return next
+  }
+
+  playLab(it: LabItem): void {
+    if (it.locked || !supportedLab(it)) return
+    for (const other of this.doc.items) if (other.t === 'l' && other.id !== it.id && this.labs.playing(other)) this.pauseLab(other)
+    this.labs.play(it); this.refresh(itemBounds(it))
+  }
+  pauseLab(it: LabItem): void { this.labs.pause(it); this.refresh(itemBounds(it)) }
+  labTime(it: LabItem): number { return this.labs.time(it) }
+  seekLab(it: LabItem, time: number): void {
+    if (it.locked || !supportedLab(it)) return
+    this.labs.seek(it, time); this.refresh(itemBounds(it))
+  }
+  stepLab(it: LabItem, direction = 1): void { this.seekLab(it, this.labs.time(it) + direction / 30) }
+  freezeLab(it: LabItem, annotate = false): void {
+    if (it.locked || !supportedLab(it)) return
+    this.pauseLab(it)
+    const time = Math.min(labDuration(it), this.labs.time(it))
+    this.editLab(it, { frozenTime: time }, 'Freeze science frame')
+    if (annotate) { this.setTool('pen'); scienceInspector.value = false; showToast('Frame frozen · draw your explanation · select the lab to continue') }
+  }
+
   serialize(): string {
     const draft = S.editing.value
     const items = draft ? (draft.isNew ? [...this.doc.items, draft.item] : this.doc.items.map(it => it.id === draft.item.id ? draft.item : it)) : this.doc.items
@@ -774,6 +832,7 @@ export class Board implements ToolHost {
     const parsed = parseBoard(json)
     if (!parsed) return null
     if (S.editing.value) this.cancelText()
+    this.labs.clear(); this.labDraft.clear(); activeLabId.value = null
     const before = this.doc.snapshot()
     this.doc.replaceAll(parsed.items)
     this.setSelection([])
@@ -806,7 +865,7 @@ export class Board implements ToolHost {
     }
     ctx.scale(scale, scale)
     ctx.translate(-b[0] + pad, -b[1] + pad)
-    for (const it of this.doc.items) paintItem(ctx, it)
+    for (const it of this.doc.items) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
     const blob = await new Promise<Blob | null>((res) => cv.toBlob(res, 'image/png'))
     return blob ? await blob.arrayBuffer() : null
   }

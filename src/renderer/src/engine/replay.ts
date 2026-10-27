@@ -17,7 +17,7 @@ export interface ReplayStep {
 }
 export interface Recording {
   format: typeof REPLAY_FORMAT
-  version: 1
+  version: 1 | 2
   id: string
   title: string
   createdAt: string
@@ -40,7 +40,8 @@ export function applyReplayStep(items: Item[], step: ReplayStep): Item[] {
 }
 
 export function serializeRecording(recording: Recording): string {
-  return JSON.stringify({ ...recording, initial: recording.initial.map(itemToJson),
+  const hasLab = recording.initial.some(it => it.t === 'l') || recording.steps.some(step => step.added.some(e => e.it.t === 'l'))
+  return JSON.stringify({ ...recording, version: hasLab ? 2 : recording.version, initial: recording.initial.map(itemToJson),
     steps: recording.steps.map(step => ({ ...step, added: step.added.map(e => ({ i: e.i, it: itemToJson(e.it) })) })) })
 }
 
@@ -49,7 +50,7 @@ export function parseRecording(json: string): Recording | null {
   try {
     if (typeof json !== 'string' || json.length > MAX_REPLAY_CHARS) return null
     const raw = JSON.parse(json) as Recording
-    if (!raw || raw.format !== REPLAY_FORMAT || raw.version !== 1 || !identifier(raw.id) || typeof raw.title !== 'string' || !raw.title.trim() || raw.title.length > 160 ||
+    if (!raw || raw.format !== REPLAY_FORMAT || (raw.version !== 1 && raw.version !== 2) || !identifier(raw.id) || typeof raw.title !== 'string' || !raw.title.trim() || raw.title.length > 160 ||
         typeof raw.createdAt !== 'string' || !Number.isFinite(Date.parse(raw.createdAt)) || !finite(raw.duration) || raw.duration < 0 || raw.duration > MAX_DURATION ||
         !/^#(?:[\da-f]{3}|[\da-f]{6})$/i.test(raw.background) || !validView(raw.view) || !raw.viewport || !finite(raw.viewport.w) || !finite(raw.viewport.h) ||
         raw.viewport.w < 1 || raw.viewport.h < 1 || raw.viewport.w > 32000 || raw.viewport.h > 32000 || !Array.isArray(raw.initial) || raw.initial.length > MAX_ENTRIES ||
@@ -58,6 +59,7 @@ export function parseRecording(json: string): Recording | null {
       if (!identifier(it?.id)) throw new Error('Missing item ID')
       const parsed = itemFromJson(it)
       if (!parsed) throw new Error('Invalid item')
+      if (parsed.t === 'l' && raw.version !== 2) throw new Error('Labs require replay format 2')
       return parsed
     }
     const initial = raw.initial.map(parseItem)
@@ -110,7 +112,7 @@ export class ReplayRecorder {
     this.previous = this.filter(initial)
     this.entries = this.previous.length
     this.started = clock()
-    this.recording = { format: REPLAY_FORMAT, version: 1, id: `replay-${globalThis.crypto.randomUUID()}`, title: title.trim().slice(0, 160) || 'Untitled recording',
+    this.recording = { format: REPLAY_FORMAT, version: this.previous.some(it => it.t === 'l') ? 2 : 1, id: `replay-${globalThis.crypto.randomUUID()}`, title: title.trim().slice(0, 160) || 'Untitled recording',
       createdAt: new Date().toISOString(), duration: 0, background, viewport: { ...viewport }, initial: this.previous.slice(), view: { ...view }, steps: [] }
   }
   private filter(items: Item[]): Item[] { return this.watched ? items.filter(it => this.watched!.has(it.id) || !this.baseline.has(it.id)) : items.slice() }
@@ -146,6 +148,7 @@ export class ReplayRecorder {
     if (!removed.length && !added.length && prev && !prev.removed.length && !prev.added.length && at - prev.at < 200) steps[steps.length - 1] = step
     else steps.push(step)
     this.entries += added.length; this.previous = next
+    if (added.some(e => e.it.t === 'l')) this.recording.version = 2
   }
   snapshot(): Recording { return { ...this.recording, duration: Math.min(MAX_DURATION, Math.max(this.elapsed, this.recording.steps.at(-1)?.at ?? 0)), steps: this.recording.steps.slice() } }
 }
