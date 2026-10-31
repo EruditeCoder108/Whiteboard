@@ -170,6 +170,12 @@ export function SettingsPopover(): JSX.Element {
         value={S.layout.value}
         onChange={(v) => actions.chooseLayout(v)}
       />
+      <div class="pop-sub">Pages</div>
+      <Segmented
+        options={[{ value: 'pages', label: 'Fixed pages' }, { value: 'canvas', label: 'Endless canvas' }]}
+        value={S.pageMode.value}
+        onChange={(v) => actions.setPageMode(v)}
+      />
       <PaperPicker />
       <Row label="Opacity" hint="Lower it to see the screen through the board">
         <Slider min={0} max={100} value={S.bgAlpha.value} onChange={(v) => (S.bgAlpha.value = v)} />

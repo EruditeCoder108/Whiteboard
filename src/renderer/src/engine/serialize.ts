@@ -2,6 +2,8 @@ import type { GraphItem, ImageItem, Item, ObjectMeta, ShapeItem, StrokeItem, Tex
 import { assetKey } from './media'
 import { isPaper } from './grid'
 import type { Paper } from './grid'
+import { isDefaultFrame, validFrame } from './pages'
+import type { Frame } from './pages'
 import { newId } from './types'
 import { MAX_ZOOM, MIN_ZOOM } from './view'
 import { clamp } from './geometry'
@@ -191,18 +193,19 @@ export function serializeBoard(items: Item[], view?: View): string {
   return JSON.stringify(file)
 }
 
-export interface PageData { items: Item[]; view?: View; paper?: Paper }
+export interface PageData { items: Item[]; view?: View; paper?: Paper; frame?: Frame }
 
 /**
  * Multi-page boards and boards with pictures use format 4. With `inline` the pictures are embedded
  * (portable files); otherwise they are returned separately so autosave writes each picture once.
  */
 export function serializePages(pages: PageData[], page: number, inline: boolean): { json: string; assets: Record<string, string> } {
-  if (pages.length === 1 && !pages[0].items.some(it => it.t === 'i')) return { json: serializeBoard(pages[0].items, pages[0].view), assets: {} }
+  if (pages.length === 1 && !pages[0].items.some(it => it.t === 'i') && (!pages[0].frame || isDefaultFrame(pages[0].frame))) return { json: serializeBoard(pages[0].items, pages[0].view), assets: {} }
   const assets: Record<string, string> = {}
   const pageJson = pages.map(pg => ({
     view: pg.view ? { x: r2(pg.view.x), y: r2(pg.view.y), zoom: r3(pg.view.zoom) } : undefined,
     ...(pg.paper ? { paper: pg.paper } : {}),
+    ...(pg.frame ? { frame: { x: r2(pg.frame.x), y: r2(pg.frame.y), extent: pg.frame.extent } } : {}),
     items: pg.items.map(it => {
       if (it.t !== 'i') return itemToJson(it)
       const key = assetKey(it.src)
@@ -236,7 +239,7 @@ function parsePages(f: Record<string, unknown>, externalAssets: boolean): Parsed
   let skipped = 0, total = 0
   const pages: PageData[] = []
   for (const raw of f.pages as unknown[]) {
-    const pg = raw as { view?: unknown; items?: unknown; paper?: unknown }
+    const pg = raw as { view?: unknown; items?: unknown; paper?: unknown; frame?: unknown }
     if (!pg || typeof pg !== 'object' || !Array.isArray(pg.items)) return null
     total += pg.items.length
     if (total > MAX_ITEMS) return null
@@ -253,7 +256,7 @@ function parsePages(f: Record<string, unknown>, externalAssets: boolean): Parsed
       ids.add(it.id)
       items.push(it)
     }
-    pages.push({ items, view: parseView(pg.view, false), paper: isPaper(pg.paper) ? pg.paper : undefined })
+    pages.push({ items, view: parseView(pg.view, false), paper: isPaper(pg.paper) ? pg.paper : undefined, frame: validFrame(pg.frame) })
   }
   if (total && !pages.some(pg => pg.items.length)) return null
   const page = Number.isSafeInteger(f.page) && (f.page as number) >= 0 && (f.page as number) < pages.length ? f.page as number : 0

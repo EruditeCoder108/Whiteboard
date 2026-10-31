@@ -29,7 +29,7 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Content | Generic tools | **NCERT-mapped animated library, Class 6–12, English + Hindi** |
 | Lecture notes | None | **Notes from the teacher's own voice and board drawings, made into a PDF and shared by QR** |
 | Ink | Soft pen | Soft pen **plus** real pen pressure, prediction for low lag, shape snapping |
-| Hindi | Not documented | Hindi interface, Devanagari text, Hindi handwriting lines, Hindi labels in the library |
+| Hindi content | Not documented | Devanagari text, Hindi writing lines, Hindi labels in the library |
 | Over other apps | Annotate | Annotate **plus** a click-through overlay, screen → page, and a replay you can export as a video |
 | AI | None | Optional, teacher-controlled, and faithful to the lecture by default |
 | Panel makers | Closed | Can be branded with their logo and shipped preinstalled, and IT can deploy it silently |
@@ -61,9 +61,12 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Feature | Status |
 |---|---|
 | Pages: add, delete, PgUp/PgDn and presentation clickers | ✅ |
-| **Screen-sized pages** like a notebook; *Extend down* when a page fills up | 🛠 |
+| **Fixed pages or endless canvas**, switchable any time: a fixed page is a 16:9 sheet that fills the screen and can't be zoomed out or lost | ✅ |
+| **More space below:** a page grows a screen at a time (up to 8), and empty space can be removed again | ✅ |
+| **Turning pages:** two-finger swipe, toolbar Back/Next, PgUp/PgDn or a presentation clicker, with a quick slide | ✅ |
+| PDF worksheets on fixed pages: slides fill the page, portrait sheets sit at a readable width and the page grows to fit | ✅ |
 | **Page sorter:** thumbnails, reorder, duplicate, delete | ✅ |
-| **Navigation map** for a long page | ⏳ |
+| **Page map** for a long page (drag to scroll) | ✅ |
 | **Background library, per page:** white, black and green chalkboard, ruled, four-line English, Hindi writing lines, mm graph paper, squares, dots, music staff | ✅ |
 | More papers: isometric, outline maps of India and the world, your own image | ⏳ |
 | Templates: Venn diagram, timeline, KWL chart, worksheet | ⏳ |
@@ -78,7 +81,7 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | PDF worksheets and textbook pages: one page each, write on them | ✅ |
 | PowerPoint: present it under the overlay now; import it as pages later | ✅ / ⏳ |
 | OpenBoard lesson import (`.ubz`) | ⏳ |
-| Export all pages as PDF | ✅ |
+| Export all pages as PDF (fixed pages export whole sheets with their paper, blank ones included) | ✅ |
 | Export a page as a picture | ⏳ |
 | Record the board, replay it step by step, export the replay as a video | ✅ |
 | **QR code share over the school's Wi-Fi** (students scan, PDF downloads; no cloud) | ⏳ |
@@ -151,7 +154,6 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Light theme and **chalkboard theme** (toolbar goes dark on a dark board) | ✅ |
 | Internals hidden: zoom %, pin and pass-through tucked away; save status only on error | 🛠 |
 | Settings for teachers, plus an *Advanced* page for IT | 🛠 |
-| **English and Hindi interface**, more Indian languages later | 🛠 |
 | Radial tool menu (press and hold) | ✅ |
 
 ## 9. For schools, IT and panel makers

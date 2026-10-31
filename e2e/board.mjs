@@ -50,11 +50,12 @@ try {
 
   // Palm erase: a finger-sized touch draws, a palm-sized one wipes and then hands the pen back.
   await fw(page, w => { w.board.goToPage(0); w.board.setTool('pen') })
-  await gesture(page, wave(300, 300, 50, 20), { type: 'touch', pressure: 0, size: 12 })
+  // The board learns this screen's fingertip size from the first few touches.
+  for (const y of [300, 360, 420]) await gesture(page, wave(300, y, 50, 20), { type: 'touch', pressure: 0, size: 12 })
   const drawn = await fw(page, w => w.board.doc.items.length)
-  await gesture(page, Array.from({ length: 30 }, (_, i) => [280 + i * 10, 300 + (i % 2) * 10]), { type: 'touch', pressure: 0, size: 90 })
+  await gesture(page, Array.from({ length: 30 }, (_, i) => [280 + i * 10, 300 + (i % 4) * 40]), { type: 'touch', pressure: 0, size: 90 })
   const palm = await fw(page, w => ({ items: w.board.doc.items.length, tool: w.S.tool.value, override: w.S.override.value, palm: w.S.palm.value }))
-  check('a finger-sized touch draws', drawn >= 2, String(drawn))
+  check('a finger-sized touch draws', drawn >= 4, String(drawn))
   check('a palm wipes the ink away and the pen comes back', palm.items < drawn && palm.tool === 'pen' && palm.override === null && palm.palm === 0, JSON.stringify({ drawn, ...palm }))
 
   // Paper belongs to its page.
@@ -80,6 +81,41 @@ try {
   await page.waitForTimeout(250)
   await page.screenshot({ path: join(shotDir, 'board-chalk.png') })
   await fw(page, w => { w.S.bgColor.value = '#ffffff'; w.S.grid.value = 'none' })
+
+  // Page mode: the sheet fills the screen, cannot be lost, turns with a swipe and grows downward.
+  await page.keyboard.press('Escape')
+  const fit = await fw(page, w => { w.board.goToPage(0); w.board.zoomAt(.2, 500, 500); w.board.panBy(-3000, 2000); return { mode: w.S.pageMode.value, v: w.board.view, size: w.board.size } })
+  check('smart board opens in page mode and the page cannot be zoomed out or pushed off screen',
+    fit.mode === 'pages' && Math.abs(fit.v.zoom - fit.size.w / 1600) < .01 && Math.abs(fit.v.x) < .5 && Math.abs(fit.v.y) < .5, JSON.stringify(fit))
+  const swipe = async (dx) => page.evaluate(async (dx) => {
+    const el = document.querySelector('.stage'), r = el.getBoundingClientRect(), sleep = (ms) => new Promise(res => setTimeout(res, ms))
+    const ev = (type, id, x, y) => el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: id, pointerType: 'touch', isPrimary: id === 11, clientX: r.left + x, clientY: r.top + y, buttons: type === 'pointerup' ? 0 : 1, pressure: .5 }))
+    ev('pointerdown', 11, 900, 500); ev('pointerdown', 12, 1000, 520)
+    for (let i = 1; i <= 12; i++) { ev('pointermove', 11, 900 + dx * i / 12, 500); ev('pointermove', 12, 1000 + dx * i / 12, 520); await sleep(8) }
+    ev('pointerup', 11, 900 + dx, 500); ev('pointerup', 12, 1000 + dx, 520)
+  }, dx)
+  await swipe(-320)
+  const afterSwipe = await fw(page, w => ({ page: w.board.page, items: w.board.doc.items.length }))
+  await page.waitForTimeout(80)
+  await page.screenshot({ path: join(shotDir, 'board-page-turn.png') })
+  await page.waitForTimeout(300)
+  await swipe(320)
+  check('a two-finger swipe turns the page forward and back without drawing', afterSwipe.page === 1 && await fw(page, w => w.board.page) === 0, JSON.stringify(afterSwipe))
+  await page.getByRole('button', { name: 'More space below' }).click()
+  await page.waitForTimeout(350)
+  const long = await fw(page, w => ({ extent: w.board.pageFrame.extent, y: w.board.view.y }))
+  check('more space below extends the page and scrolls down to it', long.extent === 2 && long.y > 100, JSON.stringify(long))
+  check('a long page shows its map on the right edge', await page.locator('.rail-map').isVisible())
+  await page.screenshot({ path: join(shotDir, 'board-long-page.png') })
+  const pdf = await fw(page, async w => (await w.board.exportPages('#ffffff')).length)
+  check('PDF export keeps every sheet, blank ones too', pdf === await fw(page, w => w.board.pageCount), String(pdf))
+  await page.getByRole('button', { name: 'Remove the empty space at the bottom' }).click()
+  check('empty space at the bottom can be removed again', await fw(page, w => w.board.pageFrame.extent) === 1)
+  await page.getByRole('button', { name: 'More', exact: true }).click()
+  await page.getByRole('button', { name: 'Endless canvas' }).click()
+  const free = await fw(page, w => { w.board.zoomAt(.25, 500, 500); return { mode: w.S.pageMode.value, zoom: w.board.view.zoom } })
+  check('endless canvas mode frees the view again', free.mode === 'canvas' && free.zoom < .5, JSON.stringify(free))
+  await fw(page, w => { w.S.pageMode.value = 'pages' })
 
   check('no renderer errors', logs.filter(l => /pageerror|\[error\]/.test(l)).length === 0, logs.join(' | '))
 } finally { await app.close().catch(() => {}) }

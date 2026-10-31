@@ -1,6 +1,8 @@
 import { signal } from '@preact/signals'
 import { board } from '@/engine/instance'
 import { imageFromBlob, rasterize } from '@/engine/media'
+import { MAX_EXTENT, PAGE_H, PAGE_W } from '@/engine/pages'
+import type { Frame } from '@/engine/pages'
 import type { GraphItem, ImageItem } from '@/engine/types'
 import { S, showToast } from './store'
 
@@ -67,12 +69,20 @@ export async function importPdf(file: File): Promise<void> {
       page.cleanup()
       const src = rasterize(cv, cv.width, cv.height, .85)
       // World size: PDF points × 1.5, so an A4 page is about 900 units wide.
-      const w = base.width * 1.5, h = base.height * 1.5
-      const item: ImageItem = { t: 'i', id: crypto.randomUUID(), c: '#111827', w: 1, p: [0, 0, w, h], src, aspect: w / h, locked: true }
-      const view = { x: -40, y: -40, zoom: 1 }
+      let w = base.width * 1.5, h = base.height * 1.5, x = 0, y = 0
+      let frame: Frame | undefined
+      if (board.paged) {
+        // On sheets: slides fill the page; portrait worksheets sit centred at a readable width and
+        // the page grows down to hold them, with room either side for working.
+        const k = w >= h ? Math.min((PAGE_W - 40) / w, (PAGE_H - 40) / h) : 1100 / w
+        w *= k; h *= k; x = (PAGE_W - w) / 2; y = w >= h ? (PAGE_H - h) / 2 : 30
+        frame = { x: 0, y: 0, extent: Math.min(MAX_EXTENT, Math.ceil((y + h + 30) / PAGE_H)) }
+      }
+      const item: ImageItem = { t: 'i', id: crypto.randomUUID(), c: '#111827', w: 1, p: [x, y, x + w, y + h], src, aspect: w / h, locked: true }
       if (first) {
         board.addPageContent([item]); first = false
-      } else board.addPage([item], view)
+        if (frame) board.setPageFrame(frame)
+      } else board.addPage([item], board.paged ? undefined : { x: -40, y: -40, zoom: 1 }, undefined, frame)
       board.fitPage()
     }
     await pdf.destroy()

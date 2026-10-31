@@ -130,8 +130,8 @@ export function installShortcuts(cancelRadial: () => void): () => void {
         break
       }
       // With a selection these reorder objects; otherwise they turn pages (presentation clickers send them).
-      case 'PageUp': e.preventDefault(); return board.selection.length ? board.arrangeSelection('front') : void board.goToPage(board.page - 1)
-      case 'PageDown': e.preventDefault(); return board.selection.length ? board.arrangeSelection('back') : void board.goToPage(board.page + 1)
+      case 'PageUp': e.preventDefault(); return board.selection.length ? board.arrangeSelection('front') : void board.turnPage(-1)
+      case 'PageDown': e.preventDefault(); return board.selection.length ? board.arrangeSelection('back') : void board.turnPage(1)
       case 'Delete':
       case 'Backspace':
         return board.deleteSelection()
