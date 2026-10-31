@@ -6,6 +6,14 @@ import { S, activeTool } from '@/state/store'
 
 const LONG_PRESS_SLOP = 9
 const PEN_PALM_MS = 700
+/** A landing palm starts small and spreads; it can still turn into the eraser this long after touching down. */
+const PALM_GROW_MS = 160
+
+/** Contact diameter of a touch in CSS px, or 0 when the screen does not report it. */
+export const contactSize = (e: PointerEvent): number => {
+  const s = Math.max(e.width || 0, e.height || 0)
+  return s > 1.5 ? s : 0
+}
 
 type Mode = 'idle' | 'tool' | 'pan' | 'pinch' | 'radial' | 'window'
 
@@ -17,6 +25,7 @@ type Mode = 'idle' | 'tool' | 'pan' | 'pinch' | 'radial' | 'window'
  *  - mouse:  left draws · middle/right pans · wheel pans · Ctrl+wheel zooms
  *  - press-and-hold (any device) opens the radial menu
  *  - touch is ignored while a pen is near (palm rejection)
+ *  - on touch panels a palm-sized contact erases (palm erase), sized to the hand
  */
 export class InputRouter {
   private mode: Mode = 'idle'
@@ -24,6 +33,9 @@ export class InputRouter {
   private tool: Tool | null = null
   private touches = new Map<number, { x: number; y: number }>()
   private penUntil = 0
+  /** a palm is erasing; extra contacts from the same hand are ignored */
+  private palm = false
+  private toolSince = 0
   private space = false
   private lastPan: [number, number] = [0, 0]
   private pinch: { cx: number; cy: number; d: number } | null = null
@@ -142,11 +154,26 @@ export class InputRouter {
       this.beginPan(e)
       return
     }
+    this.toolSince = performance.now()
     const instruments = this.board.instruments
     this.tool = instruments.active ? instruments.intercept(p) ?? instruments.snapTool(this.board.currentTool(), p) : this.board.currentTool()
     this.mode = 'tool'
     this.tool.down(p)
     if (this.tool.allowsRadial) this.armLongPress(e, p)
+  }
+
+  private isPalm(e: PointerEvent): boolean {
+    return S.palmErase.value && contactSize(e) >= S.palmSize.value
+  }
+
+  /** Erase with the palm for as long as it touches, then go back to the chosen tool. */
+  private beginPalm(e: PointerEvent): void {
+    this.palm = true
+    S.palm.value = contactSize(e) * 1.15
+    S.override.value = 'eraser'
+    this.beginTool(e)
+    window.clearTimeout(this.longTimer)
+    this.longTimer = 0
   }
 
   private beginPan(e: PointerEvent): void {
@@ -180,6 +207,7 @@ export class InputRouter {
 
   private endGesture(p: Ptr | null): void {
     window.clearTimeout(this.longTimer)
+    const palm = this.palm
     const mode = this.mode
     this.mode = 'idle'
     this.primary = null
@@ -193,7 +221,15 @@ export class InputRouter {
       this.winDrag = null
     }
     this.tool = null
+    if (palm) this.endPalm()
     this.el.style.cursor = this.space ? 'grab' : this.board.currentTool().cursor()
+  }
+
+  private endPalm(): void {
+    this.palm = false
+    S.palm.value = 0
+    if (S.override.value === 'eraser') S.override.value = null
+    this.board.currentTool().leave?.()
   }
 
   /** Throw away whatever is in progress (focus loss, 2nd finger, Esc …). */
@@ -207,6 +243,8 @@ export class InputRouter {
     this.tool = null
     this.pinch = null
     this.touches.clear()
+    this.palm = false
+    S.palm.value = 0
     S.override.value = null
     this.board.currentTool().leave?.()
     this.el.style.cursor = this.board.currentTool().cursor()
@@ -231,10 +269,19 @@ export class InputRouter {
       if (this.penRecent()) return // palm
       const r = this.el.getBoundingClientRect()
       this.touches.set(e.pointerId, { x: e.clientX - r.left, y: e.clientY - r.top })
+      if (this.palm) return // the rest of the hand
       if (this.touches.size === 1 && this.mode === 'idle') {
-        if (S.fingerDraw.value || activeTool.value === 'laser') this.beginTool(e)
+        if (this.isPalm(e)) this.beginPalm(e)
+        else if (S.fingerDraw.value || activeTool.value === 'laser') this.beginTool(e)
         else this.beginPan(e)
       } else if (this.touches.size >= 2) {
+        if (this.isPalm(e) && !(this.mode === 'tool' && this.tool?.underway())) {
+          // a palm landing next to a finger: erase with the palm, drop the finger
+          if (this.mode === 'tool') this.tool?.cancel()
+          this.mode = 'idle'
+          this.beginPalm(e)
+          return
+        }
         const busy = this.mode === 'tool' && this.tool?.underway()
         if (busy) return // keep following the first finger
         window.clearTimeout(this.longTimer)
@@ -291,6 +338,15 @@ export class InputRouter {
       const r = this.el.getBoundingClientRect()
       if (this.touches.has(e.pointerId)) this.touches.set(e.pointerId, { x: e.clientX - r.left, y: e.clientY - r.top })
       if (this.mode === 'pinch') return this.updatePinch()
+      if (this.palm && e.pointerId === this.primary) S.palm.value = Math.max(S.palm.value, contactSize(e) * 1.15)
+      else if (this.mode === 'tool' && e.pointerId === this.primary && this.isPalm(e) && performance.now() - this.toolSince < PALM_GROW_MS) {
+        // the "finger" was the edge of a landing palm: drop its few points and erase instead
+        this.tool?.cancel()
+        this.tool = null
+        this.mode = 'idle'
+        this.beginPalm(e)
+        return
+      }
     }
 
     switch (this.mode) {

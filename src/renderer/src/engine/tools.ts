@@ -304,7 +304,7 @@ export class EraserTool implements Tool {
 
   /** eraser radius in world units (the eraser keeps a constant on-screen size) */
   private radius(): number {
-    return S.eraserSize.value / 2 / this.host.view.zoom
+    return Math.max(S.eraserSize.value, S.palm.value) / 2 / this.host.view.zoom
   }
 
   down(p: Ptr): void {
@@ -356,7 +356,7 @@ export class EraserTool implements Tool {
     const r = this.radius()
     const box: Rect = [Math.min(x0, x1) - r, Math.min(y0, y1) - r, Math.max(x0, x1) + r, Math.max(y0, y1) + r]
     const cands: Item[] = []
-    const pixel = S.eraserMode.value === 'pixel'
+    const pixel = S.eraserMode.value === 'pixel' || S.palm.value > 0 // a palm wipes like a real duster
     for (const it of doc.items) {
       if (it.locked || isBox(it) || (pixel && it.t === 'h' && (it.text || (it.fill && it.fill !== 'none')))) continue
       if (rectsHit(itemBounds(it), box)) cands.push(it)
@@ -404,7 +404,7 @@ export class EraserTool implements Tool {
   paintOverlay(ctx: CanvasRenderingContext2D): void {
     if (!this.at) return
     const rad = S.eraserSize.value / 2
-    const pixel = S.eraserMode.value === 'pixel'
+    const pixel = S.eraserMode.value === 'pixel' || S.palm.value > 0 // a palm wipes like a real duster
     const dark = isDarkBg.value
     const edge = dark ? 'rgba(255,255,255,0.85)' : 'rgba(30,34,50,0.8)'
     ctx.save()
