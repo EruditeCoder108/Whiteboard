@@ -16,7 +16,7 @@ const subject = signal<Subject>('maths')
 
 const SUBJECTS: [Subject, string, Icon][] = [
   ['maths', 'Maths', Calculator], ['physics', 'Physics', Atom], ['chemistry', 'Chemistry', TestTubes],
-  ['biology', 'Biology', Dna], ['english', 'English', BookOpen], ['hindi', 'हिन्दी', NotebookPen]
+  ['biology', 'Biology', Dna], ['english', 'English', BookOpen], ['hindi', 'Hindi', NotebookPen]
 ]
 
 interface Entry { icon: Icon; label: string; on?: () => boolean; run: () => void; stay?: boolean }
