@@ -96,6 +96,34 @@ try {
   await page.screenshot({ path: join(shotDir, 'laser-dense.png') })
   await leave(); await page.waitForTimeout(2800)
   check('laser trails and dot completely expire after leaving', await fw(page, w => w.board.tools.laser.trail.length === 0 && w.board.tools.laser.head === null && !w.board.tools.laser.animating))
+  const scribble = await page.evaluate(async () => {
+    const el = document.querySelector('.stage'), r = el.getBoundingClientRect()
+    const cv = window.__fw.board.liveCv, ctx = cv.getContext('2d'), dpr = devicePixelRatio
+    // Fast back-and-forth passes; the old single-gradient trail dropped whole sections of these.
+    // Longer than the 2.4 s trail life, so the oldest visible point has almost faded out.
+    for (let i = 0; i <= 330; i++) {
+      const phase = (i % 26) / 13, x = 200 + 300 * (phase <= 1 ? phase : 2 - phase)
+      el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerType: 'mouse', pointerId: 1, buttons: 0, clientX: r.left + x, clientY: r.top + 480 + 6 * Math.sin(i * .7) }))
+      await new Promise(res => setTimeout(res, 9))
+    }
+    const frames = []
+    for (let f = 0; f < 20; f++) {
+      await new Promise(res => requestAnimationFrame(res))
+      const x = Math.round(230 * dpr), y = Math.round(470 * dpr), width = Math.round(240 * dpr), height = Math.round(20 * dpr)
+      const data = ctx.getImageData(x, y, width, height).data
+      let weakest = 255
+      for (let col = 0; col < width; col++) {
+        let strongest = 0
+        for (let row = 0; row < height; row++) strongest = Math.max(strongest, data[(row * width + col) * 4 + 3])
+        weakest = Math.min(weakest, strongest)
+      }
+      frames.push(weakest)
+    }
+    return { weakestColumn: Math.min(...frames), frames: frames.length }
+  })
+  check('a fast scribble stays continuously visible across frames', scribble.weakestColumn > 100, JSON.stringify(scribble))
+  await page.screenshot({ path: join(shotDir, 'laser-scribble.png') })
+  await leave(); await page.waitForTimeout(2800)
   await hover(page, 200, 200); await hover(page, 260, 200)
   await leave(); await hover(page, 600, 200); await hover(page, 650, 200)
   await page.waitForTimeout(30)
