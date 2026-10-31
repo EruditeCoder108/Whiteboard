@@ -3,8 +3,11 @@ import { radial } from '@/engine/radial'
 import type { RadialPick } from '@/engine/radial'
 import { clipboardImage } from './insert'
 import { S, luminance, isDarkBg, showToast, styleKey, SIZE_RANGE } from './store'
-import type { ToolName } from './store'
+import type { Layout, ToolName } from './store'
 import { clamp } from '@/engine/geometry'
+
+/** Below this board opacity (percent) the board counts as "writing over the screen". */
+export const OVERLAY_ALPHA = 20
 
 /** Everything a user can *do*.  Buttons, shortcuts and the radial menu all call these. */
 export const actions = {
@@ -93,6 +96,25 @@ export const actions = {
 
   toggleFullscreen(): void {
     window.api.win.toggleFullscreen()
+  },
+
+  /** Smart board: full screen, solid board. Laptop: the compact floating window. */
+  chooseLayout(layout: Layout): void {
+    S.popover.value = null
+    S.layout.value = layout
+    S.layoutChosen.value = true
+    if (layout === 'board') {
+      if (S.bgAlpha.value < 100) S.bgAlpha.value = 100
+      window.api.win.setFullscreen(true)
+    } else window.api.win.setFullscreen(false)
+  },
+
+  /** Write over the screen: the board turns see-through (and back to solid). */
+  toggleOverlay(): void {
+    S.popover.value = null
+    const on = S.bgAlpha.value >= OVERLAY_ALPHA
+    S.bgAlpha.value = on ? 1 : 100
+    showToast(on ? 'Writing over the screen · use the hand button to use the apps underneath' : 'Back to the board')
   },
 
   runRadial(pick: RadialPick): void {

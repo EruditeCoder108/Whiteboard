@@ -303,6 +303,7 @@ function registerIpc(): void {
   ipcMain.on('win:close', () => w()?.close())
   ipcMain.on('win:toggle-zoom', toggleZoom)
   ipcMain.on('win:toggle-fullscreen', () => setFullscreen(!fullscreen))
+  ipcMain.on('win:set-fullscreen', (_e, on: boolean) => setFullscreen(!!on))
   ipcMain.on('win:set-on-top', (_e, on: boolean) => {
     onTop = !!on
     if (!fullscreen) w()?.setAlwaysOnTop(onTop)

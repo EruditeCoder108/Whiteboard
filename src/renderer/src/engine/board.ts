@@ -892,6 +892,39 @@ export class Board implements ToolHost {
     showToast('Page deleted')
   }
 
+  /** Copy a page (items are immutable, so sharing them is safe) and show the copy after it. */
+  duplicatePage(i = this.pageIndex): void {
+    if (!this.leavePage()) return
+    const pg = this.pages[i]
+    if (!pg) return
+    this.pages.splice(i + 1, 0, { items: pg.items.map(it => ({ ...it, id: newId() })), view: { ...pg.view }, history: { undo: [], redo: [] } })
+    this.showPage(i + 1)
+    this.onChange?.()
+  }
+
+  /** Reorder pages; the visible page stays visible. */
+  movePage(from: number, to: number): void {
+    if (from === to || from < 0 || to < 0 || from >= this.pages.length || to >= this.pages.length || !this.leavePage()) return
+    const [pg] = this.pages.splice(from, 1)
+    this.pages.splice(to, 0, pg)
+    const shown = this.pageIndex === from ? to : this.pageIndex > from && this.pageIndex <= to ? this.pageIndex - 1 : this.pageIndex < from && this.pageIndex >= to ? this.pageIndex + 1 : this.pageIndex
+    this.showPage(shown)
+    this.onChange?.()
+  }
+
+  /** Picture of page i as it looks on screen (its own view), drawn into `cv`. */
+  paintPageThumb(i: number, cv: HTMLCanvasElement, bg: string): void {
+    const pg = this.pageData()[i]
+    const ctx = cv.getContext('2d')
+    if (!pg || !ctx) return
+    const k = cv.width / (this.w || 1)
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.fillStyle = bg
+    ctx.fillRect(0, 0, cv.width, cv.height)
+    ctx.setTransform(k * pg.view.zoom, 0, 0, k * pg.view.zoom, -pg.view.x * pg.view.zoom * k, -pg.view.y * pg.view.zoom * k)
+    for (const it of pg.items) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
+  }
+
   /** Add items to the visible page as one undoable edit. */
   addPageContent(items: Item[]): void {
     const before = this.doc.snapshot()

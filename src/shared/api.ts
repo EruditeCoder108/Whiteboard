@@ -51,6 +51,7 @@ export interface Api {
     close(): void
     toggleZoom(): void
     toggleFullscreen(): void
+    setFullscreen(on: boolean): void
     setOnTop(on: boolean): void
     setBounds(b: Partial<Bounds>): void
     getBounds(): Promise<Bounds>
