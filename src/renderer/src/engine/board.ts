@@ -20,6 +20,7 @@ import { S, SHAPE_TOOLS, activeTool, isDarkBg, showToast } from '@/state/store'
 import type { ToolName } from '@/state/store'
 import type { InkTiming } from './replay'
 import { paintGrid } from './grid'
+import type { Paper } from './grid'
 import { LabRuntime, supportedLab } from './science/runtime'
 import { activeLabId, scienceInspector } from '@/state/science'
 
@@ -47,7 +48,8 @@ export class Board implements ToolHost {
   onPageChange: (() => void) | null = null
 
   /** Pages other than the visible one keep their items, camera and undo history here. */
-  private pages: { items: Item[]; view: View; history: HistoryState }[] = [{ items: [], view: this.view, history: { undo: [], redo: [] } }]
+  /** paper: the page's background (undefined = keep whatever the board shows) */
+  private pages: { items: Item[]; view: View; history: HistoryState; paper?: Paper }[] = [{ items: [], view: this.view, history: { undo: [], redo: [] } }]
   private pageIndex = 0
 
   private stage!: HTMLElement
@@ -844,12 +846,13 @@ export class Board implements ToolHost {
   private syncPages(): void { S.page.value = this.pageIndex; S.pageCount.value = this.pages.length }
 
   private stashPage(): void {
-    this.pages[this.pageIndex] = { items: this.doc.items, view: this.view, history: this.history.take() }
+    this.pages[this.pageIndex] = { items: this.doc.items, view: this.view, history: this.history.take(), paper: S.grid.value }
   }
 
   private showPage(i: number): void {
     const pg = this.pages[i]
     this.pageIndex = i
+    if (pg.paper) S.grid.value = pg.paper
     this.labs.clear(); this.labDraft.clear(); activeLabId.value = null
     this.doc.replaceAll(pg.items)
     this.history.restore(pg.history)
@@ -878,7 +881,7 @@ export class Board implements ToolHost {
 
   addPage(items: Item[] = [], view?: View, at = this.pageIndex + 1): void {
     if (!this.leavePage()) return
-    this.pages.splice(at, 0, { items, view: view ?? { x: -80, y: -80, zoom: 1 }, history: { undo: [], redo: [] } })
+    this.pages.splice(at, 0, { items, view: view ?? { x: -80, y: -80, zoom: 1 }, history: { undo: [], redo: [] }, paper: S.grid.value })
     this.showPage(at)
     this.onChange?.()
   }
@@ -897,7 +900,7 @@ export class Board implements ToolHost {
     if (!this.leavePage()) return
     const pg = this.pages[i]
     if (!pg) return
-    this.pages.splice(i + 1, 0, { items: pg.items.map(it => ({ ...it, id: newId() })), view: { ...pg.view }, history: { undo: [], redo: [] } })
+    this.pages.splice(i + 1, 0, { items: pg.items.map(it => ({ ...it, id: newId() })), view: { ...pg.view }, history: { undo: [], redo: [] }, paper: pg.paper })
     this.showPage(i + 1)
     this.onChange?.()
   }
@@ -942,10 +945,10 @@ export class Board implements ToolHost {
   }
 
   /** Every page, with the visible one (and any open text edit) taken live. */
-  pageData(): { items: Item[]; view: View }[] {
+  pageData(): { items: Item[]; view: View; paper?: Paper }[] {
     const draft = S.editing.value
     const items = draft ? (draft.isNew ? [...this.doc.items, draft.item] : this.doc.items.map(it => it.id === draft.item.id ? draft.item : it)) : this.doc.items
-    return this.pages.map((pg, i) => i === this.pageIndex ? { items, view: this.view } : { items: pg.items, view: pg.view })
+    return this.pages.map((pg, i) => i === this.pageIndex ? { items, view: this.view, paper: S.grid.value } : { items: pg.items, view: pg.view, paper: pg.paper })
   }
 
   /** Portable JSON with pictures embedded. */
@@ -962,7 +965,7 @@ export class Board implements ToolHost {
     if (!opts.undoable || (parsed.pages && parsed.pages.length > 1)) {
       // Multi-page files replace the page set; that is not an undoable edit.
       const fallback = parsed.view ?? this.view
-      this.pages = (parsed.pages ?? [{ items: parsed.items, view: parsed.view }]).map(pg => ({ items: pg.items, view: pg.view ?? fallback, history: { undo: [], redo: [] } }))
+      this.pages = (parsed.pages ?? [{ items: parsed.items, view: parsed.view }]).map(pg => ({ items: pg.items, view: pg.view ?? fallback, history: { undo: [], redo: [] }, paper: pg.paper }))
       this.history.take()
       this.showPage(parsed.page ?? 0)
       return parsed

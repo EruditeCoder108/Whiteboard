@@ -1,5 +1,7 @@
 import type { GraphItem, ImageItem, Item, ObjectMeta, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
 import { assetKey } from './media'
+import { isPaper } from './grid'
+import type { Paper } from './grid'
 import { newId } from './types'
 import { MAX_ZOOM, MIN_ZOOM } from './view'
 import { clamp } from './geometry'
@@ -189,7 +191,7 @@ export function serializeBoard(items: Item[], view?: View): string {
   return JSON.stringify(file)
 }
 
-export interface PageData { items: Item[]; view?: View }
+export interface PageData { items: Item[]; view?: View; paper?: Paper }
 
 /**
  * Multi-page boards and boards with pictures use format 4. With `inline` the pictures are embedded
@@ -200,6 +202,7 @@ export function serializePages(pages: PageData[], page: number, inline: boolean)
   const assets: Record<string, string> = {}
   const pageJson = pages.map(pg => ({
     view: pg.view ? { x: r2(pg.view.x), y: r2(pg.view.y), zoom: r3(pg.view.zoom) } : undefined,
+    ...(pg.paper ? { paper: pg.paper } : {}),
     items: pg.items.map(it => {
       if (it.t !== 'i') return itemToJson(it)
       const key = assetKey(it.src)
@@ -233,7 +236,7 @@ function parsePages(f: Record<string, unknown>, externalAssets: boolean): Parsed
   let skipped = 0, total = 0
   const pages: PageData[] = []
   for (const raw of f.pages as unknown[]) {
-    const pg = raw as { view?: unknown; items?: unknown }
+    const pg = raw as { view?: unknown; items?: unknown; paper?: unknown }
     if (!pg || typeof pg !== 'object' || !Array.isArray(pg.items)) return null
     total += pg.items.length
     if (total > MAX_ITEMS) return null
@@ -250,7 +253,7 @@ function parsePages(f: Record<string, unknown>, externalAssets: boolean): Parsed
       ids.add(it.id)
       items.push(it)
     }
-    pages.push({ items, view: parseView(pg.view, false) })
+    pages.push({ items, view: parseView(pg.view, false), paper: isPaper(pg.paper) ? pg.paper : undefined })
   }
   if (total && !pages.some(pg => pg.items.length)) return null
   const page = Number.isSafeInteger(f.page) && (f.page as number) >= 0 && (f.page as number) < pages.length ? f.page as number : 0
