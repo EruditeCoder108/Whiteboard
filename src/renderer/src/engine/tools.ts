@@ -15,6 +15,10 @@ import { labState } from './science/models'
 import { magnetCenter, magnetPosition } from './science/showcase-models'
 
 // ── cursors ───────────────────────────────────────────────────────────────────
+/** Soft pen: slow strokes sit at this pressure, fast ones thin towards 0.3 (by ~2500 px/s). */
+const SOFT_REST = 0.72
+export const softPressure = (speed: number): number => SOFT_REST - 0.42 * Math.min(1, speed / 2500)
+
 const cursorCache = new Map<string, string>()
 
 /** A crisp ring cursor sized to the real brush (1× and 2× variants). */
@@ -57,6 +61,8 @@ export class PenTool implements Tool {
   private live: Omit<StrokeItem, 'p'> | null = null
   private smoother = new Smoother()
   private pressure = 0.5
+  private soft = false
+  private lastRaw: [number, number, number] = [0, 0, 0]
   private lastS: [number, number] = [0, 0]
   private pointTimes: number[] = []
   private strokeStart = 0
@@ -83,7 +89,10 @@ export class PenTool implements Tool {
   }
 
   down(p: Ptr): void {
-    const variable = !this.marker && S.pressure.value && p.type === 'pen'
+    // Touch panels (most classroom boards are IR) send no pressure: width follows speed instead.
+    this.soft = !this.marker && S.pressure.value && p.type === 'touch'
+    const variable = !this.marker && S.pressure.value && (p.type === 'pen' || this.soft)
+    this.lastRaw = [p.x, p.y, p.t]
     this.live = {
       t: 's',
       id: newId(),
@@ -92,7 +101,7 @@ export class PenTool implements Tool {
       m: this.marker,
       v: variable
     }
-    this.pressure = variable ? clamp(p.pressure, 0.05, 1) : 0.5
+    this.pressure = this.soft ? SOFT_REST : variable ? clamp(p.pressure, 0.05, 1) : 0.5
     this.smoother.reset()
     this.smoother.feed(p.x, p.y, p.t, smoothingToCutoff(S.smoothing.value))
     this.pts = [p.wx, p.wy, this.pressure]
@@ -130,7 +139,14 @@ export class PenTool implements Tool {
     let sx = p.x
     let sy = p.y
     if (S.smoothing.value > 0) [sx, sy] = this.smoother.feed(p.x, p.y, p.t, smoothingToCutoff(S.smoothing.value))
-    if (this.live.v) this.pressure = this.pressure * 0.55 + clamp(p.pressure, 0.02, 1) * 0.45
+    if (this.soft) {
+      const dt = p.t - this.lastRaw[2]
+      if (dt > 0) {
+        const speed = Math.hypot(p.x - this.lastRaw[0], p.y - this.lastRaw[1]) / dt // px/s
+        this.pressure = this.pressure * 0.8 + softPressure(speed) * 0.2
+      }
+      this.lastRaw = [p.x, p.y, p.t]
+    } else if (this.live.v) this.pressure = this.pressure * 0.55 + clamp(p.pressure, 0.02, 1) * 0.45
     if (Math.hypot(sx - this.lastS[0], sy - this.lastS[1]) < 0.6) return
     const [wx, wy] = this.host.toWorld(sx, sy)
     this.pts.push(wx, wy, this.pressure)
