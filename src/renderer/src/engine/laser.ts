@@ -14,9 +14,26 @@ export class LaserTool implements Tool {
   private source: string | null = null
   private stroke = 0
   private contact = false
+  private layer: CanvasRenderingContext2D | null = null
   private static LIFE = 2.4
   private static HEAD_FADE = .65
   private static MAX_POINTS = 8192
+  private static SLICE = .05
+  /** Colour, width, peak opacity and mask channel (0 red, 1 green) of the core and halo. */
+  private static PASSES = [['#ff3030', 4, .12, 1], ['#ff2424', 1.8, .95, 0]] as const
+  private static filters = new Set<number>()
+  private static filter(channel: number): string {
+    const id = `fw-laser-mask-${channel}`
+    if (!LaserTool.filters.has(channel) && typeof document !== 'undefined') {
+      const [r, g, b] = channel === 0 ? [1, .141, .141] : [1, .188, .188]
+      const alpha = channel === 0 ? '1 0 0 0 0' : '0 1 0 0 0'
+      const holder = document.createElement('div')
+      holder.innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 ${r}  0 0 0 0 ${g}  0 0 0 0 ${b}  ${alpha}"/></filter></svg>`
+      document.body.appendChild(holder.firstElementChild!)
+      LaserTool.filters.add(channel)
+    }
+    return id
+  }
 
   constructor(private host: Pick<ToolHost, 'requestOverlay'>, private clock = () => performance.now() / 1000) {}
 
@@ -71,12 +88,27 @@ export class LaserTool implements Tool {
     this.host.requestOverlay()
   }
 
+  /** Offscreen trail layer, so erasing slice joins never touches other live-canvas content. */
+  private layerFor(ctx: CanvasRenderingContext2D): CanvasRenderingContext2D {
+    const target = ctx.canvas
+    if (!target || typeof document === 'undefined') return ctx // canvas-less test contexts
+    if (!this.layer) this.layer = document.createElement('canvas').getContext('2d')
+    const layer = this.layer
+    if (!layer) return ctx
+    if (layer.canvas.width !== target.width || layer.canvas.height !== target.height) {
+      layer.canvas.width = target.width; layer.canvas.height = target.height
+    }
+    return layer
+  }
   paintOverlay(ctx: CanvasRenderingContext2D): void {
     const now = this.clock()
     this.prune(now)
-    ctx.save()
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round'
     const cutoff = now - LaserTool.LIFE
+    const fade = (t: number): number => 1 - Math.pow(clamp((now - t) / LaserTool.LIFE, 0, 1), 3)
+    // The smoothed path runs through sample midpoints. It is painted in short time slices, each at
+    // its own age. A single gradient between the oldest and newest points cannot follow a path that
+    // doubles back, so parts of a scribble would vanish and reappear as the head moved.
+    const slices: { trace: (g: CanvasRenderingContext2D) => void; alpha: number }[] = []
     for (let first = 0; first < this.trail.length;) {
       let end = first + 1
       while (end < this.trail.length && this.trail[end].stroke === this.trail[first].stroke) end++
@@ -88,25 +120,54 @@ export class LaserTool implements Tool {
         const u = clamp((cutoff - a.t) / Math.max(1e-6, b.t - a.t), 0, 1)
         points[0] = { ...a, x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, t: cutoff }
       }
-      const a = points[0], b = points.at(-1)!
-      const fade = (t: number): number => 1 - Math.pow(clamp((now - t) / LaserTool.LIFE, 0, 1), 3)
-      // One smoothed path per contact avoids dark beads at overlapping segment caps.
-      ctx.beginPath(); ctx.moveTo(a.x, a.y)
-      for (let i = 1; i < points.length; i++) {
-        const previous = points[i - 1], point = points[i]
-        ctx.quadraticCurveTo(previous.x, previous.y, (previous.x + point.x) / 2, (previous.y + point.y) / 2)
+      const n = points.length
+      const mid = (k: number): [number, number] => [(points[k - 1].x + points[k].x) / 2, (points[k - 1].y + points[k].y) / 2]
+      for (let s = 1; s < n;) {
+        let e = s
+        while (e < n - 1 && points[e].t - points[s - 1].t < LaserTool.SLICE) e++
+        const from = s, to = e
+        slices.push({ alpha: fade((points[from - 1].t + points[to].t) / 2), trace: g => {
+          const [x0, y0] = from === 1 ? [points[0].x, points[0].y] : mid(from - 1)
+          g.beginPath(); g.moveTo(x0, y0)
+          for (let k = from; k <= to; k++) { const [x, y] = mid(k); g.quadraticCurveTo(points[k - 1].x, points[k - 1].y, x, y) }
+          if (to === n - 1) g.lineTo(points[n - 1].x, points[n - 1].y) // no lag behind the actual pointer/lift endpoint
+        } })
+        s = e + 1
       }
-      ctx.lineTo(b.x, b.y) // no lag behind the actual pointer/lift endpoint
-      const colour = (rgb: string): string | CanvasGradient => {
-        if (Math.hypot(b.x - a.x, b.y - a.y) < 1) return `rgba(${rgb},${fade(b.t)})`
-        const gradient = ctx.createLinearGradient(a.x, a.y, b.x, b.y)
-        gradient.addColorStop(0, `rgba(${rgb},${fade(a.t)})`)
-        gradient.addColorStop(1, `rgba(${rgb},${fade(b.t)})`)
-        return gradient
-      }
-      ctx.strokeStyle = colour('255,48,48'); ctx.lineWidth = 4; ctx.globalAlpha = .12; ctx.stroke()
-      ctx.strokeStyle = colour('255,36,36'); ctx.lineWidth = 1.8; ctx.globalAlpha = .95; ctx.stroke()
     }
+    const g = this.layerFor(ctx), transform = ctx.getTransform?.()
+    if (g === ctx || !transform) {
+      // Canvas-less contexts (unit tests) get plain strokes with the same geometry and opacity.
+      ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'
+      for (const [colour, width, opacity] of LaserTool.PASSES) for (const slice of slices) {
+        slice.trace(ctx); ctx.strokeStyle = colour; ctx.lineWidth = width; ctx.globalAlpha = opacity * slice.alpha; ctx.stroke()
+      }
+      ctx.restore()
+    } else if (slices.length) {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+      for (const p of this.trail) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y) }
+      const a = transform.transformPoint({ x: minX - 4, y: minY - 4 }), b = transform.transformPoint({ x: maxX + 4, y: maxY + 4 })
+      const x = Math.max(0, Math.floor(Math.min(a.x, b.x))), y = Math.max(0, Math.floor(Math.min(a.y, b.y)))
+      const w = Math.min(g.canvas.width, Math.ceil(Math.max(a.x, b.x))) - x, h = Math.min(g.canvas.height, Math.ceil(Math.max(a.y, b.y))) - y
+      if (w > 0 && h > 0) {
+        // Opacity is painted as brightness on opaque black (core in red, halo in green) with `lighten`,
+        // i.e. a per-pixel maximum. Newer slices are always more opaque, so they win at joins and
+        // crossings without the dark beads of stacked translucency or the rings of erase-and-redraw.
+        g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.fillStyle = '#000'; g.fillRect(x, y, w, h)
+        g.setTransform(transform); g.save()
+        g.lineCap = 'round'; g.lineJoin = 'round'; g.globalCompositeOperation = 'lighten'
+        for (const [, width, opacity, channel] of LaserTool.PASSES) for (const slice of slices) {
+          const v = Math.round(255 * opacity * slice.alpha)
+          slice.trace(g); g.lineWidth = width; g.strokeStyle = channel === 0 ? `rgb(${v},0,0)` : `rgb(0,${v},0)`; g.stroke()
+        }
+        g.restore()
+        ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0)
+        // Halo first, then core: each SVG colour matrix turns one channel into alpha of the laser red.
+        for (const id of [LaserTool.filter(1), LaserTool.filter(0)]) { ctx.filter = `url(#${id})`; ctx.drawImage(g.canvas, x, y, w, h, x, y, w, h) }
+        ctx.restore()
+      }
+    }
+    ctx.save()
     if (this.head) {
       const fade = this.headLive ? 1 : clamp(1 - (now - this.headGone) / LaserTool.HEAD_FADE, 0, 1)
       if (fade <= 0) this.head = null

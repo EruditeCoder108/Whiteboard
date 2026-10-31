@@ -61,4 +61,6 @@ export interface Tool {
   /** far enough along that a stray second finger must not cancel it */
   underway(): boolean
   paintOverlay?(ctx: CanvasRenderingContext2D): void
+  /** where the pointer is predicted to be next frame (drawn ahead, never committed) */
+  predict?(pts: Ptr[]): void
 }

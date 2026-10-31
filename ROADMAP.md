@@ -1,5 +1,8 @@
 # Floating Whiteboard product roadmap
 
+> The overall direction (library, AI lecture notes, voice agent, gesture ring) is in
+> [MASTER-PLAN.md](MASTER-PLAN.md), written 2026-10-31. This file stays the detailed editor plan.
+
 Planning date: 2026-10-06. Baseline: Electron app 1.1.0.
 Status: Phases 1 and 2 complete; native agent foundation delivered in 1.3.0; recording/replay delivered early in 1.4.0. Remaining work in Phases 3–6 is planned.
 

@@ -2,17 +2,19 @@ import { getModel, labDuration, EXPLORE_REVEAL } from './science/models'
 import { isShowcase } from './science/showcase-models'
 import { effect } from '@preact/signals'
 import { Doc, History, opBounds, restyleItems } from './doc'
-import type { EditOp } from './doc'
+import type { EditOp, HistoryState } from './doc'
 import { clamp, inflate, lerp, rectsHit, unionRect } from './geometry'
 import { cloneItem, itemBounds, paintItem, hitObject, translateItem } from './items'
 import { fitTextHeight, textAlign, textColor } from './text'
 import { transformItem } from './transforms'
-import { parseBoard, serializeBoard, MAX_TEXT_LENGTH, itemFromJson } from './serialize'
+import { parseBoard, serializePages, MAX_TEXT_LENGTH, itemFromJson } from './serialize'
 import type { ParsedBoard } from './serialize'
 import { EraserTool, HandTool, LaserTool, PenTool, SelectTool, ShapeTool, TextTool } from './tools'
 import type { Tool, ToolHost } from './tool-types'
 import { newId } from './types'
-import type { Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, LabItem } from './types'
+import type { Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, LabItem, ImageItem, GraphItem } from './types'
+import { onImageReady, preloadImages } from './media'
+import { Instruments } from './instruments'
 import { MAX_ZOOM, MIN_ZOOM, fitRect, panBy as panView, toWorld, zoomAboutCentre, zoomAt } from './view'
 import { S, SHAPE_TOOLS, activeTool, isDarkBg, showToast } from '@/state/store'
 import type { ToolName } from '@/state/store'
@@ -32,6 +34,7 @@ export class Board implements ToolHost {
   readonly doc = new Doc()
   readonly history = new History(this.doc)
   readonly labs = new LabRuntime()
+  readonly instruments: Instruments = new Instruments(this, () => this.viewCentre())
   private labDraft = new Map<string, LabItem>()
   view: View = { x: -80, y: -80, zoom: 1 }
   selection: Item[] = []
@@ -40,6 +43,12 @@ export class Board implements ToolHost {
   onChange: (() => void) | null = null
   onViewChange: (() => void) | null = null
   onEdit: ((label: string, timing?: InkTiming) => void) | null = null
+  /** before the visible page is replaced (recording cannot span pages) */
+  onPageChange: (() => void) | null = null
+
+  /** Pages other than the visible one keep their items, camera and undo history here. */
+  private pages: { items: Item[]; view: View; history: HistoryState }[] = [{ items: [], view: this.view, history: { undo: [], redo: [] } }]
+  private pageIndex = 0
 
   private stage!: HTMLElement
   private boardCv!: HTMLCanvasElement
@@ -105,6 +114,7 @@ export class Board implements ToolHost {
     // APIs (Zoom, Teams, OBS, Windows capture) cannot see, so the board would appear black when shared.
     this.lctx = live.getContext('2d', { alpha: true })!
 
+    onImageReady(() => this.refresh(null))
     const ro = new ResizeObserver(() => this.resize())
     ro.observe(stage)
     this.resize()
@@ -252,7 +262,7 @@ export class Board implements ToolHost {
     } else {
       this.refresh(itemBounds(it))
     }
-    this.afterEdit(it.t === 's' ? (it.m ? 'Draw highlighter' : 'Draw pen stroke') : 'Draw shape', timing)
+    this.afterEdit(it.t === 's' ? (it.m ? 'Draw highlighter' : 'Draw pen stroke') : it.t === 'i' ? (it.latex ? 'Insert equation' : 'Insert picture') : it.t === 'g' ? 'Insert graph' : 'Draw shape', timing)
   }
 
   private afterEdit(label = 'Edit objects', timing?: InkTiming): void {
@@ -501,6 +511,7 @@ export class Board implements ToolHost {
     this.currentTool().paintOverlay?.(ctx)
     const laser = this.tools.laser
     if (laser !== this.currentTool() && laser.animating) laser.paintOverlay?.(ctx)
+    if (this.instruments.active) this.withWorld(ctx, () => this.instruments.paint(ctx))
   }
 
   // ── commands ────────────────────────────────────────────────────────────────
@@ -680,6 +691,7 @@ export class Board implements ToolHost {
   }
 
   private copied: Item[] = []
+  get hasCopy(): boolean { return this.copied.length > 0 }
   private copiedStyle: Partial<TextStyle & Pick<ShapeItem, 'c' | 'w' | 'fill' | 'dash' | 'radius' | 'opacity'>> | null = null
 
   copySelection(): void {
@@ -726,7 +738,10 @@ export class Board implements ToolHost {
   editTextAt(wx: number, wy: number): void {
     const it = [...this.doc.items].reverse().find(it => hitObject(it, wx, wy, 6 / this.view.zoom))
     if (it && (it.t === 't' || it.t === 'h')) this.editText(it)
+    else if (it && !it.locked && ((it.t === 'i' && it.latex !== undefined) || it.t === 'g')) this.onEditMedia?.(it)
   }
+  /** opens the equation or graph editor (wired by the UI) */
+  onEditMedia: ((it: ImageItem | GraphItem) => void) | null = null
 
   updateTextDraft(text: string): void {
     const draft = S.editing.value
@@ -822,34 +837,186 @@ export class Board implements ToolHost {
     if (annotate) { this.setTool('pen'); scienceInspector.value = false; showToast('Frame frozen · draw your explanation · select the lab to continue') }
   }
 
-  serialize(): string {
+  // ── pages ────────────────────────────────────────────────────────────────────
+  get page(): number { return this.pageIndex }
+  get pageCount(): number { return this.pages.length }
+
+  private syncPages(): void { S.page.value = this.pageIndex; S.pageCount.value = this.pages.length }
+
+  private stashPage(): void {
+    this.pages[this.pageIndex] = { items: this.doc.items, view: this.view, history: this.history.take() }
+  }
+
+  private showPage(i: number): void {
+    const pg = this.pages[i]
+    this.pageIndex = i
+    this.labs.clear(); this.labDraft.clear(); activeLabId.value = null
+    this.doc.replaceAll(pg.items)
+    this.history.restore(pg.history)
+    this.setSelection([])
+    this.setView(pg.view)
+    S.canUndo.value = this.history.canUndo; S.canRedo.value = this.history.canRedo
+    this.refresh(null)
+    this.syncPages()
+  }
+
+  /** False while a gesture is in progress; pages change only between gestures. */
+  private leavePage(): boolean {
+    if (this.currentTool().underway()) return false
+    this.commitText()
+    this.onPageChange?.()
+    this.stashPage()
+    return true
+  }
+
+  goToPage(i: number): boolean {
+    if (i === this.pageIndex || i < 0 || i >= this.pages.length || !this.leavePage()) return false
+    this.showPage(i)
+    this.onChange?.()
+    return true
+  }
+
+  addPage(items: Item[] = [], view?: View, at = this.pageIndex + 1): void {
+    if (!this.leavePage()) return
+    this.pages.splice(at, 0, { items, view: view ?? { x: -80, y: -80, zoom: 1 }, history: { undo: [], redo: [] } })
+    this.showPage(at)
+    this.onChange?.()
+  }
+
+  deletePage(): void {
+    if (this.pages.length === 1) return this.clearBoard()
+    if (!this.leavePage()) return
+    this.pages.splice(this.pageIndex, 1)
+    this.showPage(Math.min(this.pageIndex, this.pages.length - 1))
+    this.onChange?.()
+    showToast('Page deleted')
+  }
+
+  /** Add items to the visible page as one undoable edit. */
+  addPageContent(items: Item[]): void {
+    const before = this.doc.snapshot()
+    this.doc.replaceAll([...this.doc.items, ...items])
+    this.commit(this.doc.diff(before), 'Insert content')
+    this.refresh(null)
+  }
+
+  /** Fit the page's content to the window width (reading a document page). */
+  fitPage(): void {
+    const b = this.doc.bounds()
+    if (!b) return
+    const zoom = clamp((this.w - 80) / (b[2] - b[0]), MIN_ZOOM, MAX_ZOOM)
+    this.setView({ x: b[0] - (this.w / zoom - (b[2] - b[0])) / 2, y: b[1] - 40 / zoom, zoom })
+  }
+
+  /** Every page, with the visible one (and any open text edit) taken live. */
+  pageData(): { items: Item[]; view: View }[] {
     const draft = S.editing.value
     const items = draft ? (draft.isNew ? [...this.doc.items, draft.item] : this.doc.items.map(it => it.id === draft.item.id ? draft.item : it)) : this.doc.items
-    return serializeBoard(items, this.view)
+    return this.pages.map((pg, i) => i === this.pageIndex ? { items, view: this.view } : { items: pg.items, view: pg.view })
   }
+
+  /** Portable JSON with pictures embedded. */
+  serialize(): string { return serializePages(this.pageData(), this.pageIndex, true).json }
+
+  /** Autosave JSON; pictures are returned separately so each is written to disk once. */
+  serializeForStore(): { json: string; assets: Record<string, string> } { return serializePages(this.pageData(), this.pageIndex, false) }
 
   load(json: string, opts: { undoable: boolean }): ParsedBoard | null {
     const parsed = parseBoard(json)
     if (!parsed) return null
     if (S.editing.value) this.cancelText()
     this.labs.clear(); this.labDraft.clear(); activeLabId.value = null
+    if (!opts.undoable || (parsed.pages && parsed.pages.length > 1)) {
+      // Multi-page files replace the page set; that is not an undoable edit.
+      const fallback = parsed.view ?? this.view
+      this.pages = (parsed.pages ?? [{ items: parsed.items, view: parsed.view }]).map(pg => ({ items: pg.items, view: pg.view ?? fallback, history: { undo: [], redo: [] } }))
+      this.history.take()
+      this.showPage(parsed.page ?? 0)
+      return parsed
+    }
     const before = this.doc.snapshot()
     this.doc.replaceAll(parsed.items)
     this.setSelection([])
-    if (opts.undoable) {
-      this.commit(this.doc.diff(before))
-    } else {
-      this.history.clear()
-      if (parsed.view) this.setView(parsed.view)
-      S.canUndo.value = S.canRedo.value = false
-    }
+    this.commit(this.doc.diff(before))
     this.refresh(null)
     return parsed
   }
 
+  // ── pictures, equations and graphs ──────────────────────────────────────────
+  /** World-space centre of the visible board. */
+  viewCentre(): [number, number] { return [this.view.x + this.w / 2 / this.view.zoom, this.view.y + this.h / 2 / this.view.zoom] }
+
+  insertImage(src: string, width: number, height: number, opts: { at?: [number, number]; latex?: string; color?: string; scale?: number } = {}): ImageItem {
+    this.commitText()
+    const zoom = this.view.zoom
+    // Fit within most of the visible board, never enlarging beyond the source size.
+    const k = Math.min(opts.scale ?? 1, this.w * .7 / zoom / width, this.h * .7 / zoom / height)
+    const w = width * k, h = height * k
+    const [cx, cy] = opts.at ?? this.viewCentre()
+    const it: ImageItem = { t: 'i', id: newId(), c: opts.color ?? '#111827', w: 1, p: [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2], src, aspect: width / height }
+    if (opts.latex !== undefined) it.latex = opts.latex
+    this.setTool('select')
+    this.commitAdd(it)
+    this.setSelection([it])
+    return it
+  }
+
+  /** Replace an equation in place, keeping its height and position. */
+  replaceEquation(it: ImageItem, src: string, latex: string, width: number, height: number): void {
+    const current = this.doc.items.find(x => x.id === it.id)
+    if (!current || current.t !== 'i') return
+    const h = current.p[3] - current.p[1], w = h * width / height
+    this.editSelectionItems([current], () => ({ ...current, src, latex, aspect: width / height, p: [current.p[0], current.p[1], current.p[0] + w, current.p[3]] }), 'Edit equation')
+  }
+
+  insertGraph(fns: string[], xr: [number, number] = [-10, 10], yr: [number, number] = [-6, 6]): GraphItem {
+    this.commitText()
+    const [cx, cy] = this.viewCentre(), w = 560, h = 400
+    const it: GraphItem = { t: 'g', id: newId(), c: '#111827', w: 1, p: [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2], fns, xr, yr }
+    this.setTool('select')
+    this.commitAdd(it)
+    this.setSelection([it])
+    return it
+  }
+
+  updateGraph(it: GraphItem, patch: Partial<Pick<GraphItem, 'fns' | 'xr' | 'yr'>>): void {
+    const current = this.doc.items.find(x => x.id === it.id)
+    if (!current || current.t !== 'g') return
+    this.editSelectionItems([current], () => ({ ...current, ...patch }), 'Edit graph')
+  }
+
+  private editSelectionItems(targets: Item[], edit: (it: Item) => Item, label: string): void {
+    const before = this.doc.snapshot()
+    const set = new Set(targets)
+    const map = new Map<Item, Item>()
+    this.doc.replaceAll(this.doc.items.map(it => { if (!set.has(it)) return it; const next = edit(it); map.set(it, next); return next }))
+    this.setSelection(this.selection.map(it => map.get(it) ?? it))
+    const op = this.doc.diff(before)
+    if (!op) return
+    this.history.push(op)
+    this.refresh(opBounds(op))
+    this.afterEdit(label)
+  }
+
+  /** PNG of each page, pictures decoded first; for PDF export. */
+  async exportPages(bg: string): Promise<ArrayBuffer[]> {
+    const out: ArrayBuffer[] = []
+    for (const pg of this.pageData()) {
+      await preloadImages(pg.items)
+      const png = await this.renderPng(pg.items, bg, true, 2)
+      if (png) out.push(png)
+    }
+    return out
+  }
+
   /** Render everything (cropped to its bounds) to a PNG. */
   async exportPng(bg: string, bgOpaque: boolean, maxScale = 2): Promise<ArrayBuffer | null> {
-    const b = this.doc.bounds()
+    await preloadImages(this.doc.items)
+    return this.renderPng(this.doc.items, bg, bgOpaque, maxScale)
+  }
+
+  private async renderPng(items: Item[], bg: string, bgOpaque: boolean, maxScale: number): Promise<ArrayBuffer | null> {
+    const b = this.doc.bounds(items)
     if (!b) return null
     const pad = 48
     const w = b[2] - b[0] + pad * 2
@@ -865,7 +1032,7 @@ export class Board implements ToolHost {
     }
     ctx.scale(scale, scale)
     ctx.translate(-b[0] + pad, -b[1] + pad)
-    for (const it of this.doc.items) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
+    for (const it of items) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
     const blob = await new Promise<Blob | null>((res) => cv.toBlob(res, 'image/png'))
     return blob ? await blob.arrayBuffer() : null
   }

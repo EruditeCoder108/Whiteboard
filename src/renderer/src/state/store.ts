@@ -6,7 +6,7 @@ import type { SaveStatus } from './autosave'
 export type ToolName = 'select' | 'lasso' | 'text' | 'sticky' | 'hand' | 'pen' | 'marker' | 'eraser' | 'laser' | ShapeKind
 export type EraserMode = 'stroke' | 'pixel'
 export type GridMode = 'none' | 'dots' | 'lines'
-export type PopoverName = 'props' | 'shapes' | 'menu' | 'settings' | 'help' | 'recovery' | 'agent' | 'replay' | 'science' | null
+export type PopoverName = 'props' | 'shapes' | 'menu' | 'settings' | 'help' | 'recovery' | 'agent' | 'replay' | 'science' | 'insert' | 'equation' | 'graph' | 'maths' | 'present' | null
 
 export const SHAPE_TOOLS: ShapeKind[] = ['line', 'arrow', 'rect', 'ellipse', 'diamond', 'triangle']
 export const isShapeTool = (t: ToolName): t is ShapeKind => (SHAPE_TOOLS as string[]).includes(t)
@@ -67,6 +67,8 @@ export const S = {
   selection: signal<Item[]>([]),
   editing: signal<{ item: EditableItem; isNew: boolean } | null>(null),
   viewRevision: signal(0),
+  page: signal(0),
+  pageCount: signal(1),
   documentRevision: signal(0),
   gestureActive: signal(false),
   replaying: signal(false),

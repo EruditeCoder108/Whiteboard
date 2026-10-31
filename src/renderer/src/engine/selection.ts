@@ -2,6 +2,7 @@ import { boundsOfPoints, rectContains, rectsHit, segDistSq } from './geometry'
 import { itemBounds, rotatePoint, shapePolylines } from './items'
 import { pointInPolygon } from './transforms'
 import type { Item, Rect } from './types'
+import { isBox } from './types'
 
 export type ResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
 export type SelectionHandle = ResizeHandle | 'rotate'
@@ -79,7 +80,7 @@ export function itemInLasso(item: Item, polygon: [number, number][]): boolean {
     }
   }
   // A lasso entirely inside a closed object selects that object as well.
-  const closed = item.t === 't' || item.t === 'l' || (item.t === 'h' && item.k !== 'line' && item.k !== 'arrow')
+  const closed = isBox(item) || (item.t === 'h' && item.k !== 'line' && item.k !== 'arrow')
   return closed && paths.some(path => polygon.some(([x, y]) => pointInPolygon(x, y, path)))
 }
 

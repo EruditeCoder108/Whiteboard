@@ -16,6 +16,9 @@ import { AgentPanel } from '@/ui/AgentPanel'
 import { replay } from '@/state/replay'
 import { ReplayPanel, ReplayCanvas, ReplayControls, RecordingControls } from '@/ui/Replay'
 import { ScienceUI } from '@/ui/science/Science'
+import { PageBar, ImportStatus } from '@/ui/Insert'
+import { CurtainLayer, SpotlightLayer, TimerWidget } from '@/ui/Present'
+import { editEquation, editGraph, insertFiles } from '@/state/insert'
 
 const agentForPanel = new BoardAgent(board, replay)
 
@@ -51,9 +54,21 @@ export function App(): JSX.Element {
     let active = true
     let saveBoardOnClose = false
     let settings: ReturnType<typeof startPersisting> | undefined
+    // Pictures are sent once per session; the main process writes each one to disk once.
+    const savedAssets = new Set<string>()
+    let pendingAssets: Record<string, string> = {}
     const autosave = new Autosave(
-      () => board.serialize(),
-      (json) => window.api.store.saveBoard(json),
+      () => {
+        const { json, assets } = board.serializeForStore()
+        pendingAssets = Object.fromEntries(Object.entries(assets).filter(([key]) => !savedAssets.has(key)))
+        return json
+      },
+      async (json) => {
+        const sent = pendingAssets
+        const result = await window.api.store.saveBoard(json, sent)
+        if (result.ok) for (const key of Object.keys(sent)) savedAssets.add(key)
+        return result
+      },
       (status, error) => {
         if (!active) return
         S.saveStatus.value = status
@@ -67,7 +82,19 @@ export function App(): JSX.Element {
       autosave.markDirty()
     }
     board.onEdit = (label, timing) => replay.capture(label, timing)
+    board.onEditMedia = it => it.t === 'g' ? editGraph(it) : editEquation(it)
+    const onDragOver = (e: DragEvent): void => { if (e.dataTransfer?.types.includes('Files')) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' } }
+    const onDrop = (e: DragEvent): void => {
+      const files = [...e.dataTransfer?.files ?? []]
+      if (!files.length) return
+      e.preventDefault()
+      const r = stage.getBoundingClientRect()
+      void insertFiles(files, board.toWorld(e.clientX - r.left, e.clientY - r.top))
+    }
+    stage.addEventListener('dragover', onDragOver)
+    stage.addEventListener('drop', onDrop)
     board.onViewChange = () => { board.onChange?.(); replay.capture() }
+    board.onPageChange = () => { if (replay.recording.value) { replay.stop(); showToast('Recording saved · a recording covers one page') } }
 
     const load = async (): Promise<void> => {
       try {
@@ -148,7 +175,7 @@ export function App(): JSX.Element {
       active = false
       autosave.dispose()
       settings?.dispose()
-      board.onChange = board.onViewChange = board.onEdit = null
+      board.onChange = board.onViewChange = board.onEdit = board.onPageChange = null
       replay.dispose()
       S.retrySave.value = null
       unmount()
@@ -157,6 +184,8 @@ export function App(): JSX.Element {
       offAgent()
       offs.forEach((f) => f())
       document.removeEventListener('pointerdown', onDocDown, true)
+      stage.removeEventListener('dragover', onDragOver)
+      stage.removeEventListener('drop', onDrop)
     }
   }, [])
 
@@ -176,6 +205,8 @@ export function App(): JSX.Element {
         <canvas ref={liveRef} class="cv" />
       </div>
       <ReplayCanvas />
+      <SpotlightLayer />
+      <CurtainLayer />
 
       {!hidden && (
         <>
@@ -183,6 +214,7 @@ export function App(): JSX.Element {
           <Dock />
           <HistoryBar />
           <ZoomBar />
+          <PageBar />
           <Popovers />
           <AgentPanel agent={agentForPanel} />
           <ReplayPanel />
@@ -194,6 +226,8 @@ export function App(): JSX.Element {
       {!S.passthrough.value && <><ReplayControls /><RecordingControls /></>}
       {!S.passthrough.value && <Editor />}
       <Radial />
+      <TimerWidget />
+      <ImportStatus />
       <Toast />
       {(!S.ready.value || S.closing.value) && <div class="loading-cover" role="status">
         <span>{S.closing.value ? 'Saving before closing…' : S.saveError.value ? 'Could not load your board' : 'Loading your board…'}</span>

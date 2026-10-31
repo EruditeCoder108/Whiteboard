@@ -89,9 +89,20 @@ export class Doc {
   }
 }
 
+export interface HistoryState { undo: EditOp[]; redo: EditOp[] }
+
 export class History {
   private undoStack: EditOp[] = []
   private redoStack: EditOp[] = []
+
+  /** Detach this page's stacks (page switching keeps a separate history per page). */
+  take(): HistoryState {
+    const state = { undo: this.undoStack, redo: this.redoStack }
+    this.undoStack = []; this.redoStack = []
+    return state
+  }
+  restore(state: HistoryState): void { this.undoStack = state.undo; this.redoStack = state.redo }
+
   constructor(
     private doc: Doc,
     private limit = 500

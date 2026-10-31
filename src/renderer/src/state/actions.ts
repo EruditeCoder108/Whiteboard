@@ -1,6 +1,7 @@
 import { board } from '@/engine/instance'
 import { radial } from '@/engine/radial'
 import type { RadialPick } from '@/engine/radial'
+import { clipboardImage } from './insert'
 import { S, luminance, isDarkBg, showToast, styleKey, SIZE_RANGE } from './store'
 import type { ToolName } from './store'
 import { clamp } from '@/engine/geometry'
@@ -131,6 +132,7 @@ export const actions = {
       const png = await board.exportPng(S.bgColor.value, S.bgAlpha.value > 0)
       if (!png) return showToast('Nothing to copy yet — the board is empty')
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': new Blob([png], { type: 'image/png' }) })])
+      clipboardImage.value = true
       showToast('Image copied to the clipboard')
     } catch {
       showToast('Could not copy the image')

@@ -1,7 +1,7 @@
 import {
   Crosshair, Eraser, Eye, EyeOff, Hand, Highlighter, Menu, Minimize2,
   MousePointer2, MousePointerClick, Pen, Pin, PinOff, Redo2, Scan, SlidersHorizontal, Undo2, X, Minus, Plus,
-  Slash, ArrowUpRight, Square, Circle, Maximize2, Diamond, Triangle, Type, StickyNote, Lasso, Sparkles, Clapperboard, FlaskConical
+  Slash, ArrowUpRight, Square, Circle, Maximize2, Diamond, Triangle, Type, StickyNote, Lasso, Sparkles, Clapperboard, FlaskConical, ImagePlus, Ruler, Presentation
 } from 'lucide-preact'
 import type { JSX } from 'preact'
 import { board } from '@/engine/instance'
@@ -10,10 +10,12 @@ import { S, activeTool, currentColor, isShapeTool } from '@/state/store'
 import type { ToolName } from '@/state/store'
 import { Btn, Sep } from './kit'
 import { PropsPopover, ShapesPopover } from './Popovers'
+import { MathsPopover } from './Present'
+import { instrumentsShown } from '@/engine/instruments'
 
 const SHAPE_ICON = { line: Slash, arrow: ArrowUpRight, rect: Square, ellipse: Circle, diamond: Diamond, triangle: Triangle }
 
-function toggle(name: 'props' | 'shapes' | 'menu' | 'settings' | 'agent' | 'replay' | 'science'): void {
+function toggle(name: 'props' | 'shapes' | 'menu' | 'settings' | 'agent' | 'replay' | 'science' | 'insert' | 'maths' | 'present'): void {
   S.popover.value = S.popover.value === name ? null : name
 }
 
@@ -23,6 +25,8 @@ export function TopBar(): JSX.Element {
       <Btn icon={Menu} title="Menu" keep onClick={() => toggle('menu')} active={S.popover.value === 'menu'} />
       <div class="grow" />
       <SaveIndicator />
+      <Btn icon={ImagePlus} title="Insert picture, PDF, equation, graph or page" keep onClick={() => toggle('insert')} active={['insert', 'equation', 'graph'].includes(S.popover.value ?? '')} />
+      <Btn icon={Presentation} title="Present: spotlight, curtain, timer" keep onClick={() => toggle('present')} active={S.popover.value === 'present'} />
       <Btn icon={FlaskConical} title="Science labs" keep onClick={() => toggle('science')} active={S.popover.value === 'science'} />
       <Btn icon={Clapperboard} title="Record and replay" keep onClick={() => toggle('replay')} active={S.popover.value === 'replay' || S.replaying.value} />
       <Btn icon={Sparkles} title="Agent tools and assistant" keep onClick={() => toggle('agent')} active={S.popover.value === 'agent'} />
@@ -88,6 +92,10 @@ export function Dock(): JSX.Element {
         <ToolBtn tool="text" icon={Type} title="Text  (T)" />
         <ToolBtn tool="sticky" icon={StickyNote} title="Sticky note  (N)" />
         <ToolBtn tool="laser" icon={Crosshair} title="Laser pointer  (K)" />
+        <div class="anchor">
+          <Btn icon={Ruler} title="Maths: ruler, set square, protractor, compass, equations, graphs" keep active={S.popover.value === 'maths' || instrumentsShown.value.length > 0} onClick={() => toggle('maths')} />
+          {S.popover.value === 'maths' && <MathsPopover />}
+        </div>
         <Sep />
         <div class="anchor">
           <button

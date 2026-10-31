@@ -8,6 +8,9 @@ import {
   BACKGROUNDS, PALETTE, S, SIZE_RANGE, SHAPE_TOOLS, activeTool, currentColor, currentSize, styleKey
 } from '@/state/store'
 import type { ShapeKind } from '@/engine/types'
+import { InsertPopover, EquationEditor, GraphEditor } from './Insert'
+import { PresentPopover } from './Present'
+import { equationTarget, graphTarget, exportPdf } from '@/state/insert'
 import { Btn, MenuItem, Row, Segmented, Sep, Slider, Swatch, Switch } from './kit'
 
 const TOOL_TITLE: Record<string, string> = {
@@ -141,6 +144,7 @@ export function MenuPopover(): JSX.Element {
     <div class="popover panel ui menu" data-popover-keep="">
       <MenuItem icon={Download} label="Save as PNG" hint="Ctrl+S" onClick={close(actions.savePng)} />
       <MenuItem icon={Copy} label="Copy image" hint="Ctrl+Shift+C" onClick={close(actions.copyImage)} />
+      <MenuItem icon={Download} label="Export all pages as PDF" onClick={close(() => void exportPdf())} />
       <Sep />
       <MenuItem icon={FolderOpen} label="Open board…" hint="Ctrl+O" onClick={close(actions.openBoard)} />
       <MenuItem icon={Download} label="Save board file…" hint="Ctrl+Shift+S" onClick={close(actions.saveBoardFile)} />
@@ -268,6 +272,10 @@ export function Popovers(): JSX.Element {
       {p === 'settings' && <SettingsPopover />}
       {p === 'help' && <HelpPopover />}
       {p === 'recovery' && <RecoveryPopover />}
+      {p === 'insert' && <InsertPopover />}
+      {p === 'present' && <PresentPopover />}
+      {p === 'equation' && <EquationEditor key={equationTarget.value?.id ?? 'new'} />}
+      {p === 'graph' && <GraphEditor key={graphTarget.value?.id ?? 'new'} />}
     </>
   )
 }

@@ -5,15 +5,15 @@ import type { Ptr } from '@/engine/tool-types'
 function harness() {
   let now = 0
   const laser = new LaserTool({ requestOverlay() {} }, () => now)
-  const segments: { points: number[][]; width: number; alpha: number }[] = []
+  const segments: { points: number[][]; width: number; alpha: number; erase: boolean }[] = []
   let path: number[][] = []
   const ctx = {
-    lineWidth: 0, globalAlpha: 1, lineCap: '', lineJoin: '', strokeStyle: '', fillStyle: '',
+    lineWidth: 0, globalAlpha: 1, globalCompositeOperation: 'source-over', lineCap: '', lineJoin: '', strokeStyle: '', fillStyle: '',
     save() {}, restore() {}, beginPath() { path = [] },
     moveTo(x: number, y: number) { path.push([x, y]) }, lineTo(x: number, y: number) { path.push([x, y]) },
     quadraticCurveTo(cx: number, cy: number, x: number, y: number) { path.push([cx, cy], [x, y]) },
     createLinearGradient() { return { addColorStop() {} } },
-    stroke(this: { lineWidth: number; globalAlpha: number }) { segments.push({ points: path.slice(), width: this.lineWidth, alpha: this.globalAlpha }) },
+    stroke(this: { lineWidth: number; globalAlpha: number; globalCompositeOperation: string }) { segments.push({ points: path.slice(), width: this.lineWidth, alpha: this.globalAlpha, erase: this.globalCompositeOperation === 'destination-out' }) },
     arc() {}, fill() {}
   } as unknown as CanvasRenderingContext2D
   const point = (x: number, y: number, type: Ptr['type'] = 'touch'): Ptr => ({ id: 1, type, x, y, wx: x, wy: y, t: now, pressure: .5, buttons: 1, shift: false, alt: false, ctrl: false })
@@ -25,7 +25,7 @@ describe('laser pointer', () => {
     const h = harness()
     h.laser.down(h.point(10, 10)); h.time(.1); h.laser.up(h.point(40, 10))
     h.time(.2); h.laser.down(h.point(400, 10)); h.time(.3); h.laser.up(h.point(430, 10)); h.paint()
-    expect(h.segments.filter(s => s.width === 1.8).map(s => [s.points[0], s.points.at(-1)])).toEqual([[[10, 10], [40, 10]], [[400, 10], [430, 10]]])
+    expect(h.segments.filter(s => s.width === 1.8 && !s.erase).map(s => [s.points[0], s.points.at(-1)])).toEqual([[[10, 10], [40, 10]], [[400, 10], [430, 10]]])
   })
   it('retains the final lifted endpoint after a fast drag', () => {
     const h = harness()
@@ -37,11 +37,24 @@ describe('laser pointer', () => {
     h.laser.down(h.point(0, 0))
     for (let i = 1; i <= 1200; i++) { h.time(i / 2000); h.laser.move(h.point(i, i % 2)) }
     h.paint()
-    const core = h.segments.filter(s => s.width === 1.8)
-    expect(core).toHaveLength(1) // continuous painting prevents sample-density-dependent beads
+    const core = h.segments.filter(s => s.width === 1.8 && !s.erase)
+    expect(core.length).toBeGreaterThan(1)
+    core.slice(1).forEach((slice, i) => expect(slice.points[0]).toEqual(core[i].points.at(-1))) // slices join exactly
     expect(core[0].points[0]).toEqual([0, 0]); expect(core.at(-1)?.points.at(-1)).toEqual([1200, 0])
     expect(core.at(-1)?.alpha).toBeGreaterThan(.94)
     expect(h.segments.every(s => s.width <= 4)).toBe(true)
+  })
+  it('keeps every recent part of a back-and-forth scribble visible', () => {
+    const h = harness()
+    h.laser.down(h.point(0, 0))
+    for (let i = 1; i <= 240; i++) { h.time(i / 200); h.laser.move(h.point(i % 40 < 20 ? (i % 20) * 15 : 300 - (i % 20) * 15, 0)) }
+    h.time(1.4); h.paint()
+    const core = h.segments.filter(s => s.width === 1.8 && !s.erase)
+    expect(core.length).toBeGreaterThan(10)
+    // Opacity follows age along the path, never the straight-line distance from the oldest point.
+    core.slice(1).forEach((slice, i) => expect(slice.alpha).toBeGreaterThanOrEqual(core[i].alpha))
+    expect(core.slice(-10).every(s => s.alpha > .85)).toBe(true)
+    expect(Math.max(...core.slice(-10).flatMap(s => s.points.map(p => p[0]))) - Math.min(...core.slice(-10).flatMap(s => s.points.map(p => p[0])))).toBeGreaterThan(250)
   })
   it('interpolates expiry at the tail and finishes animation after touch release', () => {
     const h = harness()
@@ -54,7 +67,7 @@ describe('laser pointer', () => {
     const h = harness()
     h.laser.hover(h.point(0, 0, 'mouse')); h.time(.1); h.laser.hover(h.point(30, 0, 'mouse'))
     h.laser.leave(); h.time(.2); h.laser.hover(h.point(300, 0, 'mouse')); h.time(.3); h.laser.hover(h.point(330, 0, 'mouse')); h.paint()
-    expect(h.segments.filter(s => s.width === 1.8).map(s => [s.points[0], s.points.at(-1)])).toEqual([[[0, 0], [30, 0]], [[300, 0], [330, 0]]])
+    expect(h.segments.filter(s => s.width === 1.8 && !s.erase).map(s => [s.points[0], s.points.at(-1)])).toEqual([[[0, 0], [30, 0]], [[300, 0], [330, 0]]])
     h.laser.cancel(); h.time(3); h.paint(); expect(h.laser.animating).toBe(false)
   })
   it('ignores stale input samples instead of snapping the head backwards', () => {

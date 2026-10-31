@@ -346,7 +346,7 @@ function registerIpc(): void {
   ipcMain.handle('store:load-board', () => storage.loadBoard())
   ipcMain.handle('store:load-recordings', () => storage.loadRecordings())
   ipcMain.handle('store:save-recordings', (_e, json: string) => storage.saveRecordings(json))
-  ipcMain.handle('store:save-board', (_e, json: string) => storage.saveBoard(json))
+  ipcMain.handle('store:save-board', (_e, json: string, assets?: unknown) => storage.saveBoard(json, assets))
   ipcMain.handle('store:list-backups', () => storage.listBackups())
   ipcMain.handle('store:load-backup', (_e, id: string) => storage.loadBackup(id))
 
@@ -386,6 +386,27 @@ function registerIpc(): void {
     await fs.writeFile(r.filePath, Buffer.from(png))
     return r.filePath
   })
+  ipcMain.handle('files:save-pdf', async (_e, pages: ArrayBuffer[], name: string) => {
+    const owner = w()
+    if (!owner || !Array.isArray(pages) || !pages.length || pages.length > 500 || !pages.every(p => p instanceof ArrayBuffer)) return null
+    const r = await dialog.showSaveDialog(owner, { title: 'Export PDF', defaultPath: join(app.getPath('documents'), name), filters: [{ name: 'PDF document', extensions: ['pdf'] }] })
+    if (r.canceled || !r.filePath) return null
+    // Lay each page image on its own landscape A4 sheet in a hidden window, then print to PDF.
+    const dir = await fs.mkdtemp(join(app.getPath('temp'), 'whiteboard-pdf-'))
+    const printer = new BrowserWindow({ show: false, webPreferences: { offscreen: false, javascript: false } })
+    try {
+      await Promise.all(pages.map((png, i) => fs.writeFile(join(dir, `page-${i + 1}.png`), Buffer.from(png))))
+      const html = `<!doctype html><meta charset="utf-8"><style>@page{size:A4 landscape;margin:0}html,body{margin:0}.page{width:297mm;height:210mm;display:flex;align-items:center;justify-content:center;page-break-after:always;overflow:hidden}.page:last-child{page-break-after:auto}img{max-width:285mm;max-height:198mm;object-fit:contain}</style>${pages.map((_, i) => `<div class="page"><img src="page-${i + 1}.png"></div>`).join('')}`
+      await fs.writeFile(join(dir, 'index.html'), html, 'utf8')
+      await printer.loadFile(join(dir, 'index.html'))
+      const pdf = await printer.webContents.printToPDF({ landscape: true, pageSize: 'A4', printBackground: true, margins: { top: 0, bottom: 0, left: 0, right: 0 } })
+      await fs.writeFile(r.filePath, pdf)
+      return r.filePath
+    } finally {
+      printer.destroy()
+      await fs.rm(dir, { recursive: true, force: true }).catch(() => {})
+    }
+  })
   ipcMain.handle('files:open-recording', async () => {
     const owner = w()
     if (!owner) return null
@@ -422,7 +443,7 @@ function registerIpc(): void {
       filters: [{ name: 'Whiteboard', extensions: ['wbd', 'json'] }]
     })
     if (r.canceled || !r.filePaths[0]) return null
-    if ((await fs.stat(r.filePaths[0])).size > MAX_FILE_BYTES) throw new Error('Board file exceeds 50 MB')
+    if ((await fs.stat(r.filePaths[0])).size > MAX_FILE_BYTES) throw new Error('Board file exceeds 300 MB')
     return { path: r.filePaths[0], json: await fs.readFile(r.filePaths[0], 'utf8') }
   })
   ipcMain.handle('files:save-board-as', async (_e, json: string, name: string) => {
@@ -477,6 +498,7 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(async () => {
     app.setAppUserModelId('com.sambhav.floating-whiteboard')
     storage = new DiskStore(app.getPath('userData'))
+    setTimeout(() => { void storage.collectAssets().catch(() => {}) }, 60_000)
     agentBridge = new AgentBridge(app.getPath('userData'), app.isPackaged ? join(process.resourcesPath, 'mcp/whiteboard-mcp.cjs') : join(app.getAppPath(), 'mcp/whiteboard-mcp.cjs'), callBoard)
     await agentBridge.disable()
     assistant = new Assistant(dataFile('assistant.json'), { available: () => safeStorage.isEncryptionAvailable(), encrypt: text => safeStorage.encryptString(text), decrypt: data => safeStorage.decryptString(data) }, callBoard)

@@ -19,9 +19,12 @@ const num = (v: unknown, fallback?: number): number => v === undefined && fallba
 function only(o: JsonObject, keys: string[]): void { for (const k of Object.keys(o)) if (!keys.includes(k)) fail(`Unknown field: ${k}`) }
 function summary(it: Item, textLimit = 2000): JsonObject {
   const bounds = itemBounds(it)
-  const common = { id: it.id, kind: it.t === 'l' ? 'lab' : it.t === 's' ? 'ink' : it.t === 't' ? it.note ? 'note' : 'text' : it.k,
+  const common = { id: it.id, kind: it.t === 'l' ? 'lab' : it.t === 's' ? 'ink' : it.t === 't' ? it.note ? 'note' : 'text' : it.t === 'i' ? it.latex ? 'equation' : 'image' : it.t === 'g' ? 'graph' : it.k,
     bounds, color: it.c, strokeWidth: it.w, group: it.group ?? null, locked: !!it.locked, opacity: it.opacity ?? 1 }
   if (it.t === 's') return { ...common, points: it.p.length / 3 }
+  const box = { x: it.p[0], y: it.p[1], width: it.p[2] - it.p[0], height: it.p[3] - it.p[1], angle: it.angle ?? 0 }
+  if (it.t === 'i') return { ...common, ...box, ...(it.latex ? { latex: it.latex.slice(0, textLimit) } : {}) }
+  if (it.t === 'g') return { ...common, ...box, functions: [...it.fns], xRange: [...it.xr], yRange: [...it.yr] }
   if (it.t === 'l') return { ...common, model: it.model, modelVersion: it.modelVersion, labVersion: it.labVersion,
     ...(it.model === 'projectile' ? { parametersSI: { ...it.params } } : { parameters: { ...it.params } }), parameterUnits: it.model === 'projectile' ? { speed: 'm/s', angle: 'deg', height: 'm', gravity: 'm/s²', mass: 'kg' } : Object.fromEntries(Object.entries(getModel(it.model)?.params ?? {}).map(([key, spec]) => [key, spec.unit])),
     frozenTimeSeconds: it.frozenTime, reveal: { ...it.reveal }, theme: it.theme,
@@ -63,6 +66,7 @@ export function stageBatch(before: Item[], raw: unknown, revision: number, fit: 
       if (it.t === 's' && !['color', 'strokeWidth', 'opacity'].includes(key)) fail(`Ink does not support ${key}`)
       if (it.t === 't' && ['dash', 'radius'].includes(key)) fail(`Text does not support ${key}`)
       if (it.t === 'l' && !['color', 'strokeWidth', 'opacity', 'angle'].includes(key)) fail(`Lab does not support ${key}`)
+      if ((it.t === 'i' || it.t === 'g') && !['color', 'opacity', 'angle'].includes(key)) fail(`Pictures and graphs do not support ${key}`)
       patch[aliases[key] ?? key] = op[key]
     }
     return validate(fit(validate({ ...it, ...patch })))
@@ -177,7 +181,7 @@ export class BoardAgent {
         if (args.ids !== undefined && (!Array.isArray(args.ids) || !args.ids.length || args.ids.length > 500)) fail('Invalid ID filter')
         const ids = args.ids ? new Set((args.ids as unknown[]).map(v => str(v))) : null
         const query = (args.query as string | undefined)?.toLocaleLowerCase()
-        const all = this.board.doc.items.filter(it => (!ids || ids.has(it.id)) && (!query || (it.t === 'l' ? `${it.model} lab`.includes(query) : it.t !== 's' && it.text?.toLocaleLowerCase().includes(query))))
+        const all = this.board.doc.items.filter(it => (!ids || ids.has(it.id)) && (!query || (it.t === 'l' ? `${it.model} lab`.includes(query) : it.t === 'i' ? !!it.latex?.toLocaleLowerCase().includes(query) : it.t === 'g' ? it.fns.join(' ').toLocaleLowerCase().includes(query) : it.t !== 's' && it.text?.toLocaleLowerCase().includes(query))))
         const offset = num(args.offset, 0), limit = num(args.limit, 100)
         if (!Number.isInteger(offset) || offset < 0 || !Number.isInteger(limit) || limit < 1 || limit > 200) fail('Invalid pagination')
         const requestedText = num(args.textLimit, 2000)

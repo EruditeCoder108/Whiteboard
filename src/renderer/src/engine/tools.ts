@@ -4,9 +4,10 @@ import { expandGroups, transformItem } from './transforms'
 import { handleCursor, HANDLE_ORDER, insideSelection, itemInLasso, pickSelectionHandle, resizeSelection, selectionHandles } from './selection'
 import type { SelectionHandle } from './selection'
 import { Smoother, smoothingToCutoff } from './smoother'
-import { newId } from './types'
+import { isBox, newId } from './types'
 import type { Item, Rect, ShapeItem, ShapeKind, StrokeItem, LabItem } from './types'
 import type { Ptr, Tool, ToolHost } from './tool-types'
+import { recognize } from './recognize'
 import { S, isDarkBg } from '@/state/store'
 import { launchHandle, labToWorld, worldToLab } from './science/scene'
 import { supportedLab } from './science/runtime'
@@ -59,6 +60,11 @@ export class PenTool implements Tool {
   private lastS: [number, number] = [0, 0]
   private pointTimes: number[] = []
   private strokeStart = 0
+  /** Hold still before lifting and a rough shape snaps clean. */
+  private holdTimer = 0
+  private snapped: Item | null = null
+  private heldAt: [number, number] = [0, 0]
+  private ahead: number[] = []
 
   constructor(
     private host: ToolHost,
@@ -93,11 +99,34 @@ export class PenTool implements Tool {
     this.strokeStart = p.t
     this.pointTimes = [0]
     this.lastS = [p.x, p.y]
+    this.armHold(p)
     this.host.requestOverlay()
+  }
+
+  predict(pts: Ptr[]): void {
+    // At most ~30 ms ahead, and only along the current direction of travel.
+    this.ahead = []
+    if (!this.live || this.snapped || !pts.length) return
+    const last = pts.filter(p => p.t - pts[0].t < .03).at(-1)!
+    this.ahead.push(last.wx, last.wy, this.pressure)
+  }
+
+  private armHold(p: Ptr): void {
+    window.clearTimeout(this.holdTimer)
+    if (this.marker) return
+    this.heldAt = [p.x, p.y]
+    this.holdTimer = window.setTimeout(() => {
+      if (!this.live || this.pts.length < 18) return
+      this.snapped = recognize({ ...this.live, p: this.pts })
+      if (this.snapped) this.host.requestOverlay()
+    }, 600)
   }
 
   move(p: Ptr): void {
     if (!this.live) return
+    // Small tremor while holding keeps the hold; a real move resumes freehand drawing.
+    if (Math.hypot(p.x - this.heldAt[0], p.y - this.heldAt[1]) > 5) { this.snapped = null; this.armHold(p) }
+    if (this.snapped) return
     let sx = p.x
     let sy = p.y
     if (S.smoothing.value > 0) [sx, sy] = this.smoother.feed(p.x, p.y, p.t, smoothingToCutoff(S.smoothing.value))
@@ -112,6 +141,15 @@ export class PenTool implements Tool {
 
   up(p: Ptr): void {
     if (!this.live) return
+    window.clearTimeout(this.holdTimer)
+    this.ahead = []
+    if (this.snapped) {
+      const shape = this.snapped
+      this.snapped = null; this.live = null; this.pts = []; this.pointTimes = []
+      this.host.commitAdd(shape)
+      this.host.requestOverlay()
+      return
+    }
     // finish exactly where the pen lifted, so smoothing never shortens a stroke
     if (this.pts.length > 3 && Math.hypot(p.x - this.lastS[0], p.y - this.lastS[1]) > 0.6) {
       this.pts.push(p.wx, p.wy, this.pressure)
@@ -126,6 +164,9 @@ export class PenTool implements Tool {
   }
 
   cancel(): void {
+    window.clearTimeout(this.holdTimer)
+    this.snapped = null
+    this.ahead = []
     this.live = null
     this.pts = []
     this.pointTimes = []
@@ -134,7 +175,8 @@ export class PenTool implements Tool {
 
   paintOverlay(ctx: CanvasRenderingContext2D): void {
     if (!this.live) return
-    const item: StrokeItem = { ...this.live, p: this.pts }
+    if (this.snapped) { const shape = this.snapped; this.host.withWorld(ctx, () => paintItem(ctx, shape)); return }
+    const item: StrokeItem = { ...this.live, p: this.ahead.length ? [...this.pts, ...this.ahead] : this.pts }
     this.host.withWorld(ctx, () => paintItem(ctx, item))
   }
 }
@@ -300,7 +342,7 @@ export class EraserTool implements Tool {
     const cands: Item[] = []
     const pixel = S.eraserMode.value === 'pixel'
     for (const it of doc.items) {
-      if (it.locked || it.t === 't' || it.t === 'l' || (pixel && it.t === 'h' && (it.text || (it.fill && it.fill !== 'none')))) continue
+      if (it.locked || isBox(it) || (pixel && it.t === 'h' && (it.text || (it.fill && it.fill !== 'none')))) continue
       if (rectsHit(itemBounds(it), box)) cands.push(it)
     }
     if (!cands.length) return
