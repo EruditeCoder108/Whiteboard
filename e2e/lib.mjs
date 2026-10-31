@@ -1,5 +1,5 @@
 import { _electron as electron } from 'playwright'
-import { mkdtempSync, mkdirSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -10,8 +10,10 @@ export const shotDir = join(appDir, 'e2e', 'shots')
 mkdirSync(shotDir, { recursive: true })
 
 /** Launch the built app with a throw-away profile; returns { app, page, logs, userData }. */
-export async function launch({ userData, executablePath, inputIsolated = process.env.FW_QA_ISOLATE === '1' } = {}) {
+export async function launch({ userData, executablePath, inputIsolated = process.env.FW_QA_ISOLATE === '1', layout = 'laptop' } = {}) {
   const dir = userData ?? mkdtempSync(join(tmpdir(), 'fw-e2e-'))
+  // A fresh profile answers the first-launch layout question (layout: null leaves it unanswered).
+  if (!userData && layout) writeFileSync(join(dir, 'settings.json'), JSON.stringify({ layout, layoutChosen: true }))
   const app = await electron.launch({
     ...(executablePath ? { executablePath } : {}),
     args: [...(executablePath ? [] : [appDir]), `--user-data-dir=${dir}`],

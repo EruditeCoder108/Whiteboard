@@ -12,6 +12,13 @@ into notes.**
 
 Everything core works offline on an ordinary school PC. AI features are optional extras.
 
+**Direction change (31 Oct 2026): smart boards first.** We now design for 65–86 inch (and
+larger) classroom touch panels: pages instead of an endless canvas, controls within reach at the
+bottom and sides, touch-first input (palm erase, pen vs finger by contact size) and ink readable
+from the back row. Laptops and pen tablets still work. The transparent "write over anything" overlay
+stays as a second mode. Research, comparison and the redesign plan:
+[docs/SMARTBOARD-RESEARCH.md](docs/SMARTBOARD-RESEARCH.md).
+
 ---
 
 ## 1. Where we are today (honest check)
@@ -220,6 +227,10 @@ in OpenUSD format. It is useful but secondary for us:
 
 AI is **optional and off by default**. The teacher chooses a provider: a local model on the PC, or a
 cloud API with their own key. The app already supports both, through any OpenAI-style endpoint.
+**Gemini comes first** because it takes long audio and images in one request. The key is pasted in
+settings, stored encrypted on the PC (Electron `safeStorage`) and never put in the repo. The free
+tier is fine for building and demos. Google may use free-tier data to improve its products, so
+real classroom audio needs a paid key or offline transcription.
 
 ### 5A. Lecture → beautiful PDF notes (best college-project candidate)
 **Can it be done? Yes.** We already have half of it: the board records timed steps.
@@ -232,9 +243,15 @@ How it works:
    A cloud speech API is an optional "high accuracy" mode. Each sentence gets a timestamp.
 3. **Line it up with the board.** The recording already knows what was drawn and when, so each part
    of the speech is matched to the board picture at that moment.
-4. **Make notes.** At the end the teacher presses *Make notes*. The AI turns transcript + board
-   pictures into sections, headings, key points, definitions, formulas, the diagrams drawn in class
-   (as real pictures from the board) and a short revision quiz.
+4. **Make notes.** At the end the teacher presses *Make notes*. For every page, the AI gets the
+   page snapshot, clean crops of each drawing, and the speech from while that page was shown. A
+   vision model reads the handwriting and diagrams. It turns all of this into sections, headings,
+   definitions and typeset formulas, with the real board diagrams placed beside the text that
+   explains them.
+   **Faithful by default:** the AI only organises and cleans up what the teacher said and drew,
+   and adds nothing of its own. Extras (explanations, summary, practice questions, translation)
+   are separate switches, all **off** by default. Anything they add is printed in a labelled
+   "Added by AI" box.
 5. **The teacher checks and edits** the draft. Nothing goes out unchecked, because AI can get facts
    wrong.
 6. **PDF.** Electron can print to PDF with nothing extra installed. Includes the school name, date,
@@ -321,6 +338,18 @@ benchmarks on the test PC.
 3. Maths instruments, equations (MathJax), graph plotter, shape recognition.
 4. Export PDF, Hindi UI and fonts, curtain/spotlight, timer.
 5. Performance: spatial index, pointer prediction, test-PC benchmarks.
+
+**Track A2: Smart board mode (next).** Do this first, because every later screen (library,
+notes) is built on it. Detail: [docs/SMARTBOARD-RESEARCH.md](docs/SMARTBOARD-RESEARCH.md),
+section 4.
+1. Board mode vs overlay mode, plus the first-launch choice. A size scale for big panels.
+2. New layout: bottom toolbar with colours and sizes on it, snapping to the teacher's side; edge
+   menus; page control and page sorter. Developer and rarely used controls hidden.
+3. Screen-sized pages, the background library, and *Extend down*.
+4. Touch input: palm erase, pen/finger by contact size, calibration, several writers at once.
+5. Visual polish pass, chalkboard theme, Hindi string table.
+6. Then the extras: QR share over local Wi-Fi, screen capture → page, split screen, OpenBoard
+   import.
 
 **Track B: Library**
 1. Build the Lesson Kit: lesson file format, design system, 2D scene kit, shared 3D viewport,

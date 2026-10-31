@@ -27,6 +27,7 @@ const api: Api = {
     close: () => ipcRenderer.send('win:close'),
     toggleZoom: () => ipcRenderer.send('win:toggle-zoom'),
     toggleFullscreen: () => ipcRenderer.send('win:toggle-fullscreen'),
+    setFullscreen: (on) => ipcRenderer.send('win:set-fullscreen', on),
     setOnTop: (on) => ipcRenderer.send('win:set-on-top', on),
     setBounds: (b) => ipcRenderer.send('win:set-bounds', b),
     getBounds: () => ipcRenderer.invoke('win:get-bounds'),

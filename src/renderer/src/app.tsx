@@ -4,7 +4,8 @@ import { board } from '@/engine/instance'
 import { InputRouter } from '@/engine/input'
 import { actions } from '@/state/actions'
 import { installShortcuts } from '@/state/shortcuts'
-import { S, applySettings, isDarkBg, showToast, startPersisting } from '@/state/store'
+import { S, applySettings, boardMode, isDarkBg, showToast, startPersisting } from '@/state/store'
+import { BoardBar, BoardSaveChip, EdgeTabs, LayoutChooser } from '@/ui/Board'
 import { Autosave } from '@/state/autosave'
 import { Radial } from '@/ui/Radial'
 import { ResizeHandles, Toast } from '@/ui/Chrome'
@@ -111,6 +112,7 @@ export function App(): JSX.Element {
         S.saveStatus.value = 'saved'
         S.saveError.value = ''
         window.api.win.setOnTop(S.onTop.value)
+        if (S.layoutChosen.value && boardMode.value) window.api.win.setFullscreen(true)
         if (saved.message) showToast(saved.message, 7000)
       } catch (error) {
         S.saveStatus.value = 'error'
@@ -193,7 +195,8 @@ export function App(): JSX.Element {
   const alpha = Math.max(0.004, S.bgAlpha.value / 100) // never fully 0 → stays hit-testable
   // pass-through hides the chrome too: nothing on the board is clickable in that mode
   const hidden = S.uiHidden.value || S.passthrough.value
-  const cls = ['window', S.fullscreen.value || S.zoomed.value ? 'flat' : '', isDarkBg.value ? 'dark' : '', hidden ? 'ui-hidden' : '', !S.ready.value ? 'loading' : '', S.replaying.value ? 'replaying' : '']
+  const onBoard = boardMode.value && S.layoutChosen.value
+  const cls = ['window', onBoard ? `board bar-${S.barSide.value}` : '', S.fullscreen.value || S.zoomed.value ? 'flat' : '', isDarkBg.value ? 'dark' : '', hidden ? 'ui-hidden' : '', !S.ready.value ? 'loading' : '', S.replaying.value ? 'replaying' : '']
     .filter(Boolean)
     .join(' ')
 
@@ -210,11 +213,7 @@ export function App(): JSX.Element {
 
       {!hidden && (
         <>
-          <TopBar />
-          <Dock />
-          <HistoryBar />
-          <ZoomBar />
-          <PageBar />
+          {onBoard ? <><BoardBar /><EdgeTabs /><BoardSaveChip /></> : <><TopBar /><Dock /><HistoryBar /><ZoomBar /><PageBar /></>}
           <Popovers />
           <AgentPanel agent={agentForPanel} />
           <ReplayPanel />
@@ -229,6 +228,7 @@ export function App(): JSX.Element {
       <TimerWidget />
       <ImportStatus />
       <Toast />
+      {S.ready.value && !S.layoutChosen.value && <LayoutChooser />}
       {(!S.ready.value || S.closing.value) && <div class="loading-cover" role="status">
         <span>{S.closing.value ? 'Saving before closing…' : S.saveError.value ? 'Could not load your board' : 'Loading your board…'}</span>
         {!S.closing.value && S.saveError.value && <button type="button" onClick={() => { void S.retrySave.value?.() }}>Retry loading</button>}

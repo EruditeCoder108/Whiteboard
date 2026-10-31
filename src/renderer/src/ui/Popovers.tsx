@@ -162,6 +162,12 @@ export function MenuPopover(): JSX.Element {
 export function SettingsPopover(): JSX.Element {
   return (
     <div class="popover panel ui settings" data-popover-keep="">
+      <div class="pop-sub">Layout</div>
+      <Segmented
+        options={[{ value: 'board', label: 'Smart board' }, { value: 'laptop', label: 'Laptop' }]}
+        value={S.layout.value}
+        onChange={(v) => actions.chooseLayout(v)}
+      />
       <div class="pop-sub">Background</div>
       <div class="swatches">
         {BACKGROUNDS.map((b) => (

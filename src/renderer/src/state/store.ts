@@ -6,7 +6,10 @@ import type { SaveStatus } from './autosave'
 export type ToolName = 'select' | 'lasso' | 'text' | 'sticky' | 'hand' | 'pen' | 'marker' | 'eraser' | 'laser' | ShapeKind
 export type EraserMode = 'stroke' | 'pixel'
 export type GridMode = 'none' | 'dots' | 'lines'
-export type PopoverName = 'props' | 'shapes' | 'menu' | 'settings' | 'help' | 'recovery' | 'agent' | 'replay' | 'science' | 'insert' | 'equation' | 'graph' | 'maths' | 'present' | null
+/** board: big classroom touch panel (bottom toolbar, pages); laptop: compact side dock */
+export type Layout = 'board' | 'laptop'
+export type BarSide = 'left' | 'center' | 'right'
+export type PopoverName = 'props' | 'shapes' | 'menu' | 'settings' | 'help' | 'recovery' | 'agent' | 'replay' | 'science' | 'insert' | 'equation' | 'graph' | 'maths' | 'present' | 'board-menu' | 'pages' | null
 
 export const SHAPE_TOOLS: ShapeKind[] = ['line', 'arrow', 'rect', 'ellipse', 'diamond', 'triangle']
 export const isShapeTool = (t: ToolName): t is ShapeKind => (SHAPE_TOOLS as string[]).includes(t)
@@ -52,6 +55,10 @@ export const S = {
   onTop: signal(true),
   radialEnabled: signal(true),
   radialDelay: signal(450),
+  layout: signal<Layout>('board'),
+  /** false until the first-launch "smart board or laptop?" question is answered */
+  layoutChosen: signal(false),
+  barSide: signal<BarSide>('center'),
 
   // ── transient ───────────────────────────────────────────────────────────────
   /** set while the pen's eraser end / barrel button is active */
@@ -82,6 +89,8 @@ export const S = {
   settingsError: signal(''),
   retrySave: signal<(() => Promise<void>) | null>(null)
 }
+
+export const boardMode = computed(() => S.layout.value === 'board')
 
 export const activeTool = computed<ToolName>(() => S.override.value ?? S.tool.value)
 
@@ -123,7 +132,7 @@ export function showToast(text: string, ms = 2200): void {
 const PERSISTED = [
   'tool', 'lastShape', 'penColor', 'penSize', 'markerColor', 'markerSize', 'eraserSize',
   'eraserMode', 'grid', 'bgColor', 'bgAlpha', 'smoothing', 'pressure', 'fingerDraw', 'onTop',
-  'radialEnabled', 'radialDelay'
+  'radialEnabled', 'radialDelay', 'layout', 'layoutChosen', 'barSide'
 ] as const
 
 export function snapshotSettings(): Record<string, unknown> {
@@ -142,7 +151,8 @@ export function applySettings(raw: unknown): void {
     if (typeof value !== typeof sig.value) continue
     const enums: Partial<Record<typeof PERSISTED[number], readonly string[]>> = {
       tool: ['select', 'lasso', 'text', 'sticky', 'hand', 'pen', 'marker', 'eraser', 'laser', ...SHAPE_TOOLS],
-      lastShape: SHAPE_TOOLS, eraserMode: ['stroke', 'pixel'], grid: ['none', 'dots', 'lines']
+      lastShape: SHAPE_TOOLS, eraserMode: ['stroke', 'pixel'], grid: ['none', 'dots', 'lines'],
+      layout: ['board', 'laptop'], barSide: ['left', 'center', 'right']
     }
     if (enums[k] && !enums[k]!.includes(value as string)) continue
     if (['penColor', 'markerColor', 'bgColor'].includes(k) && !/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value as string)) continue
