@@ -45,9 +45,9 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Pen styles: marker, pencil, brush, **chalk texture** | 🛠 ⏳ |
 | Highlighter that stays behind ink | ✅ |
 | **A tool per input:** fine tip, thick end, finger and palm each get their own tool and colour, so turning the stylus around switches colour | 🛠 |
-| **Palm, fist or edge-of-hand erase** | 🛠 |
+| **Palm, fist or edge-of-hand erase** (wipes like a duster, sized to the hand) | ✅ |
 | Stroke eraser, pixel eraser, clear page | ✅ |
-| Calibration: "touch with the pen, now with your palm" | 🛠 |
+| Calibration: "touch with a finger, now with your palm" | ✅ |
 | **Several writers at once** (20 touches); pair mode splits the board into 2–6 zones, each with its own pen | 🛠 ⏳ |
 | Shape snapping: hold still to turn a rough shape into a clean line, circle, rectangle or triangle | ✅ |
 | Shapes, arrows, text, sticky notes | ✅ |
@@ -64,7 +64,8 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | **Screen-sized pages** like a notebook; *Extend down* when a page fills up | 🛠 |
 | **Page sorter:** thumbnails, reorder, duplicate, delete | ✅ |
 | **Navigation map** for a long page | ⏳ |
-| **Background library:** white, black and green chalkboard, ruled, four-line English, Hindi writing lines, graph paper (mm/cm), square grid, dotted, isometric, music staff, coordinate axes, outline maps of India and the world, your own image | 🛠 (dots and lines ✅) |
+| **Background library, per page:** white, black and green chalkboard, ruled, four-line English, Hindi writing lines, mm graph paper, squares, dots, music staff | ✅ |
+| More papers: isometric, outline maps of India and the world, your own image | ⏳ |
 | Templates: Venn diagram, timeline, KWL chart, worksheet | ⏳ |
 | Home screen with recent lessons, a new lesson and open-from-pen-drive | 🛠 |
 | Autosave that never loses work | ✅ |
@@ -87,7 +88,7 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 
 | Feature | Status |
 |---|---|
-| **Subjects drawer:** Maths · Physics · Chemistry · Biology · English · Hindi, each with its own tools, backgrounds and lessons | 🛠 |
+| **Subjects drawer:** Maths · Physics · Chemistry · Biology · English · Hindi, each with its own tools and papers (lessons join with the library) | ✅ |
 | Ruler, set square, protractor, compass, with pen strokes snapping to their edges | ✅ |
 | Equations, maths and chemistry (MathJax + mhchem), editable later | ✅ |
 | Graph of a function (several functions, editable) | ✅ |
@@ -147,7 +148,7 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Colours and pen sizes **on the toolbar**: one tap, no popover | ✅ |
 | Buttons 4–6 cm across on the panel, labels under icons | ✅ |
 | Thick default ink and high-contrast colours, readable from the back row | 🛠 |
-| Light theme and **chalkboard theme** | 🛠 |
+| Light theme and **chalkboard theme** (toolbar goes dark on a dark board) | ✅ |
 | Internals hidden: zoom %, pin and pass-through tucked away; save status only on error | 🛠 |
 | Settings for teachers, plus an *Advanced* page for IT | 🛠 |
 | **English and Hindi interface**, more Indian languages later | 🛠 |

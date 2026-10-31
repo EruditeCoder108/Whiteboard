@@ -6,6 +6,7 @@ import { actions } from '@/state/actions'
 import { installShortcuts } from '@/state/shortcuts'
 import { S, applySettings, boardMode, isDarkBg, showToast, startPersisting } from '@/state/store'
 import { BoardBar, BoardSaveChip, EdgeTabs, LayoutChooser } from '@/ui/Board'
+import { PalmCalibration } from '@/ui/Calibrate'
 import { Autosave } from '@/state/autosave'
 import { Radial } from '@/ui/Radial'
 import { ResizeHandles, Toast } from '@/ui/Chrome'
@@ -228,6 +229,7 @@ export function App(): JSX.Element {
       <TimerWidget />
       <ImportStatus />
       <Toast />
+      <PalmCalibration />
       {S.ready.value && !S.layoutChosen.value && <LayoutChooser />}
       {(!S.ready.value || S.closing.value) && <div class="loading-cover" role="status">
         <span>{S.closing.value ? 'Saving before closing…' : S.saveError.value ? 'Could not load your board' : 'Loading your board…'}</span>

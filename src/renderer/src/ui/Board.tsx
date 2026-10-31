@@ -1,7 +1,7 @@
 import {
   Blinds, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileDown, FileText, FlaskConical, GripVertical,
   Highlighter, Image as ImageIcon, Laptop, LayoutGrid, LineChart, LogOut, Minus, MousePointer2, MousePointerClick, Pen, Plus,
-  Presentation, Redo2, Ruler, Shapes, SlidersHorizontal, Sigma, Sparkles, Spotlight, Timer, Trash2, Type, Undo2, MonitorUp, Layers
+  Presentation, GraduationCap, Redo2, Ruler, Shapes, SlidersHorizontal, Sigma, Sparkles, Spotlight, Timer, Trash2, Type, Undo2, MonitorUp, Layers
 } from 'lucide-preact'
 import type { ComponentChildren, JSX } from 'preact'
 import { useEffect, useRef } from 'preact/hooks'
@@ -13,6 +13,8 @@ import type { BarSide, ToolName } from '@/state/store'
 import { editEquation, editGraph, exportPdf, insertFiles, pickFiles } from '@/state/insert'
 import { ShapesPopover, PropsPopover } from './Popovers'
 import { MathsPopover, curtainOn, spotlightOn, timerOn } from './Present'
+import { PaperPopover } from './Paper'
+import { SubjectsPopover } from './Subjects'
 
 type Icon = typeof Pen
 
@@ -67,6 +69,8 @@ export function BoardBar(): JSX.Element {
       {p === 'shapes' && <ShapesPopover />}
       {p === 'maths' && <MathsPopover />}
       {p === 'props' && <PropsPopover />}
+      {p === 'paper' && <PaperPopover />}
+      {p === 'subjects' && <SubjectsPopover />}
       <div class="boardbar panel ui" role="toolbar" aria-label="Board tools">
         <button type="button" class="bb-grip nodrag" aria-label="Move the toolbar left or right" title="Drag to move the toolbar"
           onPointerDown={onGrip as never} onPointerMove={onGripMove as never} onPointerUp={() => (drag.current = false)} onPointerCancel={() => (drag.current = false)}>
@@ -82,6 +86,7 @@ export function BoardBar(): JSX.Element {
         }} />
         <ToolBtn tool="text" icon={Type} label="Text" />
         <ToolBtn tool="laser" icon={Crosshair} label="Laser" />
+        <BBtn icon={GraduationCap} label="Subjects" keep active={p === 'subjects'} onClick={() => toggle('subjects')} />
         <div class="bb-sep" />
         <div class={`bb-inks ${showInk ? '' : 'muted'}`}>
           {inks.map(c => (
@@ -155,7 +160,7 @@ function BoardMenu(): JSX.Element {
         <Tile icon={Sparkles} label="Assistant" onClick={() => (S.popover.value = 'agent')} />
       </Section>
       <Section title="Board">
-        <Tile icon={Layers} label="Background" onClick={() => (S.popover.value = 'settings')} />
+        <Tile icon={Layers} label="Background" onClick={() => (S.popover.value = 'paper')} />
         <Tile icon={FileDown} label="Save as PDF" onClick={close(exportPdf)} />
         <Tile icon={SlidersHorizontal} label="Settings" onClick={() => (S.popover.value = 'settings')} />
         <Tile icon={Eye} label="Hide toolbar" onClick={actions.toggleUi} />

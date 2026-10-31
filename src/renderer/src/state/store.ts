@@ -5,11 +5,14 @@ import type { SaveStatus } from './autosave'
 
 export type ToolName = 'select' | 'lasso' | 'text' | 'sticky' | 'hand' | 'pen' | 'marker' | 'eraser' | 'laser' | ShapeKind
 export type EraserMode = 'stroke' | 'pixel'
-export type GridMode = 'none' | 'dots' | 'lines'
+import { PAPERS } from '@/engine/grid'
+import type { Paper } from '@/engine/grid'
+/** the visible page's background paper (new pages take the current one) */
+export type GridMode = Paper
 /** board: big classroom touch panel (bottom toolbar, pages); laptop: compact side dock */
 export type Layout = 'board' | 'laptop'
 export type BarSide = 'left' | 'center' | 'right'
-export type PopoverName = 'props' | 'shapes' | 'menu' | 'settings' | 'help' | 'recovery' | 'agent' | 'replay' | 'science' | 'insert' | 'equation' | 'graph' | 'maths' | 'present' | 'board-menu' | 'pages' | null
+export type PopoverName = 'props' | 'shapes' | 'menu' | 'settings' | 'help' | 'recovery' | 'agent' | 'replay' | 'science' | 'insert' | 'equation' | 'graph' | 'maths' | 'present' | 'board-menu' | 'pages' | 'paper' | 'subjects' | null
 
 export const SHAPE_TOOLS: ShapeKind[] = ['line', 'arrow', 'rect', 'ellipse', 'diamond', 'triangle']
 export const isShapeTool = (t: ToolName): t is ShapeKind => (SHAPE_TOOLS as string[]).includes(t)
@@ -59,10 +62,15 @@ export const S = {
   /** false until the first-launch "smart board or laptop?" question is answered */
   layoutChosen: signal(false),
   barSide: signal<BarSide>('center'),
+  /** a touch at least this wide (CSS px) is a palm and erases */
+  palmErase: signal(true),
+  palmSize: signal(48),
 
   // ── transient ───────────────────────────────────────────────────────────────
   /** set while the pen's eraser end / barrel button is active */
   override: signal<ToolName | null>(null),
+  /** contact width (px) of the palm currently erasing; 0 when none */
+  palm: signal(0),
   uiHidden: signal(false),
   passthrough: signal(false),
   fullscreen: signal(false),
@@ -132,7 +140,7 @@ export function showToast(text: string, ms = 2200): void {
 const PERSISTED = [
   'tool', 'lastShape', 'penColor', 'penSize', 'markerColor', 'markerSize', 'eraserSize',
   'eraserMode', 'grid', 'bgColor', 'bgAlpha', 'smoothing', 'pressure', 'fingerDraw', 'onTop',
-  'radialEnabled', 'radialDelay', 'layout', 'layoutChosen', 'barSide'
+  'radialEnabled', 'radialDelay', 'layout', 'layoutChosen', 'barSide', 'palmErase', 'palmSize'
 ] as const
 
 export function snapshotSettings(): Record<string, unknown> {
@@ -151,7 +159,7 @@ export function applySettings(raw: unknown): void {
     if (typeof value !== typeof sig.value) continue
     const enums: Partial<Record<typeof PERSISTED[number], readonly string[]>> = {
       tool: ['select', 'lasso', 'text', 'sticky', 'hand', 'pen', 'marker', 'eraser', 'laser', ...SHAPE_TOOLS],
-      lastShape: SHAPE_TOOLS, eraserMode: ['stroke', 'pixel'], grid: ['none', 'dots', 'lines'],
+      lastShape: SHAPE_TOOLS, eraserMode: ['stroke', 'pixel'], grid: PAPERS,
       layout: ['board', 'laptop'], barSide: ['left', 'center', 'right']
     }
     if (enums[k] && !enums[k]!.includes(value as string)) continue
@@ -160,7 +168,7 @@ export function applySettings(raw: unknown): void {
       if (!Number.isFinite(value)) continue
       const ranges: Partial<Record<typeof PERSISTED[number], readonly [number, number]>> = {
         penSize: SIZE_RANGE.pen, markerSize: SIZE_RANGE.marker, eraserSize: SIZE_RANGE.eraser,
-        bgAlpha: [0, 100], smoothing: [0, 10], radialDelay: [300, 1500]
+        bgAlpha: [0, 100], smoothing: [0, 10], radialDelay: [300, 1500], palmSize: [12, 400]
       }
       const range = ranges[k]
       sig.value = range ? Math.max(range[0], Math.min(range[1], Math.round(value))) : value

@@ -37,8 +37,8 @@ export const actions = {
 
   cycleGrid(): void {
     const order = ['none', 'dots', 'lines'] as const
-    S.grid.value = order[(order.indexOf(S.grid.value) + 1) % 3]
-    showToast('Grid: ' + { none: 'off', dots: 'dots', lines: 'lines' }[S.grid.value])
+    S.grid.value = order[(Math.max(0, order.indexOf(S.grid.value as typeof order[number])) + 1) % 3]
+    showToast('Grid: ' + { none: 'off', dots: 'dots', lines: 'squares' }[S.grid.value as typeof order[number]])
   },
 
   setColor(c: string): void {
@@ -114,7 +114,7 @@ export const actions = {
     S.popover.value = null
     const on = S.bgAlpha.value >= OVERLAY_ALPHA
     S.bgAlpha.value = on ? 1 : 100
-    showToast(on ? 'Writing over the screen · use the hand button to use the apps underneath' : 'Back to the board')
+    showToast(on ? 'Writing over the screen · to click the apps underneath, use More → Use apps below' : 'Back to the board', 3600)
   },
 
   runRadial(pick: RadialPick): void {

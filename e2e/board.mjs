@@ -48,6 +48,39 @@ try {
   check('write over screen makes the board see-through', await fw(page, w => w.S.bgAlpha.value) < 20)
   await fw(page, w => { w.S.bgAlpha.value = 100; w.S.barSide.value = 'center' })
 
+  // Palm erase: a finger-sized touch draws, a palm-sized one wipes and then hands the pen back.
+  await fw(page, w => { w.board.goToPage(0); w.board.setTool('pen') })
+  await gesture(page, wave(300, 300, 50, 20), { type: 'touch', pressure: 0, size: 12 })
+  const drawn = await fw(page, w => w.board.doc.items.length)
+  await gesture(page, Array.from({ length: 30 }, (_, i) => [280 + i * 10, 300 + (i % 2) * 10]), { type: 'touch', pressure: 0, size: 90 })
+  const palm = await fw(page, w => ({ items: w.board.doc.items.length, tool: w.S.tool.value, override: w.S.override.value, palm: w.S.palm.value }))
+  check('a finger-sized touch draws', drawn >= 2, String(drawn))
+  check('a palm wipes the ink away and the pen comes back', palm.items < drawn && palm.tool === 'pen' && palm.override === null && palm.palm === 0, JSON.stringify({ drawn, ...palm }))
+
+  // Paper belongs to its page.
+  await page.getByRole('button', { name: 'More', exact: true }).click()
+  await page.getByRole('button', { name: 'Background' }).click()
+  await page.getByRole('button', { name: 'Four-line' }).click()
+  await page.screenshot({ path: join(shotDir, 'board-paper.png') })
+  await fw(page, w => w.board.goToPage(1))
+  const other = await fw(page, w => w.S.grid.value)
+  await fw(page, w => w.board.goToPage(0))
+  const back = await fw(page, w => ({ grid: w.S.grid.value, saved: JSON.parse(w.board.serialize()).pages.map(p => p.paper) }))
+  check('each page keeps its own paper', other !== 'fourline' && back.grid === 'fourline' && back.saved[0] === 'fourline', JSON.stringify({ other, ...back }))
+
+  // Subjects drawer and the chalkboard look.
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Subjects' }).click()
+  await page.getByRole('tab', { name: 'Maths' }).click()
+  await page.getByRole('button', { name: 'Ruler' }).click()
+  check('subjects drawer puts the maths instruments one tap away', (await fw(page, w => w.board.instruments.shown ?? null)) !== undefined && await page.locator('.subjects-sheet .tile.on').count() === 1)
+  await page.getByRole('button', { name: 'Ruler' }).click()
+  await fw(page, w => { w.S.bgColor.value = '#1d3b33'; w.S.penColor.value = '#ffffff' })
+  await page.getByRole('tab', { name: 'English' }).click()
+  await page.waitForTimeout(250)
+  await page.screenshot({ path: join(shotDir, 'board-chalk.png') })
+  await fw(page, w => { w.S.bgColor.value = '#ffffff'; w.S.grid.value = 'none' })
+
   check('no renderer errors', logs.filter(l => /pageerror|\[error\]/.test(l)).length === 0, logs.join(' | '))
 } finally { await app.close().catch(() => {}) }
 process.exit(summary() ? 1 : 0)

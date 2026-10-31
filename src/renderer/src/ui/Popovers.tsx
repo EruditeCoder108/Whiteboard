@@ -5,13 +5,15 @@ import type { BackupInfo } from '@shared/api'
 import { board } from '@/engine/instance'
 import { actions } from '@/state/actions'
 import {
-  BACKGROUNDS, PALETTE, S, SIZE_RANGE, SHAPE_TOOLS, activeTool, currentColor, currentSize, styleKey
+  PALETTE, S, SIZE_RANGE, SHAPE_TOOLS, activeTool, currentColor, currentSize, styleKey
 } from '@/state/store'
 import type { ShapeKind } from '@/engine/types'
 import { InsertPopover, EquationEditor, GraphEditor } from './Insert'
 import { PresentPopover } from './Present'
 import { equationTarget, graphTarget, exportPdf } from '@/state/insert'
 import { Btn, MenuItem, Row, Segmented, Sep, Slider, Swatch, Switch } from './kit'
+import { calibrating } from './Calibrate'
+import { PaperPicker } from './Paper'
 
 const TOOL_TITLE: Record<string, string> = {
   pen: 'Pen', marker: 'Highlighter', eraser: 'Eraser', line: 'Line', arrow: 'Arrow', rect: 'Rectangle', ellipse: 'Ellipse', diamond: 'Diamond', triangle: 'Triangle', text: 'Text', sticky: 'Sticky note'
@@ -168,26 +170,11 @@ export function SettingsPopover(): JSX.Element {
         value={S.layout.value}
         onChange={(v) => actions.chooseLayout(v)}
       />
-      <div class="pop-sub">Background</div>
-      <div class="swatches">
-        {BACKGROUNDS.map((b) => (
-          <Swatch key={b.color} color={b.color} title={b.name} selected={S.bgColor.value === b.color} onClick={() => actions.setBackground(b.color)} />
-        ))}
-        <label class="swatch custom nodrag" title="Custom background…">
-          <Plus size={14} strokeWidth={2} />
-          <input type="color" value={S.bgColor.value} onInput={(e) => actions.setBackground((e.target as HTMLInputElement).value)} />
-        </label>
-      </div>
+      <PaperPicker />
       <Row label="Opacity" hint="Lower it to see the screen through the board">
         <Slider min={0} max={100} value={S.bgAlpha.value} onChange={(v) => (S.bgAlpha.value = v)} />
         <span class="val">{S.bgAlpha.value}%</span>
       </Row>
-      <div class="pop-sub">Grid</div>
-      <Segmented
-        options={[{ value: 'none', label: 'Off' }, { value: 'dots', label: 'Dots' }, { value: 'lines', label: 'Lines' }]}
-        value={S.grid.value}
-        onChange={(v) => (S.grid.value = v)}
-      />
       <Sep />
       <Row label="Smoothing" hint="Steadies shaky handwriting. 0 = raw input">
         <Slider min={0} max={10} value={S.smoothing.value} onChange={(v) => (S.smoothing.value = v)} />
@@ -201,6 +188,11 @@ export function SettingsPopover(): JSX.Element {
         <span class="grow" />
         <Switch on={S.fingerDraw.value} onChange={(v) => (S.fingerDraw.value = v)} />
       </Row>
+      <Row label="Palm erases" hint="Touch screens: wipe with your palm to erase, like a duster">
+        <span class="grow" />
+        <Switch on={S.palmErase.value} onChange={(v) => (S.palmErase.value = v)} />
+      </Row>
+      {S.palmErase.value && <button type="button" class="link-btn nodrag" onClick={() => { S.popover.value = null; calibrating.value = true }}>Calibrate palm size…</button>}
       <Sep />
       <Row label="Hold for menu">
         <span class="grow" />
