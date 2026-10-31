@@ -17,6 +17,7 @@ export async function launch({ userData, executablePath, inputIsolated = process
   const app = await electron.launch({
     ...(executablePath ? { executablePath } : {}),
     args: [...(executablePath ? [] : [appDir]), `--user-data-dir=${dir}`],
+    env: { ...process.env, FW_E2E_OFFSCREEN: '1' },
     cwd: appDir
   })
   const page = await app.firstWindow()

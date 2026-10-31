@@ -113,11 +113,19 @@ export class PenTool implements Tool {
   }
 
   predict(pts: Ptr[]): void {
-    // At most ~30 ms ahead, and only along the current direction of travel.
+    // At most ~30 ms ahead, only roughly along the current direction of travel and never further
+    // than the last real step or two: a wild guess flickering ahead of the pen looks worse than lag.
     this.ahead = []
-    if (!this.live || this.snapped || !pts.length) return
-    const last = pts.filter(p => p.t - pts[0].t < .03).at(-1)!
-    this.ahead.push(last.wx, last.wy, this.pressure)
+    if (!this.live || this.snapped || !pts.length || this.pts.length < 6) return
+    const guess = pts.filter(p => p.t - pts[0].t < .03).at(-1)!
+    const n = this.pts.length, lx = this.pts[n - 3], ly = this.pts[n - 2], px = this.pts[n - 6], py = this.pts[n - 5]
+    const step = Math.hypot(lx - px, ly - py)
+    let dx = guess.wx - lx, dy = guess.wy - ly
+    const len = Math.hypot(dx, dy)
+    if (!len || !step || (dx * (lx - px) + dy * (ly - py)) < .5 * len * step) return
+    const cap = Math.min(len, step * 2, 24 / this.host.view.zoom)
+    dx *= cap / len; dy *= cap / len
+    this.ahead.push(lx + dx, ly + dy, this.pressure)
   }
 
   private armHold(p: Ptr): void {
