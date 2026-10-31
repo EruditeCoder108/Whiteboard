@@ -97,7 +97,40 @@ export interface LabReveal {
   equations: boolean
   compare: boolean
 }
-export type Item = StrokeItem | ShapeItem | TextItem | LabItem
+/** A picture: pasted/imported image, PDF page, or typeset equation (`latex` set, SVG source). */
+export interface ImageItem extends ObjectMeta {
+  t: 'i'
+  id: string
+  c: string
+  w: number
+  p: Rect
+  angle?: number
+  /** data URL (png, jpeg, webp or svg+xml) */
+  src: string
+  /** natural width / height, kept when resizing */
+  aspect: number
+  latex?: string
+}
+
+/** A function plot drawn as vectors at every zoom. */
+export interface GraphItem extends ObjectMeta {
+  t: 'g'
+  id: string
+  c: string
+  w: number
+  p: Rect
+  angle?: number
+  /** expressions in x, e.g. "sin(x)", "x^2 - 2" */
+  fns: string[]
+  xr: [number, number]
+  yr: [number, number]
+}
+
+export type Item = StrokeItem | ShapeItem | TextItem | LabItem | ImageItem | GraphItem
+export type BoxItem = TextItem | LabItem | ImageItem | GraphItem
+
+/** Objects whose geometry is just their rectangle. */
+export const isBox = (it: Item): it is BoxItem => it.t === 't' || it.t === 'l' || it.t === 'i' || it.t === 'g'
 
 export const MARKER_ALPHA = 0.4
 

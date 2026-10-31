@@ -9,7 +9,7 @@
   --danger: #e5484d;
   --shadow: 0 8px 28px rgba(15, 23, 42, 0.18), 0 1px 3px rgba(15, 23, 42, 0.14);
   --topbar: 28px;
-  font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Segoe UI Variable Text', 'Segoe UI', 'Nirmala UI', system-ui, sans-serif;
   font-size: 12px;
   color: var(--text);
 }
@@ -279,7 +279,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
   display: block; width: 100%; height: 100%; border: 0; border-radius: 3px; resize: none;
   box-shadow: 0 0 0 1.5px var(--accent), 0 0 0 4px rgba(66, 98, 255, .08);
   background: transparent; outline: none !important; margin: 0; overflow: auto;
-  font-family: 'Segoe UI', sans-serif; white-space: pre-wrap; overflow-wrap: anywhere;
+  font-family: 'Segoe UI', 'Nirmala UI', sans-serif; white-space: pre-wrap; overflow-wrap: anywhere;
   user-select: text; -webkit-user-select: text; touch-action: auto;
 }
 .text-editor::placeholder { color: #738097; opacity: .7; }
@@ -570,3 +570,75 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
   .science-preview { height:57px; }.science-card-art > span { font-size:6px; letter-spacing:.3px; padding-bottom:6px; }
   .science-card h2 { font-size:14px; }.science-card-description { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 }
+
+/* ── insert, pages, equations, graphs ──────────────────────────────────── */
+.insert-menu { left: auto; right: 150px; width: 250px; }
+.pagebar {
+  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; padding: 3px;
+}
+.pageval { min-width: 52px; text-align: center; font-weight: 600; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.import-status {
+  position: absolute; left: 50%; top: calc(var(--topbar) + 14px); transform: translateX(-50%);
+  padding: 8px 14px; font-weight: 600; z-index: 30;
+}
+.equation-editor, .graph-editor { left: 50%; top: calc(var(--topbar) + 6px); transform: translateX(-50%); width: min(560px, calc(100% - 24px)); animation: none; gap: 8px; }
+.symbols { display: flex; flex-wrap: wrap; gap: 3px; }
+.symbols button { min-width: 30px; height: 26px; padding: 0 6px; border-radius: 6px; border: 1px solid var(--line); font-size: 12px; }
+.symbols button:hover { background: var(--hover); }
+.equation-editor textarea {
+  width: 100%; min-height: 64px; resize: vertical; padding: 8px; border-radius: 8px; border: 1px solid var(--line);
+  font: 13px/1.4 Consolas, 'Cascadia Mono', monospace; color: var(--text); user-select: text; -webkit-user-select: text;
+}
+.equation-preview {
+  min-height: 70px; max-height: 200px; overflow: auto; display: grid; place-items: center;
+  border-radius: 8px; background: #fafbfd; border: 1px dashed var(--line); padding: 8px; color: var(--muted);
+}
+.equation-preview img { max-width: 100%; max-height: 180px; }
+.row-end { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.primary-btn { background: var(--accent); color: #fff; font-weight: 600; padding: 7px 16px; border-radius: 8px; }
+.primary-btn:disabled { opacity: .45; }
+.fn-row { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.fn-row input, .range-field input {
+  flex: 1; min-width: 0; height: 30px; padding: 0 8px; border-radius: 7px; border: 1px solid var(--line);
+  font: 13px Consolas, 'Cascadia Mono', monospace; color: var(--text); user-select: text; -webkit-user-select: text;
+}
+.fn-row.invalid input { border-color: var(--danger); background: rgba(229, 72, 77, .06); }
+.fn-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.ranges { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.range-field { display: flex; flex-direction: column; gap: 3px; font-size: 10.5px; color: var(--muted); }
+.range-field input { flex: none; width: 100%; }
+
+/* ── maths instruments & presenter tools ─────────────────────────────────── */
+.maths { left: calc(100% + 10px); top: -120px; width: 268px; gap: 1px; padding: 6px; }
+.present { right: 120px; top: calc(var(--topbar) + 6px); width: 270px; gap: 1px; padding: 4px; }
+.menu-item.on { background: var(--accent-soft); color: var(--accent); }
+.spotlight { position: absolute; inset: 0; pointer-events: none; z-index: 15; }
+.overlay-chip {
+  position: absolute; top: calc(var(--topbar) + 8px); left: 50%; transform: translateX(-50%); z-index: 16;
+  display: flex; align-items: center; gap: 6px; padding: 3px 4px 3px 12px; border-radius: 10px;
+  background: rgba(20, 24, 36, .82); color: #fff; font-weight: 600;
+}
+.overlay-chip .btn { color: #fff; }
+.curtain {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 15; pointer-events: none;
+  background: repeating-linear-gradient(90deg, #2b3242 0 22px, #313949 22px 44px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+}
+.curtain-handle {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 34px; pointer-events: auto; cursor: ns-resize; touch-action: none;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: #1d2230; color: #d7dcea; font-weight: 600; border-top: 1px solid rgba(255, 255, 255, .12);
+}
+.curtain-handle .btn { color: #d7dcea; }
+.timer {
+  position: absolute; right: 8px; top: calc(var(--topbar) + 8px); z-index: 18;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 10px;
+}
+.timer-face { font: 700 34px/1.1 'Segoe UI Variable Display', 'Segoe UI', sans-serif; font-variant-numeric: tabular-nums; min-width: 120px; text-align: center; }
+.timer.done .timer-face { color: var(--danger); animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: .25; } }
+.timer-row { display: flex; gap: 2px; }
+.timer-row.presets button { padding: 3px 7px; border-radius: 6px; font-weight: 600; font-size: 11px; }
+.timer-row.presets button:hover { background: var(--hover); }
+.timer-row.presets button.on { background: var(--accent-soft); color: var(--accent); }

@@ -69,7 +69,8 @@ export interface Api {
     loadSettings(): Promise<unknown | null>
     saveSettings(data: unknown): Promise<SaveResult>
     loadBoard(): Promise<BoardLoad>
-    saveBoard(json: string): Promise<SaveResult>
+    /** `assets`: pictures not yet sent this session, keyed by content */
+    saveBoard(json: string, assets?: Record<string, string>): Promise<SaveResult>
     listBackups(): Promise<BackupInfo[]>
     loadBackup(id: string): Promise<string | null>
   }
@@ -78,6 +79,7 @@ export interface Api {
     saveRecording(json: string, suggestedName: string): Promise<string | null>
     saveVideo(video: ArrayBuffer, suggestedName: string): Promise<string | null>
     savePng(png: ArrayBuffer, suggestedName: string): Promise<string | null>
+    savePdf(pages: ArrayBuffer[], suggestedName: string): Promise<string | null>
     openBoard(): Promise<{ path: string; json: string } | null>
     saveBoardAs(json: string, suggestedName: string): Promise<string | null>
   }

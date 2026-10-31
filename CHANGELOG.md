@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased — teaching essentials (Track A) — 2026-10-31
+
+- Laser: fix sections of a fast scribble vanishing and reappearing. The trail is now painted in short
+  time slices with per-pixel "newest wins" compositing, so it fades by age along the path.
+- Pictures: paste (Ctrl+V), drag-and-drop or Insert → Picture. Large images are downscaled to
+  2400 px and stored as WebP. Autosave writes each picture once as a content-addressed file
+  (`assets/`), so board.json stays small; unused pictures are cleaned up after a day.
+- Pages: page bar, PgUp/PgDn (presentation clickers), per-page camera and undo history.
+  Board format 4 stores pages and a shared picture table; formats 1–3 still open.
+- PDF worksheets: each PDF page becomes a board page with the page locked underneath, ready to
+  annotate. Export all pages as one landscape-A4 PDF.
+- Equations: LaTeX with live preview and a symbol palette, including chemistry (`\ce{…}`); the
+  equation follows the pen colour and stays editable (double-click).
+- Graphs: plot up to five functions (`2x^2-1`, `sinx`, `|x|`…) with a safe hand-written parser,
+  crisp at every zoom and editable.
+- Maths instruments: ruler, set square, protractor and compass. Pen strokes started on an edge
+  stay exactly on it; the compass sweeps true arcs at a labelled radius.
+- Shape snapping: hold the pen still at the end of a stroke to turn a rough line, circle,
+  rectangle, diamond or triangle into a clean one.
+- Presenter tools: spotlight, drag-to-reveal curtain, countdown/stopwatch timer with chime.
+- Devanagari and other Indian scripts use Nirmala UI consistently on the board and in editors.
+- Performance: hit-testing rejects by cached bounds first; pen ink is drawn one predicted sample
+  ahead to hide display latency.
+- New dependencies: pdf.js 4.10.38 and MathJax 3.2.2 (Apache-2.0), loaded on first use.
+- Essential checks: `npm run e2e:track-a` (15), plus the existing drawing, laser, objects,
+  recovery, replay and agent suites and 212 unit tests.
+
 ## 1.5.0-beta.1 — 2026-10-27
 
 - Package the fourteen-experiment science preview for public Windows x64 downloads, as separate

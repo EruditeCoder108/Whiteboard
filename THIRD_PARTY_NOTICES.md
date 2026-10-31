@@ -1,6 +1,6 @@
 # Third-party notices
 
-Floating Whiteboard's own code is GPL-3.0-only. Dependencies retain the licences below; this file does not relicense them. Versions are from the checked-in lockfile and installed Electron runtime when these notices were prepared (2026-10-27).
+Floating Whiteboard's own code is GPL-3.0-only. Dependencies retain the licences below; this file does not relicense them. Versions are from the checked-in lockfile and installed Electron runtime when these notices were prepared (2026-10-27; pdf.js and MathJax added 2026-10-31).
 
 | Component | Version | Licence | Source | Full notice |
 |---|---|---|---|---|
@@ -9,7 +9,10 @@ Floating Whiteboard's own code is GPL-3.0-only. Dependencies retain the licences
 | @types/dom-mediacapture-transform | 0.1.12 | MIT | [Upstream](https://github.com/DefinitelyTyped/DefinitelyTyped) | [Text](notices/types__dom-mediacapture-transform.txt) |
 | @types/dom-webcodecs | 0.1.13 | MIT | [Upstream](https://github.com/DefinitelyTyped/DefinitelyTyped) | [Text](notices/types__dom-webcodecs.txt) |
 | lucide-preact | 1.49.0 | ISC | [Upstream](https://github.com/lucide-icons/lucide) | [Text](notices/lucide-preact.txt) |
+| mathjax-full | 3.2.2 | Apache-2.0 | [Upstream](https://github.com/mathjax/MathJax-src) | [Text](notices/mathjax-full.txt) |
+| mhchemparser | 4.2.1 | Apache-2.0 | [Upstream](https://github.com/mhchem/mhchemParser) | [Text](notices/mhchemparser.txt) |
 | mediabunny | 1.61.3 | MPL-2.0 | [Upstream](https://github.com/Vanilagy/mediabunny) | [Text](notices/mediabunny.txt) |
+| pdfjs-dist | 4.10.38 | Apache-2.0 | [Upstream](https://github.com/mozilla/pdf.js) | [Text](notices/pdfjs-dist.txt) |
 | perfect-freehand | 1.2.3 | MIT | [Upstream](https://github.com/steveruizok/perfect-freehand) | [Text](notices/perfect-freehand.txt) |
 | preact | 10.29.8 | MIT | [Upstream](https://github.com/preactjs/preact) | [Text](notices/preact.txt) |
 | Electron | 44.5.1 | MIT | [Upstream](https://github.com/electron/electron) | [Text](notices/electron.txt) |

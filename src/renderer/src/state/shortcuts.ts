@@ -4,6 +4,7 @@ import { radial } from '@/engine/radial'
 import { actions } from './actions'
 import { S } from './store'
 import { replay } from './replay'
+import { clipboardImage, pasteClipboardImage, refreshClipboardImage } from './insert'
 
 /** Registers all keyboard shortcuts; returns an unsubscribe function. */
 export function installShortcuts(cancelRadial: () => void): () => void {
@@ -73,10 +74,13 @@ export function installShortcuts(cancelRadial: () => void): () => void {
             return void actions.copyImage()
           }
           e.preventDefault()
+          if (board.selection.length) { clipboardImage.value = false; void navigator.clipboard.writeText('').catch(() => {}) }
           return board.copySelection()
         case 'v':
+          // A picture on the system clipboard wins; copying board objects clears it (see 'c').
           e.preventDefault()
-          return board.pasteSelection()
+          if (!clipboardImage.value && board.hasCopy) return board.pasteSelection()
+          return void pasteClipboardImage().then(ok => { if (ok) clipboardImage.value = false; else board.pasteSelection() })
         case 'x':
           e.preventDefault()
           board.copySelection()
@@ -125,8 +129,9 @@ export function installShortcuts(cancelRadial: () => void): () => void {
         if (board.selection.length === 1 && (selected.t === 't' || selected.t === 'h')) { e.preventDefault(); return board.editText(selected) }
         break
       }
-      case 'PageUp': e.preventDefault(); return board.arrangeSelection('front')
-      case 'PageDown': e.preventDefault(); return board.arrangeSelection('back')
+      // With a selection these reorder objects; otherwise they turn pages (presentation clickers send them).
+      case 'PageUp': e.preventDefault(); return board.selection.length ? board.arrangeSelection('front') : void board.goToPage(board.page - 1)
+      case 'PageDown': e.preventDefault(); return board.selection.length ? board.arrangeSelection('back') : void board.goToPage(board.page + 1)
       case 'Delete':
       case 'Backspace':
         return board.deleteSelection()
@@ -152,6 +157,9 @@ export function installShortcuts(cancelRadial: () => void): () => void {
       case 'g': return actions.cycleGrid()
     }
   }
+  const onFocus = (): void => { void refreshClipboardImage() }
   window.addEventListener('keydown', onKey)
-  return () => window.removeEventListener('keydown', onKey)
+  window.addEventListener('focus', onFocus)
+  void refreshClipboardImage()
+  return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('focus', onFocus) }
 }

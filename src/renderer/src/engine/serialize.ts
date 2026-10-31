@@ -1,4 +1,5 @@
-import type { Item, ObjectMeta, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
+import type { GraphItem, ImageItem, Item, ObjectMeta, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
+import { assetKey } from './media'
 import { newId } from './types'
 import { MAX_ZOOM, MIN_ZOOM } from './view'
 import { clamp } from './geometry'
@@ -9,11 +10,15 @@ import type { LabItem, LabReveal } from './types'
 export const FORMAT = 'floating-whiteboard'
 export const VERSION = 2
 export const LAB_BOARD_VERSION = 3
+/** Pages and pictures. Pictures live in a shared `assets` table, keyed by content. */
+export const PAGES_VERSION = 4
 
 export const MAX_TEXT_LENGTH = 100_000
 const MAX_ID_LENGTH = 128
+const MAX_IMAGE_CHARS = 40 * 1024 * 1024
 const MAX_ITEMS = 100_000
-const MAX_FILE_CHARS = 50 * 1024 * 1024
+const MAX_FILE_CHARS = 300 * 1024 * 1024
+const MAX_PAGES = 500
 
 const r2 = (v: number): number => Math.round(v * 100) / 100
 const r3 = (v: number): number => Math.round(v * 1000) / 1000
@@ -28,6 +33,8 @@ export interface BoardFile {
 export function itemToJson(it: Item): unknown {
   const meta: ObjectMeta = { group: it.group, locked: it.locked, opacity: it.opacity }
   if (it.t === 'l') return { ...it, p: [...it.p], params: { ...it.params }, reveal: { ...it.reveal }, ...(it.gesture ? { gesture: it.gesture.map(p => ({ ...p })) } : {}) }
+  if (it.t === 'i') return { t: 'i', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, src: it.src, aspect: it.aspect, latex: it.latex, ...meta }
+  if (it.t === 'g') return { t: 'g', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, fns: [...it.fns], xr: [...it.xr], yr: [...it.yr], ...meta }
   if (it.t === 's') {
     const p: number[] = new Array(it.p.length)
     for (let i = 0; i + 2 < it.p.length; i += 3) {
@@ -116,6 +123,24 @@ export function itemFromJson(raw: unknown): Item | null {
     if (getModel(it.model) && it.modelVersion === 1 && it.labVersion === 1 && it.frozenTime > labDuration(it) + 1e-8) return null
     return it
   }
+  if (o.t === 'i' || o.t === 'g') {
+    const p = o.p as number[]
+    if (p.length !== 4 || !p.every(isCoord) || p[2] <= p[0] || p[3] <= p[1]) return null
+    if (o.angle !== undefined && (!isNum(o.angle) || Math.abs(o.angle) > 1e6)) return null
+    const box = { id, c: o.c, w: o.w, p: [p[0], p[1], p[2], p[3]] as [number, number, number, number], ...meta, ...(o.angle !== undefined ? { angle: o.angle as number } : {}) }
+    if (o.t === 'i') {
+      if (typeof o.src !== 'string' || o.src.length > MAX_IMAGE_CHARS || !/^data:image\/(?:png|jpeg|webp|gif|svg\+xml)[;,]/.test(o.src)) return null
+      if (!isNum(o.aspect) || o.aspect <= 0 || o.aspect > 1e4) return null
+      if (o.latex !== undefined && (!isText(o.latex) || !o.src.startsWith('data:image/svg+xml'))) return null
+      const image: ImageItem = { t: 'i', ...box, src: o.src, aspect: o.aspect }
+      if (o.latex !== undefined) image.latex = o.latex as string
+      return image
+    }
+    const range = (v: unknown): v is [number, number] => Array.isArray(v) && v.length === 2 && v.every(n => isNum(n) && Math.abs(n) <= 1e9) && v[0] < v[1]
+    if (!Array.isArray(o.fns) || o.fns.length < 1 || o.fns.length > 5 || !o.fns.every(f => typeof f === 'string' && f.length <= 200) || !range(o.xr) || !range(o.yr)) return null
+    const graph: GraphItem = { t: 'g', ...box, fns: [...o.fns as string[]], xr: [...o.xr], yr: [...o.yr] }
+    return graph
+  }
   if (o.t === 's') {
     const p = o.p as number[]
     if (p.length < 3 || p.length > 3_000_000 || p.length % 3 !== 0 || !isFlag(o.m) || !isFlag(o.v)) return null
@@ -164,11 +189,78 @@ export function serializeBoard(items: Item[], view?: View): string {
   return JSON.stringify(file)
 }
 
+export interface PageData { items: Item[]; view?: View }
+
+/**
+ * Multi-page boards and boards with pictures use format 4. With `inline` the pictures are embedded
+ * (portable files); otherwise they are returned separately so autosave writes each picture once.
+ */
+export function serializePages(pages: PageData[], page: number, inline: boolean): { json: string; assets: Record<string, string> } {
+  if (pages.length === 1 && !pages[0].items.some(it => it.t === 'i')) return { json: serializeBoard(pages[0].items, pages[0].view), assets: {} }
+  const assets: Record<string, string> = {}
+  const pageJson = pages.map(pg => ({
+    view: pg.view ? { x: r2(pg.view.x), y: r2(pg.view.y), zoom: r3(pg.view.zoom) } : undefined,
+    items: pg.items.map(it => {
+      if (it.t !== 'i') return itemToJson(it)
+      const key = assetKey(it.src)
+      assets[key] = it.src
+      const { src: _src, ...rest } = itemToJson(it) as Record<string, unknown>
+      return { ...rest, a: key }
+    })
+  }))
+  const file = { format: FORMAT, version: PAGES_VERSION, page, pages: pageJson, ...(inline ? { assets } : { assetKeys: Object.keys(assets) }) }
+  return { json: JSON.stringify(file), assets }
+}
+
 export interface ParsedBoard {
   items: Item[]
   view?: View
   skipped: number
   legacy: boolean
+  /** every page (format 4); `items`/`view` describe page `page` */
+  pages?: PageData[]
+  page?: number
+}
+
+const isAssetKey = (v: unknown): v is string => typeof v === 'string' && /^[0-9a-f]{16,32}$/.test(v)
+const PLACEHOLDER = 'data:image/png;base64,'
+
+/** Format 4. `externalAssets` accepts picture references without their data (save validation). */
+function parsePages(f: Record<string, unknown>, externalAssets: boolean): ParsedBoard | null {
+  if (!Array.isArray(f.pages) || !f.pages.length || f.pages.length > MAX_PAGES) return null
+  const assets = (f.assets && typeof f.assets === 'object' && !Array.isArray(f.assets) ? f.assets : {}) as Record<string, unknown>
+  const ids = new Set<string>()
+  let skipped = 0, total = 0
+  const pages: PageData[] = []
+  for (const raw of f.pages as unknown[]) {
+    const pg = raw as { view?: unknown; items?: unknown }
+    if (!pg || typeof pg !== 'object' || !Array.isArray(pg.items)) return null
+    total += pg.items.length
+    if (total > MAX_ITEMS) return null
+    const items: Item[] = []
+    for (const rawItem of pg.items) {
+      let source = rawItem as Record<string, unknown>
+      if (source && typeof source === 'object' && source.t === 'i') {
+        const src = isAssetKey(source.a) ? (externalAssets ? (source.latex !== undefined ? 'data:image/svg+xml,' : PLACEHOLDER) : assets[source.a]) : undefined
+        source = { ...source, src, a: undefined }
+      }
+      const it = itemFromJson(source)
+      if (!it) { skipped++; continue }
+      if (ids.has(it.id)) it.id = newId()
+      ids.add(it.id)
+      items.push(it)
+    }
+    pages.push({ items, view: parseView(pg.view, false) })
+  }
+  if (total && !pages.some(pg => pg.items.length)) return null
+  const page = Number.isSafeInteger(f.page) && (f.page as number) >= 0 && (f.page as number) < pages.length ? f.page as number : 0
+  return { items: pages[page].items, view: pages[page].view, skipped, legacy: false, pages, page }
+}
+
+function parseView(v: unknown, legacy: boolean): View | undefined {
+  const o = v as { x?: unknown; y?: unknown; zoom?: unknown; z?: unknown } | undefined
+  const zoom = legacy ? o?.z : o?.zoom
+  return o && isCoord(o.x) && isCoord(o.y) && isNum(zoom) ? { x: o.x, y: o.y, zoom: clamp(zoom, MIN_ZOOM, MAX_ZOOM) } : undefined
 }
 
 /** Python v10 stores constant ink as XY pairs and variable ink as XY/width triples. */
@@ -189,10 +281,11 @@ function legacyItem(raw: unknown): Item | null {
   return itemFromJson({ ...o, t: 's', p })
 }
 
-export function parseBoard(json: string): ParsedBoard | null {
+export function parseBoard(json: string, opts: { externalAssets?: boolean } = {}): ParsedBoard | null {
   try {
     if (typeof json !== 'string' || json.length > MAX_FILE_CHARS) return null
     const f = JSON.parse(json) as Partial<BoardFile>
+    if (f && typeof f === 'object' && f.format === FORMAT && f.version === PAGES_VERSION) return parsePages(f as Record<string, unknown>, !!opts.externalAssets)
     if (!f || typeof f !== 'object' || !Array.isArray(f.items) || f.items.length > MAX_ITEMS) return null
     const legacy = f.format === undefined
     if (!legacy && f.format !== FORMAT) return null
@@ -212,11 +305,7 @@ export function parseBoard(json: string): ParsedBoard | null {
       } else skipped++
     }
     if (f.items.length && !items.length) return null
-    const v = f.view
-    const view =
-      v && isCoord(v.x) && isCoord(v.y) && isNum(legacy ? (v as unknown as { z: number }).z : v.zoom)
-        ? { x: v.x, y: v.y, zoom: clamp(legacy ? (v as unknown as { z: number }).z : v.zoom, MIN_ZOOM, MAX_ZOOM) }
-        : undefined
+    const view = parseView(f.view, legacy)
     return { items, view, skipped, legacy }
   } catch {
     return null

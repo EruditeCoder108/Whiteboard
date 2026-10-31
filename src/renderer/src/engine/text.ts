@@ -1,6 +1,6 @@
 import type { EditableItem } from './types'
 
-export const fontOf = (it: EditableItem): string => `${it.italic ? 'italic ' : ''}${it.bold ? '600 ' : ''}${it.fontSize ?? 24}px "Segoe UI", sans-serif`
+export const fontOf = (it: EditableItem): string => `${it.italic ? 'italic ' : ''}${it.bold ? '600 ' : ''}${it.fontSize ?? 24}px "Segoe UI", "Nirmala UI", sans-serif`
 export const textPadding = (it: EditableItem): number => it.t === 't' ? (it.note ? 18 : 4) : Math.min(14, Math.abs(it.p[3] - it.p[1]) / 6, Math.abs(it.p[2] - it.p[0]) / 8)
 export const textAlign = (it: EditableItem): 'left' | 'center' | 'right' => it.align ?? (it.t === 'h' ? 'center' : 'left')
 export const textColor = (it: EditableItem): string => it.textColor ?? it.c

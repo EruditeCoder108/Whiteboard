@@ -142,7 +142,8 @@ export class InputRouter {
       this.beginPan(e)
       return
     }
-    this.tool = this.board.currentTool()
+    const instruments = this.board.instruments
+    this.tool = instruments.active ? instruments.intercept(p) ?? instruments.snapTool(this.board.currentTool(), p) : this.board.currentTool()
     this.mode = 'tool'
     this.tool.down(p)
     if (this.tool.allowsRadial) this.armLongPress(e, p)
@@ -320,6 +321,8 @@ export class InputRouter {
           const p = this.toPtr(ce as PointerEvent)
           this.tool.move(p)
         }
+        // Drawing a frame ahead of the hardware hides most of the display latency.
+        if (this.tool.predict) this.tool.predict((e.getPredictedEvents?.() ?? []).map(pe => this.toPtr(pe)))
         if (this.longTimer) {
           const p = this.toPtr(e)
           if (Math.hypot(p.x - this.pressAt.x, p.y - this.pressAt.y) > LONG_PRESS_SLOP) {
