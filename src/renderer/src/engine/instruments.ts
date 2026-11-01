@@ -2,6 +2,7 @@ import { signal } from '@preact/signals'
 import type { Ptr, Tool, ToolHost } from './tool-types'
 import type { StrokeItem } from './types'
 import { newId } from './types'
+import { inkWidth } from './ink'
 import { S } from '@/state/store'
 
 /** Geometry instruments that float above the board, OpenBoard-style. Not saved with the board. */
@@ -147,7 +148,8 @@ export class Instruments {
 
   commitArc(points: number[]): void {
     if (points.length < 9) return
-    const stroke: StrokeItem = { t: 's', id: newId(), c: S.penColor.value, w: S.penSize.value, m: false, v: false, p: points }
+    const style = S.penStyle.value
+    const stroke: StrokeItem = { t: 's', id: newId(), c: S.penColor.value, w: inkWidth(S.penSize.value, style), m: false, v: false, ...(style === 'pen' ? {} : { style }), p: points }
     this.host.commitAdd(stroke)
   }
 

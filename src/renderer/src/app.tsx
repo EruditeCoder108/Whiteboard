@@ -7,6 +7,7 @@ import { installShortcuts } from '@/state/shortcuts'
 import { S, applySettings, boardMode, darkUi, showToast, startPersisting } from '@/state/store'
 import { BoardBar, BoardSaveChip, EdgeTabs, LayoutChooser } from '@/ui/Board'
 import { PalmCalibration } from '@/ui/Calibrate'
+import { InputsSheet } from '@/ui/Inputs'
 import { Autosave } from '@/state/autosave'
 import { Radial } from '@/ui/Radial'
 import { ResizeHandles, Toast } from '@/ui/Chrome'
@@ -255,6 +256,7 @@ export function App(): JSX.Element {
       {S.popover.value === 'export-preview' && <ExportPreview />}
       {S.popover.value === 'periodic' && <PeriodicSheet />}
       {S.popover.value === 'table' && <TableChooser />}
+      {S.popover.value === 'inputs' && <InputsSheet />}
       {S.popover.value === 'shelf' && <ShelfSheet />}
       {S.popover.value === 'shelf-save' && <ShelfSaveSheet />}
       <Dialog />

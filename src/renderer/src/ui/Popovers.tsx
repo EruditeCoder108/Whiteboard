@@ -15,6 +15,7 @@ import { ExportSheet } from './Lessons'
 import { Btn, MenuItem, Row, Segmented, Sep, Slider, Swatch, Switch } from './kit'
 import { calibrating } from './Calibrate'
 import { PaperPicker } from './Paper'
+import { InkPreview, PenStylePicker, SlideToClear, penLabel } from './PenStyles'
 
 const TOOL_TITLE: Record<string, string> = {
   pen: 'Pen', marker: 'Highlighter', eraser: 'Eraser', line: 'Line', arrow: 'Arrow', rect: 'Rectangle', ellipse: 'Ellipse', diamond: 'Diamond', triangle: 'Triangle', text: 'Text', sticky: 'Sticky note'
@@ -30,23 +31,6 @@ function ColorPicker({ onPick, color = currentColor.value }: { onPick: (hex: str
   )
 }
 
-function Preview(): JSX.Element {
-  const marker = styleKey.value === 'marker'
-  const w = Math.min(currentSize.value, 30)
-  return (
-    <svg class="preview" viewBox="0 0 200 34" preserveAspectRatio="none">
-      <path
-        d="M 14 24 C 60 -4, 100 40, 186 10"
-        fill="none"
-        stroke={currentColor.value}
-        stroke-width={w}
-        stroke-linecap="round"
-        stroke-opacity={marker ? 0.4 : 1}
-      />
-    </svg>
-  )
-}
-
 export function PropsPopover(): JSX.Element {
   if (['select', 'lasso'].includes(S.tool.value) && S.selectionCount.value) return <SelectionPopover />
   const key = styleKey.value
@@ -54,7 +38,8 @@ export function PropsPopover(): JSX.Element {
   const eraser = key === 'eraser'
   return (
     <div class="popover panel ui props" data-popover-keep="">
-      <div class="pop-title">{TOOL_TITLE[activeTool.value] ?? 'Brush'}</div>
+      <div class="pop-title">{activeTool.value === 'pen' ? penLabel(S.penStyle.value) : TOOL_TITLE[activeTool.value] ?? 'Brush'}</div>
+      {activeTool.value === 'pen' && <PenStylePicker />}
       {!eraser && (
         <>
           <div class="swatches">
@@ -63,7 +48,7 @@ export function PropsPopover(): JSX.Element {
             ))}
             <ColorPicker onPick={actions.setColor} />
           </div>
-          <Preview />
+          <InkPreview />
         </>
       )}
       <Row label="Size">
@@ -83,6 +68,7 @@ export function PropsPopover(): JSX.Element {
               ? 'Touch a line to remove the whole stroke.'
               : 'Erase only the part you rub over — like a real eraser.'}
           </div>
+          <SlideToClear />
         </>
       )}
     </div>
@@ -206,6 +192,7 @@ export function SettingsPopover(): JSX.Element {
         <Switch on={S.palmErase.value} onChange={(v) => (S.palmErase.value = v)} />
       </Row>
       {S.palmErase.value && <button type="button" class="link-btn nodrag" onClick={() => { S.popover.value = null; calibrating.value = true }}>Calibrate palm size…</button>}
+      <button type="button" class="link-btn nodrag" onClick={() => (S.popover.value = 'inputs')}>Pen and finger: a tool for each…</button>
       <Sep />
       <Row label="Hold for menu">
         <span class="grow" />

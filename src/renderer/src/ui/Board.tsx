@@ -22,6 +22,7 @@ import { ShapesPopover, PropsPopover } from './Popovers'
 import { MathsPopover, curtainOn, spotlightOn, timerOn } from './Present'
 import { PaperPopover } from './Paper'
 import { SubjectsPopover } from './Subjects'
+import { PEN_ICON, penLabel } from './PenStyles'
 
 type Icon = typeof Pen
 
@@ -47,7 +48,13 @@ function BBtn({ icon: I, label, active, disabled, onClick, keep, danger }: {
 }
 
 function ToolBtn({ tool, icon, label }: { tool: ToolName; icon: Icon; label: string }): JSX.Element {
-  return <BBtn icon={icon} label={label} active={activeTool.value === tool} onClick={() => { S.popover.value = null; actions.setTool(tool) }} />
+  // Tapping the pen or eraser already in hand opens its choices, right where the hand is.
+  const choices = tool === 'pen' || tool === 'eraser' || tool === 'marker'
+  return <BBtn icon={icon} label={label} keep={choices} active={activeTool.value === tool} onClick={() => {
+    if (choices && S.tool.value === tool) return toggle('props')
+    S.popover.value = null
+    actions.setTool(tool)
+  }} />
 }
 
 /** The board toolbar: tools, ink colours and sizes, undo, pages and the main menu, all one tap away. */
@@ -85,7 +92,7 @@ export function BoardBar(): JSX.Element {
           <GripVertical size={18} />
         </button>
         <ToolBtn tool="select" icon={MousePointer2} label="Select" />
-        <ToolBtn tool="pen" icon={Pen} label="Pen" />
+        <ToolBtn tool="pen" icon={PEN_ICON[S.penStyle.value]} label={penLabel(S.penStyle.value)} />
         <ToolBtn tool="marker" icon={Highlighter} label="Highlight" />
         <ToolBtn tool="eraser" icon={Eraser} label="Eraser" />
         <BBtn icon={Shapes} label="Shapes" keep active={isShapeTool(t) || p === 'shapes'} onClick={() => {

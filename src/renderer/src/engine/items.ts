@@ -7,6 +7,7 @@ import {
   runsOutsideCircle,
   segDistSq
 } from './geometry'
+import { chiselPressures, outlineOptions, paintInk } from './ink'
 import { MARKER_ALPHA, isBox, newId } from './types'
 import type { Item, Rect, ShapeItem, StrokeItem } from './types'
 import { paintText } from './text'
@@ -35,17 +36,14 @@ const halfWidth = (it: StrokeItem, v: number): number => (it.w / 2) * (it.v ? wi
 
 // ── stroke outline ────────────────────────────────────────────────────────────
 export function strokeOutline(it: StrokeItem): number[][] {
-  const pts: [number, number, number][] = []
-  for (let i = 0; i + 2 < it.p.length; i += 3) pts.push([it.p[i], it.p[i + 1], it.p[i + 2]])
+  let pts: [number, number, number][] = []
+  if (it.style === 'felt') pts = chiselPressures(it.p)
+  else for (let i = 0; i + 2 < it.p.length; i += 3) pts.push([it.p[i], it.p[i + 1], it.p[i + 2]])
   return getStroke(pts, {
     size: it.w,
-    thinning: it.v ? THINNING : 0,
-    smoothing: 0.55,
-    streamline: 0.2,
     simulatePressure: false,
     last: true,
-    start: { cap: true },
-    end: { cap: true }
+    ...outlineOptions(it.style, it.w, it.v, pts.length)
   })
 }
 
@@ -276,8 +274,7 @@ function paintObject(ctx: CanvasRenderingContext2D, it: Item, alpha: number, lab
   const path = itemPath(it)
   if (it.t === 's') {
     ctx.globalAlpha = alpha * (it.m ? MARKER_ALPHA : 1)
-    ctx.fillStyle = it.c
-    ctx.fill(path)
+    paintInk(ctx, it, path)
   } else if (it.t === 't') {
     ctx.globalAlpha = alpha
     if (it.fill && it.fill !== 'none') { ctx.fillStyle = it.fill; ctx.fill(path) }
@@ -351,14 +348,14 @@ export function splitErase(it: Item, cx: number, cy: number, r: number): StrokeI
     return splitErase({ ...it, angle: 0 }, lx, ly, r).map(s => ({ ...s, p: s.p.map((v, i, pts) => i % 3 === 2 ? v : rotatePoint(pts[i - i % 3], pts[i - i % 3 + 1], cX, cY, it.angle!)[i % 3]) }))
   }
   const frags: StrokeItem[] = []
-  const mk = (run: number[], base: Pick<StrokeItem, 'c' | 'w' | 'm' | 'v' | 'group' | 'opacity'>): void => {
+  const mk = (run: number[], base: Pick<StrokeItem, 'c' | 'w' | 'm' | 'v' | 'style' | 'group' | 'opacity'>): void => {
     if (run.length < 6) return // drop crumbs: a lone sample left between two cuts
     frags.push({ t: 's', id: newId(), ...base, p: run })
   }
   if (it.t === 's') {
     const d = denseOf(it)
     if (d.length <= 3) return []
-    const base = { c: it.c, w: it.w, m: it.m, v: it.v, group: it.group, opacity: it.opacity }
+    const base = { c: it.c, w: it.w, m: it.m, v: it.v, ...(it.style ? { style: it.style } : {}), group: it.group, opacity: it.opacity }
     for (const run of runsOutsideCircle(d, cx, cy, r, (v) => halfWidth(it, v))) mk(run, base)
   } else {
     const base = { c: it.c, w: it.w, m: false, v: false, group: it.group, opacity: it.opacity }

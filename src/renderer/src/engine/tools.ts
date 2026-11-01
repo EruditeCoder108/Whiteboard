@@ -11,6 +11,8 @@ import { isBox, newId } from './types'
 import type { Item, Rect, ShapeItem, ShapeKind, StrokeItem, LabItem, TableItem } from './types'
 import type { Ptr, Tool, ToolHost } from './tool-types'
 import { recognize } from './recognize'
+import { inkFollowsSpeed, inkVaries, inkWidth } from './ink'
+import type { PenChoice } from './ink'
 import { S, isDarkBg, showToast } from '@/state/store'
 import { launchHandle, labToWorld, worldToLab } from './science/scene'
 import { supportedLab } from './science/runtime'
@@ -82,7 +84,7 @@ export class PenTool implements Tool {
   ) {}
 
   cursor(): string {
-    const size = this.marker ? S.markerSize.value : S.penSize.value
+    const size = this.marker ? S.markerSize.value : inkWidth(S.penSize.value, S.penStyle.value)
     const color = this.marker ? S.markerColor.value : S.penColor.value
     return brushCursor(size * this.host.view.zoom, color, this.marker)
   }
@@ -92,17 +94,19 @@ export class PenTool implements Tool {
   }
 
   down(p: Ptr): void {
+    const style: PenChoice = this.marker ? 'pen' : S.penStyle.value
     // Touch panels (most classroom boards are IR) send no pressure: width follows speed instead.
-    this.soft = !this.marker && S.pressure.value && p.type === 'touch'
-    const variable = !this.marker && S.pressure.value && (p.type === 'pen' || this.soft)
+    this.soft = !this.marker && inkVaries(style) && ((S.pressure.value && p.type === 'touch') || (inkFollowsSpeed(style) && p.type !== 'pen'))
+    const variable = !this.marker && inkVaries(style) && ((S.pressure.value && p.type === 'pen') || this.soft)
     this.lastRaw = [p.x, p.y, p.t]
     this.live = {
       t: 's',
       id: newId(),
-      c: this.marker ? S.markerColor.value : S.penColor.value,
-      w: this.marker ? S.markerSize.value : S.penSize.value,
+      c: S.inkOverride.value ?? (this.marker ? S.markerColor.value : S.penColor.value),
+      w: this.marker ? S.markerSize.value : inkWidth(S.penSize.value, style),
       m: this.marker,
-      v: variable
+      v: variable,
+      ...(style === 'pen' ? {} : { style })
     }
     this.pressure = this.soft ? SOFT_REST : variable ? clamp(p.pressure, 0.05, 1) : 0.5
     this.smoother.reset()

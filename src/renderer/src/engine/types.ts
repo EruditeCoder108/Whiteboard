@@ -38,6 +38,10 @@ export interface TextStyle {
   textColor?: string
 }
 
+/** How a pen stroke looks (see ink.ts); no style is the plain pen. */
+export type PenStyle = 'pencil' | 'brush' | 'chalk' | 'felt'
+export const PEN_STYLES: PenStyle[] = ['pencil', 'brush', 'chalk', 'felt']
+
 /** A freehand stroke (pen or highlighter). `p` is flat: x, y, pressure, x, y, pressure … */
 export interface StrokeItem extends ObjectMeta {
   t: 's'
@@ -50,6 +54,7 @@ export interface StrokeItem extends ObjectMeta {
   m: boolean
   /** width follows pressure */
   v: boolean
+  style?: PenStyle
   p: number[]
 }
 

@@ -11,6 +11,9 @@ import type { Artwork } from '@/engine/pages'
 import { TEXTURES } from '@/engine/texture'
 import type { Texture } from '@/engine/texture'
 import { isBoardColor, isDarkColor, luminance } from '@/engine/colour'
+import type { PenChoice } from '@/engine/ink'
+import { INPUT_ROLES } from '@/engine/roles'
+import type { InputRole } from '@/engine/roles'
 export { luminance } from '@/engine/colour'
 /** the visible page's background paper */
 export type GridMode = Paper
@@ -18,7 +21,7 @@ export type GridMode = Paper
 export type Layout = 'board' | 'laptop'
 export type BarSide = 'left' | 'center' | 'right'
 export type { BoardKind } from '@/engine/pages'
-export type PopoverName = 'props' | 'shapes' | 'menu' | 'settings' | 'help' | 'recovery' | 'agent' | 'replay' | 'science' | 'insert' | 'equation' | 'graph' | 'maths' | 'present' | 'board-menu' | 'pages' | 'paper' | 'subjects' | 'lessons' | 'new-lesson' | 'export' | 'shelf' | 'shelf-save' | 'scale' | 'export-preview' | 'periodic' | 'table' | null
+export type PopoverName = 'props' | 'shapes' | 'menu' | 'settings' | 'help' | 'recovery' | 'agent' | 'replay' | 'science' | 'insert' | 'equation' | 'graph' | 'maths' | 'present' | 'board-menu' | 'pages' | 'paper' | 'subjects' | 'lessons' | 'new-lesson' | 'export' | 'shelf' | 'shelf-save' | 'scale' | 'export-preview' | 'periodic' | 'table' | 'inputs' | null
 
 export const SHAPE_TOOLS: ShapeKind[] = ['line', 'arrow', 'rect', 'ellipse', 'diamond', 'triangle']
 export const isShapeTool = (t: ToolName): t is ShapeKind => (SHAPE_TOOLS as string[]).includes(t)
@@ -64,6 +67,7 @@ export const S = {
   lastShape: signal<ShapeKind>('line'),
   penColor: signal('#111827'),
   penSize: signal(3),
+  penStyle: signal<PenChoice>('pen'),
   markerColor: signal('#f5c518'),
   markerSize: signal(20),
   eraserSize: signal(28),
@@ -91,6 +95,15 @@ export const S = {
   /** a touch at least this wide (CSS px) is a palm and erases */
   palmErase: signal(true),
   palmSize: signal(60),
+  /** a tool per input (roles.ts): each one's tool and colour, and the contact sizes that tell them apart (0: not measured) */
+  tipRole: signal<InputRole>('same'),
+  thickRole: signal<InputRole>('same'),
+  fingerRole: signal<InputRole>('same'),
+  tipInk: signal('#2f6bff'),
+  thickInk: signal('#e5484d'),
+  fingerInk: signal('#2fa66a'),
+  tipMax: signal(0),
+  thickMax: signal(0),
 
   // ── transient ───────────────────────────────────────────────────────────────
   /** The visible page's paper and board colour. They belong to the lesson (see Board), not to settings. */
@@ -104,6 +117,8 @@ export const S = {
   undoLabel: signal(''),
   /** set while the pen's eraser end / barrel button is active */
   override: signal<ToolName | null>(null),
+  /** the ink colour of the input now writing, when it has its own (see roles.ts) */
+  inkOverride: signal<string | null>(null),
   /** the board's kind (it lives in the board file, not in settings) */
   kind: signal<'notebook' | 'canvas'>('canvas'),
   /** canvas frames: how many, and which one is on screen (-1: between frames) */
@@ -185,9 +200,9 @@ export function showToast(text: string, ms = 2200, action?: ToastAction): void {
 
 // ── persistence ───────────────────────────────────────────────────────────────
 const PERSISTED = [
-  'tool', 'lastShape', 'penColor', 'penSize', 'markerColor', 'markerSize', 'eraserSize',
+  'tool', 'lastShape', 'penColor', 'penSize', 'penStyle', 'markerColor', 'markerSize', 'eraserSize',
   'eraserMode', 'defaultPaper', 'defaultColor', 'defaultTexture', 'defaultSpacing', 'defaultStrength', 'defaultLines', 'bgAlpha', 'smoothing', 'pressure', 'fingerDraw', 'onTop',
-  'radialEnabled', 'radialDelay', 'layout', 'layoutChosen', 'barSide', 'palmErase', 'palmSize', 'uiTheme'
+  'radialEnabled', 'radialDelay', 'layout', 'layoutChosen', 'barSide', 'palmErase', 'palmSize', 'tipRole', 'thickRole', 'fingerRole', 'tipInk', 'thickInk', 'fingerInk', 'tipMax', 'thickMax', 'uiTheme'
 ] as const
 
 export function snapshotSettings(): Record<string, unknown> {
@@ -209,11 +224,12 @@ export function applySettings(raw: unknown): void {
     if (typeof value !== typeof sig.value) continue
     const enums: Partial<Record<typeof PERSISTED[number], readonly string[]>> = {
       tool: ['select', 'lasso', 'text', 'sticky', 'hand', 'pen', 'marker', 'eraser', 'laser', ...SHAPE_TOOLS],
-      lastShape: SHAPE_TOOLS, eraserMode: ['stroke', 'pixel'], defaultPaper: PAPERS, defaultTexture: TEXTURES,
-      layout: ['board', 'laptop'], barSide: ['left', 'center', 'right'], uiTheme: ['auto', 'light', 'dark']
+      lastShape: SHAPE_TOOLS, penStyle: ['pen', 'pencil', 'brush', 'chalk', 'felt'], eraserMode: ['stroke', 'pixel'], defaultPaper: PAPERS, defaultTexture: TEXTURES,
+      layout: ['board', 'laptop'], barSide: ['left', 'center', 'right'], uiTheme: ['auto', 'light', 'dark'],
+      tipRole: INPUT_ROLES, thickRole: INPUT_ROLES, fingerRole: INPUT_ROLES
     }
     if (enums[k] && !enums[k]!.includes(value as string)) continue
-    if (['penColor', 'markerColor', 'defaultColor'].includes(k) && !isBoardColor(value)) continue
+    if (['penColor', 'markerColor', 'defaultColor', 'tipInk', 'thickInk', 'fingerInk'].includes(k) && !isBoardColor(value)) continue
     if (k === 'defaultLines' && value !== '' && !isBoardColor(value)) continue
     if (typeof value === 'number') {
       if (!Number.isFinite(value)) continue
@@ -223,7 +239,7 @@ export function applySettings(raw: unknown): void {
       if (f) { sig.value = Math.max(f[0], Math.min(f[1], value)); continue }
       const ranges: Partial<Record<typeof PERSISTED[number], readonly [number, number]>> = {
         penSize: SIZE_RANGE.pen, markerSize: SIZE_RANGE.marker, eraserSize: SIZE_RANGE.eraser,
-        bgAlpha: [0, 100], smoothing: [0, 10], radialDelay: [300, 1500], palmSize: [12, 400]
+        bgAlpha: [0, 100], smoothing: [0, 10], radialDelay: [300, 1500], palmSize: [12, 400], tipMax: [0, 400], thickMax: [0, 400]
       }
       const range = ranges[k]
       sig.value = range ? Math.max(range[0], Math.min(range[1], Math.round(value))) : value

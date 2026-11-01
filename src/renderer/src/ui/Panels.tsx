@@ -58,7 +58,11 @@ function SaveIndicator(): JSX.Element {
 }
 
 function ToolBtn({ tool, icon, title }: { tool: ToolName; icon: Parameters<typeof Btn>[0]['icon']; title: string }): JSX.Element {
-  return <Btn icon={icon} title={title} active={activeTool.value === tool} onClick={() => actions.setTool(tool)} />
+  const choices = tool === 'pen' || tool === 'eraser' || tool === 'marker'
+  return <Btn icon={icon} title={title} keep={choices} active={activeTool.value === tool} onClick={() => {
+    if (choices && S.tool.value === tool) toggle('props')
+    else actions.setTool(tool)
+  }} />
 }
 
 export function Dock(): JSX.Element {

@@ -643,7 +643,7 @@ export class Board implements ToolHost {
     this.refresh(null)
     // Clearing takes the ink only: a worksheet picture and the paper stay for the next class.
     const kept = this.look.art ? 'the picture and paper stay' : (this.look.paper ?? 'none') !== 'none' ? 'the paper stays' : ''
-    showToast(kept ? `Ink cleared · ${kept} · Ctrl+Z brings it back` : 'Board cleared  ·  Ctrl+Z brings it back')
+    showToast(kept ? `Ink cleared · ${kept}` : 'Board cleared', 6000, { label: 'Undo', run: () => this.undo() })
   }
 
   selectAll(): void {

@@ -2,7 +2,8 @@ import { validStep } from './reveals'
 import { MAX_POINTS, validAxis } from './scale'
 import { validTable } from './table'
 import type { TableItem } from './types'
-import type { Anchor, GraphItem, ImageItem, Item, ObjectMeta, ScaleAxis, ScaleItem, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
+import { PEN_STYLES } from './types'
+import type { Anchor, GraphItem, ImageItem, Item, ObjectMeta, PenStyle, ScaleAxis, ScaleItem, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
 import { assetKey } from './media'
 import { artJson, hasLook, isBoardKind, lookJson, validArt, validLook, validLookFrame } from './pages'
 import type { Artwork, BoardKind, Frame, LookFrame, PageLook } from './pages'
@@ -54,7 +55,7 @@ export function itemToJson(it: Item): unknown {
       p[i + 1] = r2(it.p[i + 1])
       p[i + 2] = r3(it.p[i + 2])
     }
-    return { t: 's', id: it.id, c: it.c, w: r2(it.w) || it.w, m: it.m ? 1 : 0, v: it.v ? 1 : 0, p, ...meta }
+    return { t: 's', id: it.id, c: it.c, w: r2(it.w) || it.w, m: it.m ? 1 : 0, v: it.v ? 1 : 0, ...(it.style ? { style: it.style } : {}), p, ...meta }
   }
   const text: TextStyle = {
     text: it.text, fontSize: it.fontSize, bold: it.bold, italic: it.italic,
@@ -197,7 +198,8 @@ export function itemFromJson(raw: unknown): Item | null {
     for (let i = 0; i < p.length; i += 3) {
       if (!isCoord(p[i]) || !isCoord(p[i + 1]) || !isNum(p[i + 2]) || p[i + 2] < 0 || p[i + 2] > 1) return null
     }
-    const s: StrokeItem = { t: 's', id, c: o.c, w: o.w, m: !!o.m, v: !!o.v, p: [...p], ...meta }
+    // A style from a newer version falls back to the plain pen rather than losing the stroke.
+    const s: StrokeItem = { t: 's', id, c: o.c, w: o.w, m: !!o.m, v: !!o.v, ...(PEN_STYLES.includes(o.style as PenStyle) ? { style: o.style as PenStyle } : {}), p: [...p], ...meta }
     return s
   }
   if (o.t === 'h' || o.t === 't') {

@@ -1204,5 +1204,25 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .table-count .scale-bump { width: 56px; height: 52px; }
 .table-count .scale-bump:disabled { opacity: .4; }
 .table-head-choice { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 16px; font-weight: 600; }
+/* ── pen styles and inputs ── */
+.pen-styles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.pen-styles .tile { min-height: 58px; padding: 6px 2px; }
+.ink-preview { display: block; }
+.slide-clear { position: relative; height: 52px; border-radius: 26px; background: var(--hover); display: grid; place-items: center; margin-top: 4px; overflow: hidden; }
+.slide-clear > span { font-size: 12.5px; font-weight: 600; color: var(--muted); padding-left: 44px; opacity: calc(1 - var(--at) * 1.4); }
+.slide-clear::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: calc(52px + (100% - 52px) * var(--at)); border-radius: 26px; background: rgba(229, 72, 77, calc(.12 + var(--at) * .35)); }
+.slide-thumb { position: absolute; top: 3px; left: calc(3px + (100% - 52px) * var(--at)); width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--panel); color: var(--danger); box-shadow: 0 1px 5px rgba(15, 23, 42, .35); cursor: grab; }
+.slide-clear:not(.sliding) .slide-thumb, .slide-clear:not(.sliding)::before { transition: left .18s, width .18s; }
+.inputs-card { width: min(640px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; }
+.inputs-hint { font-size: 15px; line-height: 1.4; color: var(--muted); margin: 0; }
+.inputs-hint b { color: var(--text); }
+.input-row { display: flex; flex-direction: column; gap: 6px; }
+.input-row.off { opacity: .55; }
+.input-name { display: flex; align-items: baseline; gap: 8px; font-size: 16px; }
+.input-name span { font-size: 13px; color: var(--muted); }
+.input-row .seg { min-height: 44px; }
+.input-measure { min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 16px; border-radius: 14px; border: 2px dashed var(--accent); background: var(--accent-soft); touch-action: none; font-size: 15px; }
+.input-measure b { font-size: 20px; }
+
 .table-cell-editor { position: absolute; z-index: 26; box-shadow: 0 0 0 2.5px #4262ff; border-radius: 2px; }
 .table-cell-editor textarea { display: block; width: 100%; height: 100%; border: 0; outline: none; resize: none; background: transparent; overflow: hidden; user-select: text; -webkit-user-select: text; }

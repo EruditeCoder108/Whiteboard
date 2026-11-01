@@ -16,9 +16,9 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - ⬜ Clean up clipped labels and awkward wording
 
 **B. Writing feels right**
-- ⬜ Pen styles: pencil, paintbrush, chalk, thick marker
-- ⬜ A tool per input: pen tip, thick end and finger can each be a different tool and colour
-- ⬜ Slide to clear the page, and an eraser that is quick to reach
+- ✅ Pen styles: pencil, paintbrush, chalk, thick marker
+- ✅ A tool per input: pen tip, thick end and finger can each be a different tool and colour *(the size check needs a real panel)*
+- ✅ Slide to clear the page, and an eraser that is quick to reach
 
 **C. Objects are easy to handle**
 - ⬜ Big action bar beside whatever is selected: lock, copy, delete, flip, front and back, save to shelf
