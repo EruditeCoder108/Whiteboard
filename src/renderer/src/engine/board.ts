@@ -20,7 +20,7 @@ import { S, SHAPE_TOOLS, activeTool, isDarkBg, keepInkReadable, showToast } from
 import type { Here, ToolName } from '@/state/store'
 import { defaultStyle } from '@/state/store'
 import type { InkTiming } from './replay'
-import { DEFAULT_BOARD_COLOR, sameColor } from './colour'
+import { DEFAULT_BOARD_COLOR, sameColor, isDarkColor } from './colour'
 import type { Paper, PaperStyle } from './grid'
 import { backdropOf, paintBackdrop, styleOf } from './scene'
 import type { Backdrop } from './scene'
@@ -28,7 +28,7 @@ import type { Texture } from './texture'
 import { ART_DEFAULTS, DEFAULT_FRAME, MAX_EXTENT, MAX_TITLE, PAGE_H, PAGE_W, STYLE_KEYS, clampToFrame, fitZoom, frameForContent, frameRect, frameView, scrollOf } from './pages'
 import type { Artwork, BoardKind, Frame, LookFrame, PageLook } from './pages'
 import { canvasToNotebook, nextFrameSlot, notebookToCanvas } from './convert'
-import { pageAt } from './shelf'
+import { pageAt, readableOn } from './shelf'
 import { followConnectors, isConnector, remapAnchors, withNewIds } from './connectors'
 import { assignStep, clearStep, hideAgain, showStep, stepsOf } from './reveals'
 import type { StepInfo } from './reveals'
@@ -1938,18 +1938,26 @@ export class Board implements ToolHost {
    * screens with nothing on them are left out. `split: false` keeps a long page whole.
    * Blank pages are kept, and a notebook whose pages only have paper still prints that paper.
    */
-  async exportPages(opts: { split?: boolean; hidden?: 'keep' | 'show' } = {}): Promise<ArrayBuffer[]> {
+  async exportPages(opts: { split?: boolean; hidden?: 'keep' | 'show'; print?: boolean; scale?: number; cancelled?: () => boolean; onSheet?: (png: ArrayBuffer) => Promise<void> | void } = {}): Promise<ArrayBuffer[]> {
     const split = opts.split ?? true
-    this.exportHidden = opts.hidden ?? 'keep'
+    const scale = opts.scale ?? 1.5
     const out: ArrayBuffer[] = []
     const pages = this.pageData()
-    const sheet = async (items: Item[], f: Frame, back: Backdrop): Promise<void> => {
+    const render = async (items: Item[], rect: Rect, at: number, back: Backdrop): Promise<void> => {
+      if (opts.cancelled?.()) return
+      this.exportHidden = opts.hidden ?? 'keep'
+      const png = await this.renderRect(items, rect, at, back)
+      if (!png) return
+      out.push(png)
+      await opts.onSheet?.(png)
+    }
+    const sheet = async (shown: Item[], f: Frame, seen: Backdrop): Promise<void> => {
+      const { items, back } = opts.print ? this.printable(shown, seen) : { items: shown, back: seen }
       await preloadImages(items, back.art ? [back.art.src] : [])
       const screens = split ? this.usedScreens(items, f) : 1
       for (let k = 0; k < screens; k++) {
         const rect: Rect = split ? [f.x, f.y + k * PAGE_H, f.x + PAGE_W, f.y + (k + 1) * PAGE_H] : frameRect(f)
-        const png = await this.renderRect(items, rect, 1.5, back)
-        if (png) out.push(png)
+        await render(items, rect, scale, back)
       }
     }
     if (!this.paged && this.frames.length) {
@@ -1967,11 +1975,27 @@ export class Board implements ToolHost {
     const items = pages[0].items
     const b = this.doc.bounds(items)
     if (!b) return out
-    const back = this.surfaceBackdrop()
-    await preloadImages(items, back.art ? [back.art.src] : [])
-    const png = await this.renderRect(items, padRect(b, 48), 2, back)
-    if (png) out.push(png)
+    const open = opts.print ? this.printable(items, this.surfaceBackdrop()) : { items, back: this.surfaceBackdrop() }
+    await preloadImages(open.items, open.back.art ? [open.back.art.src] : [])
+    await render(open.items, padRect(b, 48), opts.scale ?? 2, open.back)
     return out
+  }
+
+  /**
+   * A dark board on white paper, to save toner: the board turns white and ink turns readable on it.
+   * The lesson itself is not touched. Light boards print as they are.
+   */
+  private printable(items: Item[], back: Backdrop): { items: Item[]; back: Backdrop } {
+    if (!isDarkColor(back.color)) return { items, back }
+    const { texture: _texture, textureAlpha: _alpha, ...plain } = back
+    const { lines: _lines, ...style } = back.style // chalk-coloured lines would vanish; the paper's own lines suit white
+    return { items: readableOn(items, back.color, '#ffffff', 3), back: { ...plain, color: '#ffffff', style } }
+  }
+
+  /** Whether any sheet of this lesson has a dark board, so print-friendly would change something. */
+  hasDarkSheets(): boolean {
+    if (!this.paged) return this.frames.length ? this.frames.some(f => isDarkColor(this.frameBackdrop(f).color)) : isDarkColor(this.surfaceBackdrop().color)
+    return this.pageData().some(pg => isDarkColor(this.pageBackdrop(pg, pg.frame).color))
   }
 
   /** How many screens of a sheet to print: down to the last one that has something on it. */

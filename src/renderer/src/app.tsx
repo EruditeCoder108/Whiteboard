@@ -29,6 +29,7 @@ import { CurtainLayer, SpotlightLayer, TimerWidget } from '@/ui/Present'
 import { editEquation, editGraph, editScale, insertFiles, scaleTarget } from '@/state/insert'
 import { ScaleEditor } from '@/ui/Scale'
 import { RevealBar } from '@/ui/Reveal'
+import { ExportPreview } from '@/ui/ExportPreview'
 
 const agentForPanel = new BoardAgent(board, replay)
 
@@ -246,6 +247,7 @@ export function App(): JSX.Element {
       {S.popover.value === 'lessons' && <LessonLibrary />}
       {S.popover.value === 'new-lesson' && <NewLessonSheet />}
       {S.popover.value === 'scale' && <ScaleEditor key={scaleTarget.value?.id ?? 'new'} />}
+      {S.popover.value === 'export-preview' && <ExportPreview />}
       {S.popover.value === 'shelf' && <ShelfSheet />}
       {S.popover.value === 'shelf-save' && <ShelfSaveSheet />}
       <Dialog />
