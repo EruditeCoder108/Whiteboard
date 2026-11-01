@@ -99,6 +99,8 @@ export interface PageLook {
   spacing?: number; strength?: number; lines?: string; art?: Artwork
   /** the board surface's texture for this page only (like `color`); 'none' can override a textured lesson */
   texture?: Texture
+  /** a section of the lesson starts at this page, under this heading ("Warm-up", "Practice") */
+  section?: string
 }
 /** The settings that describe how the paper is drawn; they travel with the paper. */
 export const STYLE_KEYS = ['spacing', 'strength', 'lines'] as const
@@ -124,6 +126,7 @@ export function validLook(v: unknown): PageLook {
   if (inRange(o.strength, STRENGTH_RANGE) && o.strength !== 1) look.strength = o.strength
   if (isBoardColor(o.lines)) look.lines = o.lines
   if (isTexture(o.texture)) look.texture = o.texture
+  if (typeof o.section === 'string' && o.section.trim()) look.section = o.section.trim().slice(0, MAX_TITLE)
   return look
 }
 
@@ -155,6 +158,7 @@ export function lookJson(look: PageLook): Omit<PageLook, 'art'> {
   if (look.strength !== undefined && look.strength !== 1) out.strength = r2(look.strength)
   if (look.lines) out.lines = look.lines
   if (look.texture) out.texture = look.texture
+  if (look.section) out.section = look.section
   return out
 }
 

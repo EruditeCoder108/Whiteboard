@@ -1124,6 +1124,25 @@ export class Board implements ToolHost {
     this.changed()
   }
 
+  /** Start a section of the lesson at page (or frame) `i`, under `name`; an empty name ends it there. */
+  setSection(i: number, name: string): void {
+    const t = name.trim().slice(0, MAX_TITLE)
+    const mark = <T extends PageLook>(o: T): T => t ? { ...o, section: t } : without(o, 'section')
+    if (this.paged) {
+      if (i === this.pageIndex) this.look = mark(this.look)
+      else if (this.pages[i]) this.pages[i] = mark(this.pages[i])
+      else return
+    } else if (this.frames[i]) this.frames[i] = mark(this.frames[i])
+    else return
+    this.framesChanged()
+    this.changed()
+  }
+
+  /** The heading of the section that starts at page (or frame) `i`, if one does. */
+  sectionAt(i: number): string {
+    return (this.paged ? i === this.pageIndex ? this.look.section : this.pages[i]?.section : this.frames[i]?.section) ?? ''
+  }
+
   /** The name of notebook page `i` or canvas frame `i`. */
   titleOf(i: number): string {
     return (this.paged ? i === this.pageIndex ? this.look.title : this.pages[i]?.title : this.frames[i]?.title) ?? ''
@@ -1202,7 +1221,8 @@ export class Board implements ToolHost {
     const pg = this.pages[i]
     if (!pg) return
     const { items, view, history: _h, frame, ...look } = pg
-    this.pages.splice(i + 1, 0, { ...look, items: items.map(it => ({ ...it, id: newId() })), view: { ...view }, history: { undo: [], redo: [] }, frame: frame && { ...frame } })
+    // The copy belongs to the same section: it does not start another one.
+    this.pages.splice(i + 1, 0, { ...without(look, 'section'), items: items.map(it => ({ ...it, id: newId() })), view: { ...view }, history: { undo: [], redo: [] }, frame: frame && { ...frame } })
     this.showPage(i + 1)
     this.changed({ label: `Copied page ${i + 1}`, snap })
   }

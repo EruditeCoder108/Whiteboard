@@ -1,10 +1,11 @@
 import {
-  Blinds, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileText, FlaskConical, GripVertical, FilePlus2, FolderOpen, Pencil, Save, Share2,
+  Blinds, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileText, FlaskConical, GripVertical, FilePlus2, Library, Pencil, SaveAll, Share2,
   Highlighter, Image as ImageIcon, Laptop, LayoutGrid, LineChart, LogOut, Minus, MousePointer2, MousePointerClick, Pen, Plus,
   Presentation, GraduationCap, Redo2, ArrowDownToLine, ArrowUpToLine, Infinity as InfinityIcon, BookOpen, Frame, Focus, Ruler, Shapes, SlidersHorizontal, Sigma, Sparkles, Spotlight, Timer, Trash2, Type, Undo2, MonitorUp, Layers
 } from 'lucide-preact'
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
+import { signal } from '@preact/signals'
 import { board } from '@/engine/instance'
 import { MAX_EXTENT, PAGE_H, PAGE_W, scrollOf } from '@/engine/pages'
 import { instrumentsShown } from '@/engine/instruments'
@@ -12,8 +13,8 @@ import { OVERLAY_ALPHA, actions } from '@/state/actions'
 import { S, activeTool, currentColor, currentSize, isDarkBg, isShapeTool, styleKey } from '@/state/store'
 import type { BarSide, ToolName } from '@/state/store'
 import { editEquation, editGraph, insertFiles, pickFiles } from '@/state/insert'
-import { lessonDirty, lessonName, lessonPath, lesson } from '@/state/lesson'
-import { LessonSheet, ExportSheet } from './Lessons'
+import { fileState, lessonDirty, lessonName, lessonPath, lessonSubject, lesson } from '@/state/lesson'
+import { ExportSheet } from './Lessons'
 import { Section, Tile } from './kit'
 import { ShapesPopover, PropsPopover } from './Popovers'
 import { MathsPopover, curtainOn, spotlightOn, timerOn } from './Present'
@@ -75,7 +76,6 @@ export function BoardBar(): JSX.Element {
       {p === 'props' && <PropsPopover />}
       {p === 'paper' && <PaperPopover />}
       {p === 'subjects' && <SubjectsPopover />}
-      {p === 'lessons' && <LessonSheet />}
       {p === 'export' && <ExportSheet />}
       <div class="boardbar panel ui" role="toolbar" aria-label="Board tools">
         <button type="button" class="bb-grip nodrag" aria-label="Move the toolbar left or right" title="Drag to move the toolbar"
@@ -140,18 +140,24 @@ export function BoardBar(): JSX.Element {
   )
 }
 
+/** Whether the lesson's file is up to date: it saves itself, so this only reassures (or warns). */
+export function FileStatus(): JSX.Element | null {
+  if (board.isEmpty && !lessonPath.value) return null
+  const state = fileState.value === 'failed' ? 'failed' : lessonDirty.value || fileState.value === 'saving' ? 'saving' : 'saved'
+  return <i class={`file-status ${state}`}>{state === 'failed' ? 'Not saved' : state === 'saving' ? 'Saving…' : 'Saved'}</i>
+}
+
 /** Everything that is not a drawing tool, in large tiles grouped by what a teacher wants to do. */
 function BoardMenu(): JSX.Element {
   const close = (fn: () => unknown) => () => { S.popover.value = null; void fn() }
   const overlay = S.bgAlpha.value < OVERLAY_ALPHA
-  const unsaved = lessonDirty.value && !board.isEmpty
   return (
     <div class="popover panel ui board-sheet" data-popover-keep="">
-      <div class="sheet-head lesson-line">Lesson · <b>{lessonName.value}</b>{unsaved && <i class="warn">{lessonPath.value ? 'changes not saved' : 'not saved'}</i>}</div>
+      <div class="sheet-head lesson-line">Lesson · <b>{lessonName.value}</b>{lessonSubject.value && <span class="lesson-subject">{lessonSubject.value}</span>}<FileStatus /></div>
       <div class="tiles">
-        <Tile icon={FilePlus2} label="New lesson" onClick={() => { void lesson.newLesson() }} />
-        <Tile icon={FolderOpen} label="Open…" onClick={() => (S.popover.value = 'lessons')} />
-        <Tile icon={Save} label="Save lesson" on={unsaved} onClick={close(lesson.save)} />
+        <Tile icon={FilePlus2} label="New lesson" onClick={() => (S.popover.value = 'new-lesson')} />
+        <Tile icon={Library} label="My lessons" onClick={() => (S.popover.value = 'lessons')} />
+        <Tile icon={SaveAll} label="Save a copy…" onClick={close(lesson.saveAs)} />
         <Tile icon={Share2} label="Export" onClick={() => (S.popover.value = 'export')} />
       </div>
       <Section title="Add to the page">
@@ -204,9 +210,13 @@ const THUMB_W = 176
 
 const TH = Math.round(THUMB_W * PAGE_H / PAGE_W)
 
-function Thumb({ i }: { i: number }): JSX.Element {
+function Thumb({ i, sectioned }: { i: number; sectioned: boolean }): JSX.Element {
   const cv = useRef<HTMLCanvasElement>(null)
   const notebook = S.kind.value === 'notebook'
+  const startSection = (): void => { board.setSection(i, 'New section'); editingSection.value = i }
+  const sectionBtn = !sectioned && (
+    <button type="button" class="nodrag" aria-label={`Start a section at ${notebook ? 'page' : 'frame'} ${i + 1}`} title="Start a section here" onClick={startSection}><Bookmark size={15} /></button>
+  )
   useEffect(() => {
     const c = cv.current
     if (!c) return
@@ -224,6 +234,7 @@ function Thumb({ i }: { i: number }): JSX.Element {
       <ThumbTitle i={i} fallback={`Frame ${i + 1}`} />
       <div class="thumb-tools">
         <button type="button" class="nodrag" aria-label={`Move frame ${i + 1} earlier`} disabled={i === 0} onClick={() => board.moveFrame(i, i - 1)}><ChevronLeft size={16} /></button>
+        {sectionBtn}
         <button type="button" class="nodrag" aria-label={`Remove frame ${i + 1}`} title="Remove the frame (the drawing stays)" onClick={() => board.deleteFrame(i)}><Trash2 size={15} /></button>
         <button type="button" class="nodrag" aria-label={`Move frame ${i + 1} later`} disabled={i === S.frameCount.value - 1} onClick={() => board.moveFrame(i, i + 1)}><ChevronRight size={16} /></button>
       </div>
@@ -239,6 +250,7 @@ function Thumb({ i }: { i: number }): JSX.Element {
       <div class="thumb-tools">
         <button type="button" class="nodrag" aria-label={`Move page ${i + 1} earlier`} disabled={i === 0} onClick={() => board.movePage(i, i - 1)}><ChevronLeft size={16} /></button>
         <button type="button" class="nodrag" aria-label={`Duplicate page ${i + 1}`} onClick={() => board.duplicatePage(i)}><Copy size={15} /></button>
+        {sectionBtn}
         <button type="button" class="nodrag" aria-label={`Delete page ${i + 1}`} title="Delete the page (Undo brings it back)" onClick={() => {
           if (board.page === i || board.goToPage(i)) board.deletePage()
         }}><Trash2 size={15} /></button>
@@ -248,10 +260,36 @@ function Thumb({ i }: { i: number }): JSX.Element {
   )
 }
 
-/** Thumbnails of every notebook page (go to, reorder, duplicate, delete, add) or canvas frame. */
+/** The section heading being renamed (just made, or tapped). */
+const editingSection = signal(-1)
+
+/** A section heading across the page sorter: its name (tap to rename), how many pages, and remove. */
+function SectionHead({ i, count }: { i: number; count: number }): JSX.Element {
+  S.contentRevision.value
+  const name = board.sectionAt(i)
+  const unit = S.kind.value === 'notebook' ? 'page' : 'frame'
+  const done = (text: string): void => { editingSection.value = -1; if (text.trim() && text.trim() !== name) board.setSection(i, text) }
+  return (
+    <div class="section-head">
+      {editingSection.value === i
+        ? <input class="thumb-input nodrag" type="text" maxLength={120} defaultValue={name} aria-label="Section name" ref={el => { el?.focus(); el?.select() }}
+          onBlur={e => done((e.target as HTMLInputElement).value)}
+          onKeyDown={e => { if (e.key === 'Enter') done((e.target as HTMLInputElement).value); else if (e.key === 'Escape') editingSection.value = -1; e.stopPropagation() }} />
+        : <button type="button" class="section-name nodrag" aria-label={`Rename section ${name}`} onClick={() => (editingSection.value = i)}><b>{name}</b><Pencil size={13} /></button>}
+      <small>{count} {count === 1 ? unit : `${unit}s`}</small>
+      <button type="button" class="section-remove nodrag" aria-label={`Remove the section heading ${name}`} title="Remove the heading (the pages stay)" onClick={() => board.setSection(i, '')}><X size={15} /></button>
+    </div>
+  )
+}
+
+/** Thumbnails of every notebook page (go to, reorder, duplicate, delete, add) or canvas frame, under their section headings. */
 function PageSorter(): JSX.Element {
   const notebook = S.kind.value === 'notebook'
   const add = (fn: () => void) => (): void => { fn(); S.popover.value = null }
+  S.contentRevision.value // section changes redraw the headings
+  const n = notebook ? S.pageCount.value : S.frameCount.value
+  const starts = Array.from({ length: n }, (_, i) => !!board.sectionAt(i))
+  const sizeFrom = (i: number): number => { let k = i + 1; while (k < n && !starts[k]) k++; return k - i }
   return (
     <div class="popover panel ui page-sorter" data-popover-keep="">
       <div class="sheet-head sorter-head">
@@ -259,7 +297,10 @@ function PageSorter(): JSX.Element {
         {S.undoLabel.value && <button type="button" class="chip nodrag" onClick={() => board.undoStructure()}><Undo2 size={14} /> Undo: {S.undoLabel.value}</button>}
       </div>
       <div class="thumbs">
-        {Array.from({ length: notebook ? S.pageCount.value : S.frameCount.value }, (_, i) => <Thumb key={i} i={i} />)}
+        {Array.from({ length: n }, (_, i) => [
+          starts[i] && <SectionHead key={`s${i}`} i={i} count={sizeFrom(i)} />,
+          <Thumb key={i} i={i} sectioned={starts[i]} />
+        ])}
         {notebook
           ? <button type="button" class="thumb-add nodrag" onClick={add(() => board.addPage(undefined, undefined, S.pageCount.value))}><Plus size={26} /><span>New page</span></button>
           : <>

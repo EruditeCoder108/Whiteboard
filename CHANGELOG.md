@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.6.0-beta.5 — My lessons, autosave, page sections — 2026-11-01
+
+- **Every lesson saves itself.**
+  - Each lesson is its own file in **Documents › Floating Whiteboard › Lessons**, written a moment after every change and again when the app closes.
+  - There is no more "Save first?" question when starting or opening another lesson.
+  - A board that never had a file gets one as soon as something is drawn, named after the date.
+  - Ctrl+S still saves at once, and **Save a copy…** puts the lesson anywhere else.
+  - The menu shows *Saved*, *Saving…* or *Not saved*.
+- **New lesson** asks for a name (a chapter or topic), an optional subject or class (recent ones are one tap away) and Notebook or Canvas.
+- **My lessons** (More menu, or Ctrl+O):
+  - every lesson in a full-screen view, filed under its subject, newest first;
+  - each card shows a picture of the first page, the date and the number of pages;
+  - search by name or subject;
+  - open, rename, change subject, make a copy, show in folder, or delete (to the Recycle Bin, so it can be restored);
+  - lessons kept elsewhere on the PC appear too once they have been opened here.
+- **Page sections.** In the page sorter, start a section at any page ("Warm-up", "Example", "Practice"). Headings show how many pages each section holds, can be renamed or removed, are saved in the lesson, and carry through notebook ⇄ canvas.
+
 ## 1.6.0-beta.4 — board surfaces — 2026-11-01
 
 - **Boards that look like real boards.** The Background & paper sheet starts with eight surfaces:

@@ -69,8 +69,7 @@ try {
 
   await open(); const third = await start()
   // New lesson uses the normal archive/open lifecycle, including when an unsaved lesson is unnamed.
-  await fw(page, w => { void w.lessonState.lesson.newLesson() })
-  await page.getByRole('button', { name: 'Don’t save' }).click()
+  await fw(page, w => { void w.lessonState.lesson.newLesson() }) // the old lesson saves itself first
   await page.waitForFunction(async () => !(await window.api.share.status()).active)
   check('replacing the lesson stops sharing', await stopped(third))
   await page.getByRole('button', { name: 'Close sharing' }).click()
@@ -89,7 +88,6 @@ try {
   await app.evaluate(({ dialog }, path) => { dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [path] }) }, lessonFile)
   await open(); const fifth = await start()
   await fw(page, w => { void w.lessonState.lesson.open() })
-  await page.getByRole('button', { name: 'Don’t save' }).click()
   await page.waitForFunction(async () => !(await window.api.share.status()).active)
   check('opening another lesson stops sharing', await stopped(fifth))
   await page.getByRole('button', { name: 'Close sharing' }).click()

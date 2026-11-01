@@ -216,8 +216,10 @@ export const actions = {
   },
 
   // ── lessons (see lesson.ts) ─────────────────────────────────────────────────
-  newLesson: () => lesson.newLesson(),
-  openLesson: () => lesson.open(),
+  /** The New lesson sheet: a name, a subject and the kind of board. */
+  newLesson: (): void => { S.popover.value = 'new-lesson' },
+  /** My lessons: every lesson, grouped by subject. */
+  openLesson: (): void => { S.popover.value = 'lessons' },
   saveLesson: () => lesson.save(),
   saveLessonAs: () => lesson.saveAs()
 }
