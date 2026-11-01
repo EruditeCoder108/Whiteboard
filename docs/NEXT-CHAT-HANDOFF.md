@@ -1,6 +1,6 @@
 # Next chat handoff
 
-**Updated 1 November 2026 (after Step 1 of the checklist; 1.6.0-beta.6).** Read this first in every new chat, then update it before the chat ends
+**Updated 1 November 2026 (Step 2 under way, My shelf done; 1.6.0-beta.7).** Read this first in every new chat, then update it before the chat ends
 (see the last section). Paths are relative to the repository root
 `D:\Projects 2\whiteboard\app` unless they start with a drive letter.
 
@@ -32,9 +32,9 @@ The gesture ring is a separate college project and is **not** part of the produc
 | 3D/asset licence research | `docs/EDUCATIONAL-3D-ASSETS-RESEARCH.md` |
 | Release history | `CHANGELOG.md` |
 | **The owner's progress checklist (plain language)** | `docs/CHECKLIST.md`. **Work through it in order; tick it after every milestone.** |
-| GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#9 merged, `main` = 1.6.0-beta.6 |
+| GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#11 merged, `main` = 1.6.0-beta.7 |
 | Installed app (owner's laptop) | `%LOCALAPPDATA%\Programs\Floating Whiteboard` (per-user NSIS install, Start menu + desktop shortcut) |
-| Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.6.exe` (ignored by git) |
+| Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.7.exe` (ignored by git) |
 | Older unrelated projects in the parent folder | `..\android-library`, `..\*.pyw` (the original Python board). Leave them alone. |
 
 ## 3. State right now
@@ -42,7 +42,7 @@ The gesture ring is a separate college project and is **not** part of the produc
 - **`docs/CHECKLIST.md` is the owner's plain-language progress list and the plan.** Step 1 is done (apart from
   three items moved to the end of Step 2). Tick items (✅ / 🔄 / ⬜) whenever a milestone starts or finishes; keep it
   short and jargon-free. `FEATURES.md` stays the detailed feature list.
-- `main` = **1.6.0-beta.6**, installed on the owner's laptop. Built in the last chat (see `CHANGELOG.md`):
+- `main` = **1.6.0-beta.7**, installed on the owner's laptop. **My shelf** is done (PR #11). Built before it (see `CHANGELOG.md`):
   - lesson integrity (F1–F6, F9; PR #4);
   - Background & paper (§6; PR #5);
   - Share to phones (second agent; PR #6);
@@ -65,9 +65,11 @@ The gesture ring is a separate college project and is **not** part of the produc
   - The lead reviews, merges through a PR, and writes the CHANGELOG/FEATURES/CHECKLIST entries. The owner now trusts
     it: review lightly (safety-critical parts plus the merge), then polish.
   - Done: `qr-share.md` and `capture.md`.
-  - **Now running: `note3-study.md`**, a research study of the whole Note 3 app with screenshots →
-    `D:\Projects 2\whiteboard\note3-study\REPORT.md` (no code). When the owner pastes its summary, read the report,
-    turn its "Top 10" into checklist items (Step 2 or the end of Step 2), and give the agent its next brief.
+  - **`note3-study.md` is unfinished:** `D:\Projects 2\whiteboard\note3-study\REPORT.md` (no code) is marked "in progress",
+    last written 1 Nov 12:32, with most in-use checks listed as "Not yet checked". When the owner pastes its summary, read the
+    report and turn its "Top 10" into checklist items (Step 2 or the end of Step 2).
+  - **Next brief, ready to paste: `tables.md`** (branch `feature/tables`, worktree `app-tables`). Review it when the owner pastes
+    the report back. It adds a new item type `t: 'b'`, so review the engine and file-reading parts closely.
   - **Keep it busy:** when it finishes, give it the next independent Step 2 item, with files that don't overlap
     yours, in a new brief in `docs/agent-tasks/`.
 - **Note 3 is installed on this PC** (Start menu name "Note"; its window belongs to `note.exe` /
@@ -83,8 +85,8 @@ The gesture ring is a separate college project and is **not** part of the produc
     - a check at 125/150/200% Windows scaling on hardware;
     - capture polish: grabbing one window requests full-size thumbnails of every window, which is slow with many open.
 - **Checks green on `main`:**
-  - typecheck clean, vitest 308;
-  - e2e: lesson 44, papers 34, capture 26, board 25, share 21, track-a 15, run 46, phase1 23, phase2 35, grid 30,
+  - typecheck clean, vitest 325;
+  - e2e: shelf 31, lesson 44, papers 34, capture 26, board 25, share 21, track-a 15, run 46, phase1 23, phase2 35, grid 30,
     canvas 13, replay 30, agent 40, laser 15;
   - phase2 can flake once when run straight after many suites; a rerun passes.
 - **Never tested on a real touch panel.** Swipe feel, palm threshold, soft-pen width, IR pens and tile sizes are
@@ -111,10 +113,10 @@ Read the whole document first, not just §7. Work through it iteratively, one mi
 **A. Next milestones: follow `docs/CHECKLIST.md` in order, one branch each, and tell the owner in plain words after
 each.** Step 2 is the deep dive's §8 ("Teaching tools and reusable content"); read §8.1–8.6 for each item's
 required outcome:
-1. **My shelf**: save a selection (drawing, diagram, picture group) once and reuse it in any lesson, stored in the
-   app's data folder, with large touch tiles, rename and delete.
-2. **Tables**: an editable table object (rows, columns, cell text, resize), using the shared editing lifecycle.
-3. **Attached arrows (connectors)**: arrows that stay attached to boxes when they move (mind maps, flowcharts).
+1. **My shelf**: done.
+2. **Tables**: with the second agent (`docs/agent-tasks/tables.md`).
+3. **Attached arrows (connectors)**: arrows that stay attached to boxes when they move (mind maps, flowcharts). **The lead's next
+   milestone.** They keep other objects' ids: `freshCopies` in `engine/shelf.ts`, `cloneItem`, and Duplicate must remap those ids.
 4. **Number line and coordinate axes** as real objects with an explicit scale and labels (§6.6: measured, not
    decorative).
 5. **Prepared reveals**: hide an answer behind a cover that is tapped away during class.
@@ -124,9 +126,8 @@ required outcome:
    - export preview.
 7. **Step 3**: real-panel acceptance with the owner (pen/palm, two writers F7, scaling, a slow PC).
 
-Then **make a new checklist for the big tracks** (B below) with the owner. Good candidates for the second agent
-in Step 2: tables, or the number line and axes (each mostly new files). Keep My shelf and connectors yourself
-(they touch the board engine).
+Then **make a new checklist for the big tracks** (B below) with the owner. After tables, the number line and axes are the next
+good task for the second agent (mostly new files). Keep connectors yourself (they touch the board engine).
 The look of a page is `PageLook` (`engine/pages.ts`): paper, color, title, origin, spacing, strength, lines, art.
 `engine/scene.ts` turns it into a `Backdrop` painted everywhere; `engine/grid.ts` plans each paper as `PaperPass`es
 (testable without a canvas). Extend these; never add a parallel paper path.
@@ -183,6 +184,11 @@ Electron 44 + electron-vite, Preact + `@preact/signals`, Canvas2D, TypeScript.
   sets so tests never write to the real Documents), `library.json` index (subject, pages, kind, first-page thumb),
   rename/duplicate/remove (Recycle Bin via `shell.trashItem`). UI: `ui/Lessons.tsx` `LessonLibrary` and
   `NewLessonSheet`, mounted in `app.tsx` (popover names `lessons`, `new-lesson`).
+- **My shelf:** main `shelf.ts` keeps each item in its own folder under `userData\shelf` (`meta.json` with name, subject and picture;
+  `board.json` in the lesson format, pictures inline, checked by `parseBoard`). `.wbshelf` is the whole shelf as one file. `engine/shelf.ts` is pure:
+  `freshCopies` (new ids and groups, unlocked), `placeInView`, `readableOn` (ink that would vanish on this board changes), `pageAt`. `state/shelf.ts` and
+  `ui/Shelf.tsx` are the rest (popover names `shelf`, `shelf-save`); board hooks are in the "my shelf" part of `board.ts`. Teacher items stay apart from
+  the future reviewed Lesson Kit. Not built from §8.2: folders/tags (subject and search cover it for now) and credits.
 - **Page sections:** `look.section` on the page (or frame) where a section starts; `board.setSection`/`sectionAt`;
   headings in the page sorter (`SectionHead` in `ui/Board.tsx`).
 - **Background picture** (`look.art`): stored in the assets table like pictures (`art.a` key), placed per screen of
@@ -253,6 +259,7 @@ npx vitest run
 npm run e2e:board          # board layout, notebook/canvas, palm, paper, subjects
 npm run e2e:papers         # paper settings, zoom-adaptive papers, background picture lifecycle
 npm run e2e:lesson         # lesson files, appearance in the file, export
+npm run e2e:shelf          # My shelf: save, reuse, ink on other boards, whole pages, carry to another PC
 npm run e2e:share          # share to phones: local server, QR, stop/expiry
 npm run e2e:track-a        # pictures, PDF, equations, graphs, instruments, pages
 node e2e/run.mjs; node e2e/phase1.mjs; node e2e/phase2.mjs; node e2e/laser-audit.mjs; node e2e/agent.mjs; node e2e/replay.mjs

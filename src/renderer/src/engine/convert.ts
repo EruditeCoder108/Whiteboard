@@ -20,7 +20,7 @@ const centre = (it: Item): [number, number] => { const b = itemBounds(it); retur
 const holds = (f: Frame, [x, y]: [number, number]): boolean => { const r = frameRect(f); return x >= r[0] && x < r[2] && y >= r[1] && y < r[3] }
 
 /** A paper origin moved along with the ink it sits under; (0, 0) is "not set". */
-const moved = (origin: [number, number] | undefined, dx: number, dy: number): [number, number] | undefined => {
+export const moved = (origin: [number, number] | undefined, dx: number, dy: number): [number, number] | undefined => {
   const x = (origin?.[0] ?? 0) + dx || 0, y = (origin?.[1] ?? 0) + dy || 0
   return x || y ? [x, y] : undefined
 }

@@ -15,6 +15,7 @@ import { join } from 'node:path'
 import type { Bounds, MainCommand, WinState } from '../shared/api'
 import { DiskStore, MAX_FILE_BYTES, saveError } from './storage'
 import { Lessons } from './lessons'
+import { Shelf } from './shelf'
 import { pagesToPdf } from './pdf'
 import { ShareServer, listAddresses } from './share'
 import { Capture, CaptureError } from './capture'
@@ -31,6 +32,7 @@ let quitting = false
 let closing = false
 let storage: DiskStore
 let lessons: Lessons
+let shelf: Shelf
 let fullscreen = false
 let zoomed = false
 let onTop = true
@@ -422,6 +424,23 @@ function registerIpc(): void {
   })
   ipcMain.handle('lessons:get-link', () => lessons.link())
   ipcMain.handle('lessons:set-link', (_e, link: unknown) => lessons.setLink(link))
+  ipcMain.handle('shelf:list', () => shelf.list())
+  ipcMain.handle('shelf:save', (_e, info: unknown, json: unknown) => shelf.save(info, json))
+  ipcMain.handle('shelf:read', (_e, id: unknown) => shelf.read(id))
+  ipcMain.handle('shelf:update', (_e, id: unknown, change: unknown) => shelf.update(id, change))
+  ipcMain.handle('shelf:remove', (_e, id: unknown) => shelf.remove(id))
+  ipcMain.handle('shelf:export', async () => {
+    const owner = w()
+    if (!owner) return null
+    const r = await dialog.showSaveDialog(owner, { title: 'Save My shelf to a file', defaultPath: join(app.getPath('documents'), 'My shelf.wbshelf'), filters: [{ name: 'Whiteboard shelf', extensions: ['wbshelf'] }] })
+    return r.canceled || !r.filePath ? null : shelf.exportTo(r.filePath)
+  })
+  ipcMain.handle('shelf:import', async () => {
+    const owner = w()
+    if (!owner) return null
+    const r = await dialog.showOpenDialog(owner, { title: 'Add to My shelf from a file', properties: ['openFile'], filters: [{ name: 'Whiteboard shelf', extensions: ['wbshelf'] }] })
+    return r.canceled || !r.filePaths[0] ? null : shelf.importFrom(r.filePaths[0])
+  })
 
   ipcMain.handle('share:addresses', () => listAddresses())
   ipcMain.handle('capture:sources', e => {
@@ -566,6 +585,7 @@ if (!app.requestSingleInstanceLock()) {
     // Lessons made here live in Documents\Floating Whiteboard\Lessons; deleting one sends it to the Recycle Bin.
     // (FW_LESSONS_DIR: tests keep their lessons in their own throw-away profile.)
     lessons = new Lessons(app.getPath('userData'), process.env.FW_LESSONS_DIR || join(app.getPath('documents'), 'Floating Whiteboard', 'Lessons'), (p) => shell.trashItem(p))
+    shelf = new Shelf(join(app.getPath('userData'), 'shelf'), (p) => shell.trashItem(p))
     setTimeout(() => { void storage.collectAssets().catch(() => {}) }, 60_000)
     agentBridge = new AgentBridge(app.getPath('userData'), app.isPackaged ? join(process.resourcesPath, 'mcp/whiteboard-mcp.cjs') : join(app.getAppPath(), 'mcp/whiteboard-mcp.cjs'), callBoard)
     await agentBridge.disable()

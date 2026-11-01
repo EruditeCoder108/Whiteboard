@@ -1058,3 +1058,17 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
   .capture-footer .tile { min-height: 60px; flex-direction: column; gap: 4px; }
   .capture-footer .tile span { font-size: 15px; }
 }
+
+/* ── my shelf ───────────────────────────────────────────────────────────── */
+.toast { z-index: 150; } /* what a sheet just did is told above that sheet */
+.shelf-preview { height: 200px; aspect-ratio: 16 / 9; align-self: center; border-radius: 12px; box-shadow: 0 0 0 1px var(--line); }
+.shelf-card .lesson-more { width: 48px; height: 44px; }
+.shelf-card .lesson-actions button { min-height: 44px; padding: 0 12px; font-size: 13.5px; }
+.shelf-card .card-input { height: 44px; font-size: 15px; width: 100%; }
+.shelf-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.shelf-empty p { margin: 0; max-width: 560px; line-height: 1.5; }
+.shelf-empty p svg { vertical-align: -2px; }
+.shelf-foot { display: flex; align-items: center; gap: 10px; padding: 12px 20px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.shelf-foot span { flex: 1; min-width: 220px; color: var(--muted); font-size: 13px; }
+.shelf-foot .dialog-btn { min-height: 48px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+.shelf-foot .dialog-btn:disabled { opacity: .5; }

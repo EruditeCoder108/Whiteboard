@@ -25,7 +25,7 @@ function when(iso: string): string {
 }
 
 /** Subjects already in use, most recently used first. */
-function subjectsOf(list: LibraryLesson[]): string[] {
+export function subjectsOf(list: { subject: string }[]): string[] {
   const seen: string[] = []
   for (const l of list) if (l.subject && !seen.some(s => s.toLowerCase() === l.subject.toLowerCase())) seen.push(l.subject)
   return seen

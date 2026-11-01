@@ -15,7 +15,7 @@ export const lessonName = (path: string): string => basename(path, extname(path)
 const okPath = (path: unknown): path is string => typeof path === 'string' && isAbsolute(path) && EXTENSIONS.includes(extname(path).toLowerCase())
 /** A name that is safe as a Windows file name. */
 export const fileSafe = (name: string): string => name.replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').replace(/[. ]+$/, '').trim().slice(0, 100) || 'Lesson'
-const cleanSubject = (s: unknown): string => typeof s === 'string' ? s.replace(/[\u0000-\u001f]/g, '').trim().slice(0, MAX_SUBJECT) : ''
+export const cleanSubject = (s: unknown): string => typeof s === 'string' ? s.replace(/[\u0000-\u001f]/g, '').trim().slice(0, MAX_SUBJECT) : ''
 
 /** What the library remembers about a lesson file besides the file itself. */
 interface Entry { subject: string; pages: number; kind: 'notebook' | 'canvas'; created: string; thumb?: string }

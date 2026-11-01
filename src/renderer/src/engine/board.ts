@@ -28,6 +28,7 @@ import type { Texture } from './texture'
 import { ART_DEFAULTS, DEFAULT_FRAME, MAX_EXTENT, MAX_TITLE, PAGE_H, PAGE_W, STYLE_KEYS, clampToFrame, fitZoom, frameForContent, frameRect, frameView, scrollOf } from './pages'
 import type { Artwork, BoardKind, Frame, LookFrame, PageLook } from './pages'
 import { canvasToNotebook, nextFrameSlot, notebookToCanvas } from './convert'
+import { pageAt } from './shelf'
 import { LabRuntime, supportedLab } from './science/runtime'
 import { activeLabId, scienceInspector } from '@/state/science'
 
@@ -1544,6 +1545,88 @@ export class Board implements ToolHost {
     ctx.setTransform(view.zoom, 0, 0, view.zoom, -view.x * view.zoom, -view.y * view.zoom)
     for (const it of pg.items) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
   }
+
+  // ── my shelf ────────────────────────────────────────────────────────────────
+  /** The part of the board the teacher can see (on a page, never beyond its edges). */
+  visibleRect(): Rect {
+    const r: Rect = [this.view.x, this.view.y, this.view.x + this.w / this.view.zoom, this.view.y + this.h / this.view.zoom]
+    if (!this.paged) return r
+    const f = frameRect(this.sheet)
+    return [Math.max(r[0], f[0]), Math.max(r[1], f[1]), Math.min(r[2], f[2]), Math.min(r[3], f[3])]
+  }
+
+  /** What is on screen, for a canvas without frames, where there is no page to save. */
+  itemsOnScreen(): Item[] {
+    const r = this.visibleRect()
+    return this.doc.items.filter(it => rectsHit(itemBounds(it), r))
+  }
+
+  /**
+   * The page, or the canvas frame in view, as it looks now, ready to keep: it spells out the lesson's
+   * colour and texture, so it looks the same in any other lesson. null: a canvas with no frame in view.
+   */
+  pageForShelf(): PageData | null {
+    const f = this.paged ? this.sheet : this.frames[S.frameIndex.value]
+    if (!f) return null
+    const back = this.paged ? this.pageBackdrop(this.look, this.sheet) : this.frameBackdrop(f as LookFrame)
+    const title = this.paged ? this.look.title : (f as LookFrame).title
+    const items = this.paged ? this.doc.items : this.doc.items.filter(it => rectsHit(itemBounds(it), frameRect(f)))
+    const moved = pageAt({ items, frame: { x: f.x, y: f.y, extent: f.extent }, origin: back.origin }, 0, 0)
+    return { ...moved, paper: back.paper, color: back.color, texture: back.texture ?? 'none', ...styleLook(back.style), ...(back.art ? { art: back.art } : {}), ...(title ? { title } : {}) }
+  }
+
+  /** A saved page in this lesson: a page after this one (taking the place of a blank one), or the next frame. False if a gesture is under way. */
+  addSavedPage(pg: PageData): boolean {
+    if (this.currentTool().underway()) return false
+    const snap = this.structure()
+    if (this.paged) {
+      if (!this.leavePage()) return false
+      const placed = pageAt(pg, 0, 0)
+      const here = this.pages[this.pageIndex]
+      const blank = !here.items.length && !here.art && !here.title && !here.section && (here.paper ?? 'none') === 'none'
+      const at = blank ? this.pageIndex : this.pageIndex + 1
+      this.pages.splice(at, blank ? 1 : 0, { ...placed, view: frameView(placed.frame!, this.w, this.h), history: { undo: [], redo: [] } } as PageRec)
+      this.showPage(at)
+      this.changed({ label: 'Added a saved page', snap })
+      return true
+    }
+    this.commitText()
+    const slot = nextFrameSlot(this.frames, this.doc.items)
+    const { items, view: _view, frame, ...look } = pageAt(pg, slot.x, slot.y)
+    // Not a separate step in the object history: Undo takes the frame and its objects away together.
+    this.doc.replaceAll([...this.doc.items, ...items])
+    this.frames.push({ ...frame!, ...look })
+    this.framesChanged()
+    this.goToFrame(this.frames.length - 1, false)
+    this.refresh(null)
+    this.changed({ label: 'Added a saved frame', snap })
+    return true
+  }
+
+  /** Saved objects on this page as one undoable edit, selected so they can be moved straight away. False if a gesture is under way. */
+  insertSaved(items: Item[]): boolean {
+    if (this.currentTool().underway()) return false
+    this.commitText()
+    this.setTool('select')
+    this.addPageContent(items)
+    this.setSelection(items)
+    return true
+  }
+
+  /** Objects, whole and centred, on the board's colour: the picture on a saved item's tile. */
+  paintItemsThumb(items: Item[], cv: HTMLCanvasElement): void {
+    const ctx = cv.getContext('2d'), b = this.doc.bounds(items)
+    if (!ctx || !b) return
+    ctx.fillStyle = S.bgColor.value
+    ctx.fillRect(0, 0, cv.width, cv.height)
+    const k = Math.min(cv.width * .88 / Math.max(1, b[2] - b[0]), cv.height * .88 / Math.max(1, b[3] - b[1]), 1.5)
+    ctx.setTransform(k, 0, 0, k, cv.width / 2 - (b[0] + b[2]) / 2 * k, cv.height / 2 - (b[1] + b[3]) / 2 * k)
+    for (const it of items) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+  }
+
+  /** The picture of the page or frame in view. */
+  paintCurrentThumb(cv: HTMLCanvasElement): void { this.paintPageThumb(this.paged ? this.pageIndex : S.frameIndex.value, cv) }
 
   /** Add items to the visible page as one undoable edit. */
   addPageContent(items: Item[]): void {

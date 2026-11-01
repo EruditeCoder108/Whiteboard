@@ -23,8 +23,8 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 
 ## Step 2: reusable teaching content
 
-- ⬜ My shelf: save a drawing or diagram once, reuse it in any lesson
-- ⬜ Tables
+- ✅ My shelf: save a drawing, diagram or whole page once, reuse it in any lesson, carry it to another PC
+- ⬜ Tables *(brief ready for the second agent)*
 - ⬜ Arrows that stay attached when boxes move (mind maps, flowcharts)
 - ⬜ Number line and coordinate axes as real tools
 - ⬜ Prepared reveals (hide an answer, tap to show)
@@ -47,4 +47,4 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - ⬜ AI lecture notes from the teacher's voice and board (faithful by default)
 
 ---
-*Updated 2026-11-01 · version 1.6.0-beta.6.*
+*Updated 2026-11-01 · version 1.6.0-beta.7.*

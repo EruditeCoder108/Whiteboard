@@ -75,6 +75,15 @@ const api: Api = {
     getLink: () => ipcRenderer.invoke('lessons:get-link'),
     setLink: (link) => ipcRenderer.invoke('lessons:set-link', link)
   },
+  shelf: {
+    list: () => ipcRenderer.invoke('shelf:list'),
+    save: (info, json) => ipcRenderer.invoke('shelf:save', info, json),
+    read: (id) => ipcRenderer.invoke('shelf:read', id),
+    update: (id, change) => ipcRenderer.invoke('shelf:update', id, change),
+    remove: (id) => ipcRenderer.invoke('shelf:remove', id),
+    exportFile: () => ipcRenderer.invoke('shelf:export'),
+    importFile: () => ipcRenderer.invoke('shelf:import')
+  },
   files: {
     openRecording: () => ipcRenderer.invoke('files:open-recording'),
     saveRecording: (json, name) => ipcRenderer.invoke('files:save-recording', json, name),
