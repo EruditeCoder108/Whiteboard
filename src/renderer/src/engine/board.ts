@@ -1884,6 +1884,16 @@ export class Board implements ToolHost {
     return it
   }
 
+  /** A line of typed writing in the middle of the board, selected: an answer from the calculator, say. */
+  insertWriting(text: string): void {
+    this.commitText()
+    const [cx, cy] = this.viewCentre(), size = 44, w = Math.max(160, text.length * size * .58 + 24)
+    const it = this.fitItem({ t: 't', id: newId(), c: S.penColor.value, w: 1, p: [cx - w / 2, cy - size, cx + w / 2, cy + size * .6], text, fontSize: size, note: false, fill: 'none' })
+    this.setTool('select')
+    this.commitAdd(it)
+    this.setSelection([it])
+  }
+
   /** A number line or axes on this page, selected and ready to move. */
   insertScale(fields: Omit<ScaleItem, 't' | 'id' | 'w'>): ScaleItem {
     this.commitText()

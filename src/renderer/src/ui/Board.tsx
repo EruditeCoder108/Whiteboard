@@ -1,5 +1,5 @@
 import {
-  Archive, Axis3d, Blinds, EyeOff, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileText, FlaskConical, GripVertical, FilePlus2, Library, Pencil, SaveAll, Share2,
+  Archive, Atom, Axis3d, Blinds, Calculator, EyeOff, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileText, FlaskConical, GripVertical, FilePlus2, Library, Pencil, SaveAll, Share2,
   Highlighter, MoveHorizontal, Image as ImageIcon, Laptop, LayoutGrid, LineChart, LogOut, Minus, MousePointer2, MousePointerClick, Pen, Plus,
   Presentation, GraduationCap, Redo2, ArrowDownToLine, ArrowUpToLine, Infinity as InfinityIcon, BookOpen, Frame, Focus, Ruler, Shapes, SlidersHorizontal, Sigma, Sparkles, Spotlight, Timer, Trash2, Type, Undo2, MonitorUp, Layers
 } from 'lucide-preact'
@@ -17,6 +17,7 @@ import { fileState, lessonDirty, lessonName, lessonPath, lessonSubject, lesson }
 import { ExportSheet } from './Lessons'
 import { capture } from '@/state/capture'
 import { Section, Tile } from './kit'
+import { calculatorOn } from './Tools'
 import { ShapesPopover, PropsPopover } from './Popovers'
 import { MathsPopover, curtainOn, spotlightOn, timerOn } from './Present'
 import { PaperPopover } from './Paper'
@@ -170,6 +171,7 @@ function BoardMenu(): JSX.Element {
         <Tile icon={LineChart} label="Graph" onClick={() => editGraph(null)} />
         <Tile icon={MoveHorizontal} label="Number line" onClick={() => editScale(null, 'line')} />
         <Tile icon={Axis3d} label="Axes" onClick={() => editScale(null, 'axes')} />
+        <Tile icon={Atom} label="Periodic table" onClick={() => (S.popover.value = 'periodic')} />
         <Tile icon={Ruler} label="Ruler & compass" on={instrumentsShown.value.length > 0} onClick={() => (S.popover.value = 'maths')} />
         <Tile icon={FlaskConical} label="Science labs" onClick={() => (S.popover.value = 'science')} />
       </Section>
@@ -177,6 +179,7 @@ function BoardMenu(): JSX.Element {
         <Tile icon={Spotlight} label="Spotlight" on={spotlightOn.value} onClick={close(() => (spotlightOn.value = !spotlightOn.value))} />
         <Tile icon={EyeOff} label="Prepare reveals" on={S.preparing.value} onClick={close(() => board.setPreparing(!S.preparing.value))} />
         <Tile icon={Blinds} label="Screen cover" on={curtainOn.value} onClick={close(() => (curtainOn.value = !curtainOn.value))} />
+        <Tile icon={Calculator} label="Calculator" on={calculatorOn.value} onClick={close(() => (calculatorOn.value = !calculatorOn.value))} />
         <Tile icon={Timer} label="Timer" on={timerOn.value} onClick={close(() => (timerOn.value = !timerOn.value))} />
         <Tile icon={Clapperboard} label="Record & replay" onClick={() => (S.popover.value = 'replay')} />
         <Tile icon={MonitorUp} label={overlay ? 'Back to board' : 'Write over screen'} on={overlay} onClick={actions.toggleOverlay} />

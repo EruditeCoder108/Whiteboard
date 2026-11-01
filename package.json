@@ -35,6 +35,7 @@
     "e2e:reveals": "electron-vite build && node e2e/reveals.mjs",
     "e2e:theme": "electron-vite build && node e2e/theme.mjs",
     "e2e:export": "electron-vite build && node e2e/export.mjs",
+    "e2e:tools": "electron-vite build && node e2e/tools.mjs",
     "e2e:papers": "electron-vite build && node e2e/papers.mjs",
     "e2e:replay": "electron-vite build && node e2e/replay.mjs",
     "e2e:canvas": "electron-vite build && node e2e/canvas-audit.mjs",
