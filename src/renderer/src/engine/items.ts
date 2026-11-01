@@ -51,18 +51,31 @@ export function strokeOutline(it: StrokeItem): number[][] {
 const ELLIPSE_SEGMENTS = 72
 
 /** Centre-line of a shape as polylines (flat x,y lists). */
+/** A connector's run: straight, or with square corners. */
+function linePoints(s: ShapeItem): number[] {
+  const [x0, y0, x1, y1] = s.p
+  const dx = x1 - x0, dy = y1 - y0
+  if (!s.elbow || Math.abs(dx) < 1 || Math.abs(dy) < 1) return [x0, y0, x1, y1]
+  if (s.elbow === 'h') { const mx = (x0 + x1) / 2; return [x0, y0, mx, y0, mx, y1, x1, y1] }
+  const my = (y0 + y1) / 2
+  return [x0, y0, x0, my, x1, my, x1, y1]
+}
+
 export function shapePolylines(s: ShapeItem): number[][] {
   const [x0, y0, x1, y1] = s.p
   switch (s.k) {
     case 'line':
-      return [[x0, y0, x1, y1]]
+      return [linePoints(s)]
     case 'arrow': {
-      const out: number[][] = [[x0, y0, x1, y1]]
-      const L = Math.hypot(x1 - x0, y1 - y0)
+      const run = linePoints(s)
+      const out: number[][] = [run]
+      // The head lies along the last stretch of the run.
+      const fromX = run[run.length - 4], fromY = run[run.length - 3]
+      const L = Math.hypot(x1 - fromX, y1 - fromY)
       if (L > 1e-6) {
         const head = Math.min(Math.max(12, s.w * 4.5), L * 0.6)
-        const ux = (x0 - x1) / L
-        const uy = (y0 - y1) / L
+        const ux = (fromX - x1) / L
+        const uy = (fromY - y1) / L
         const a = (27 * Math.PI) / 180
         const ca = Math.cos(a)
         const sa = Math.sin(a)

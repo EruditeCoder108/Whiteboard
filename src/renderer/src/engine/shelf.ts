@@ -1,4 +1,5 @@
 import { contrastRatio, isDarkColor } from './colour'
+import { remapAnchors } from './connectors'
 import { moved } from './convert'
 import { unionRect } from './geometry'
 import { itemBounds, translateItem } from './items'
@@ -12,12 +13,14 @@ import { newId } from './types'
  * copy alone, so inserting the same diagram twice gives two diagrams that do not move together.
  */
 export function freshCopies(items: Item[]): Item[] {
-  const groups = new Map<string, string>()
-  return items.map(it => {
+  const groups = new Map<string, string>(), ids = new Map<string, string>()
+  return remapAnchors(items.map(it => {
     const { locked: _locked, group, ...rest } = it
     if (group && !groups.has(group)) groups.set(group, newId())
-    return { ...rest, id: newId(), ...(group ? { group: groups.get(group) } : {}) } as Item
-  })
+    const id = newId()
+    ids.set(it.id, id)
+    return { ...rest, id, ...(group ? { group: groups.get(group) } : {}) } as Item
+  }), ids)
 }
 
 /** Centred in the part of the board that is visible, made smaller only if it would not fit (never larger). */

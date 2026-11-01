@@ -57,7 +57,7 @@ try {
   await page.getByRole('button', { name: 'Fill #d7f0dd', exact: true }).click()
   await screenshot('phase2-object-style')
   await page.keyboard.press('Escape')
-  await fw(page, w => w.board.setSelection([w.board.doc.items.find(it => it.t === 'h')]))
+  await fw(page, w => w.board.setSelection([w.board.doc.items.find(it => it.t === 'h' && it.k === 'rect')]))
 
   const b = await selectBox()
   const beforeResize = await fw(page, w => structuredClone(w.board.selection[0]))

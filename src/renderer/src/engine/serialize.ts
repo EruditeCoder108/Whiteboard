@@ -1,4 +1,4 @@
-import type { GraphItem, ImageItem, Item, ObjectMeta, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
+import type { Anchor, GraphItem, ImageItem, Item, ObjectMeta, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
 import { assetKey } from './media'
 import { artJson, hasLook, isBoardKind, lookJson, validArt, validLook, validLookFrame } from './pages'
 import type { Artwork, BoardKind, Frame, LookFrame, PageLook } from './pages'
@@ -56,7 +56,7 @@ export function itemToJson(it: Item): unknown {
   }
   const common = { id: it.id, c: it.c, w: r2(it.w) || it.w, p: it.p.map(r2), angle: it.angle, fill: it.fill, ...meta, ...text }
   if (it.t === 't') return { t: 't', ...common, note: it.note }
-  return { t: 'h', ...common, k: it.k, dash: it.dash, radius: it.radius }
+  return { t: 'h', ...common, k: it.k, dash: it.dash, radius: it.radius, from: it.from, to: it.to, elbow: it.elbow }
 }
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
@@ -97,6 +97,14 @@ function textStyle(o: Record<string, unknown>): TextStyle | null {
   if (o.list !== undefined) style.list = o.list as TextStyle['list']
   if (o.textColor !== undefined) style.textColor = o.textColor as string
   return style
+}
+
+function anchorOf(raw: unknown): Anchor | null {
+  if (!raw || typeof raw !== 'object') return null
+  const { id, at } = raw as { id?: unknown; at?: unknown }
+  if (!isId(id)) return null
+  if (Array.isArray(at) && at.length === 2 && at.every(v => isNum(v) && v >= 0 && v <= 1)) return { id, at: [at[0], at[1]] }
+  return { id }
 }
 
 /** Defensive parse: bad items are skipped, never thrown on. */
@@ -178,6 +186,13 @@ export function itemFromJson(raw: unknown): Item | null {
     if (o.dash !== undefined && !['solid', 'dashed', 'dotted'].includes(o.dash as string)) return null
     if (o.radius !== undefined && (!isNum(o.radius) || o.radius < 0 || o.radius > 1e6)) return null
     const s: ShapeItem = { t: 'h', ...common, ...extra, k }
+    // A bad attachment only loses the attachment, never the arrow.
+    if (k === 'line' || k === 'arrow') {
+      const from = anchorOf(o.from), to = anchorOf(o.to)
+      if (from) s.from = from
+      if (to) s.to = to
+      if (o.elbow === 'h' || o.elbow === 'v') s.elbow = o.elbow
+    }
     if (o.dash !== undefined) s.dash = o.dash as ShapeItem['dash']
     if (o.radius !== undefined) s.radius = o.radius as number
     return s

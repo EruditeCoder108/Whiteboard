@@ -7,6 +7,7 @@ import type { JSX } from 'preact'
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
 import { board } from '@/engine/instance'
 import { clamp, unionRect } from '@/engine/geometry'
+import { isConnector } from '@/engine/connectors'
 import { itemBounds } from '@/engine/items'
 import { fontOf, textAlign, textColor, textPadding, wrapText } from '@/engine/text'
 import { MAX_TEXT_LENGTH } from '@/engine/serialize'
@@ -150,6 +151,7 @@ function ObjectStyles({ items }: { items: Item[] }): JSX.Element {
   const unlocked = items.filter(it => !it.locked), text = unlocked.filter(editable), fill = unlocked.filter(filled)
   const bordered = unlocked.filter(it => !isBox(it)), shapes = unlocked.filter(it => it.t === 'h')
   const rounded = shapes.filter(it => it.t === 'h' && it.k === 'rect')
+  const connectors = unlocked.filter(isConnector)
   return <div class="object-style-content">
     {unlocked.length < items.length && <div class="pop-hint">Locked objects keep their style. Unlock them to edit.</div>}
     {text.length > 0 && <TextStyles items={text} />}
@@ -162,6 +164,11 @@ function ObjectStyles({ items }: { items: Item[] }): JSX.Element {
       {(['solid', 'dashed', 'dotted'] as const).map(dash => <button type="button" key={dash} aria-label={`${dash} border`}
         class={`style-choice ${common(shapes, it => it.t === 'h' ? it.dash ?? 'solid' : '') === dash ? 'active' : ''}`}
         onClick={() => board.patchSelection({ dash }, 'shape')}>{dash[0].toUpperCase() + dash.slice(1)}</button>)}
+    </div>}
+    {connectors.length > 0 && <div class="style-text-row"><span class="style-row-label">Path</span>
+      {([['Straight', false], ['Elbow', true]] as const).map(([label, elbow]) => <button type="button" key={label} aria-label={`${label} path`}
+        class={`style-choice ${common(connectors, it => it.t === 'h' && !!it.elbow) === elbow ? 'active' : ''}`}
+        onClick={() => board.setElbow(elbow)}>{label}</button>)}
     </div>}
     {rounded.length > 0 && <CommitSlider label="Corners" min={0} max={80} value={common(rounded, it => it.t === 'h' ? it.radius ?? 0 : 0)} onCommit={radius => board.patchSelection({ radius }, 'rect')} />}
     {unlocked.length > 0 && <CommitSlider label="Opacity" min={0} max={100} suffix="%" value={common(unlocked, it => (it.opacity ?? 1) * 100)} onCommit={opacity => board.patchSelection({ opacity: opacity / 100 })} />}
@@ -200,7 +207,7 @@ export function SelectionToolbar(): JSX.Element | null {
   const run = (fn: () => void): void => { setPanel(null); fn() }
   return <div class="selection-tools ui nodrag" ref={ref} data-testid="selection-toolbar" data-popover-keep="" style={{ left, top: toolbarTop, width }}>
     <div class="selection-actions panel" role="toolbar" aria-label="Selection actions">
-      <span class="selection-caption" title={locked ? 'Selection includes locked objects' : `${items.length} selected`}>{allLocked ? <LockKeyhole size={13} /> : items.length === 1 ? items[0].t === 'l' ? 'Lab' : items[0].t === 's' ? 'Stroke' : items[0].t === 't' ? items[0].note ? 'Note' : 'Text' : items[0].t === 'i' ? items[0].latex !== undefined ? 'Equation' : 'Picture' : items[0].t === 'g' ? 'Graph' : 'Shape' : `${items.length} selected`}</span>
+      <span class="selection-caption" title={locked ? 'Selection includes locked objects' : `${items.length} selected`}>{allLocked ? <LockKeyhole size={13} /> : items.length === 1 ? items[0].t === 'l' ? 'Lab' : items[0].t === 's' ? 'Stroke' : items[0].t === 't' ? items[0].note ? 'Note' : 'Text' : items[0].t === 'i' ? items[0].latex !== undefined ? 'Equation' : 'Picture' : items[0].t === 'g' ? 'Graph' : isConnector(items[0]) ? items[0].k === 'arrow' ? 'Arrow' : 'Line' : 'Shape' : `${items.length} selected`}</span>
       <div class="grow" />
       <Btn icon={Palette} title="Object style" active={panel === 'style'} disabled={allLocked} onClick={() => setPanel(panel === 'style' ? null : 'style')} />
       {single && <Btn icon={Pencil} title={single.text ? 'Edit text  (Enter)' : 'Add text  (Enter)'} disabled={locked} onClick={() => board.editText(single)} />}

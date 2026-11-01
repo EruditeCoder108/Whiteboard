@@ -43,6 +43,9 @@ export interface StrokeItem extends ObjectMeta {
   p: number[]
 }
 
+/** What one end of an arrow or line holds on to: another object, and on a picture the spot on it (fractions of its size). */
+export interface Anchor { id: string; at?: [number, number] }
+
 export interface ShapeItem extends ObjectMeta, TextStyle {
   t: 'h'
   id: string
@@ -55,6 +58,11 @@ export interface ShapeItem extends ObjectMeta, TextStyle {
   fill?: string
   dash?: 'solid' | 'dashed' | 'dotted'
   radius?: number
+  /** arrows and lines: the objects their ends are attached to (see connectors.ts) */
+  from?: Anchor
+  to?: Anchor
+  /** arrows and lines: square corners instead of a straight run, leaving sideways (h) or up and down (v) */
+  elbow?: 'h' | 'v'
 }
 
 export interface TextItem extends ObjectMeta, TextStyle {
