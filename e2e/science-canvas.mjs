@@ -44,7 +44,7 @@ try {
       let sum = 0; for (let i = 3; i < data.length; i += 4) sum += data[i] / 255 / d ** 2
       return sum
     }
-    board.doc.replaceAll([]); S.grid.value = 'dots'
+    board.doc.replaceAll([]); board.setPaper('dots')
     board.setView({ x: 0, y: 0, zoom: 1 }); board.refresh(null); await settle()
     const sx = 320, sy = 240, before = board.toWorld(sx, sy)
     const base = area(board.gridCv, sx, sy), cacheAlpha = area(board.cache, (sx - board.cv0.x), (sy - board.cv0.y))
@@ -54,7 +54,7 @@ try {
     await settle(); const settled = area(board.gridCv, sx, sy)
     const transitions = []
     for (const dark of [false, true]) for (const mode of ['dots', 'lines']) {
-      S.bgColor.value = dark ? '#1f232b' : '#ffffff'; S.grid.value = mode
+      board.setColor(dark ? '#1f232b' : '#ffffff'); board.setPaper(mode)
       // Dot and square-grid boundaries plus the two old abrupt thresholds.
       for (const z of [.1, .225, .4, .45, .9, 1.6, 1.8, 3.6, 6.4, 7.2, 14.4, .4499, 4]) {
         board.setView({ x: -80, y: -80, zoom: z * (1 - 1e-6) }); board.renderCommitted(); const a = pixels()
@@ -64,7 +64,7 @@ try {
       }
     }
     const thickness = []
-    S.bgColor.value = '#ffffff'; S.grid.value = 'lines'
+    board.setColor('#ffffff'); board.setPaper('lines')
     for (const z of [.05, 1, 1.5, 16]) {
       // Isolate a full-strength world-origin line, away from horizontal lines.
       board.setView({ x: -100 / z, y: -103 / z, zoom: z }); board.renderCommitted()
@@ -96,7 +96,7 @@ try {
       })
       board.doc.replaceAll(items)
       for (const grid of ['dots', 'lines']) for (const mode of ['pan', 'zoom']) {
-        S.grid.value = grid; board.setView({ x: 0, y: 0, zoom: count === 4000 ? .35 : 1 }); board.refresh(null); await settle()
+        board.setPaper(grid); board.setView({ x: 0, y: 0, zoom: count === 4000 ? .35 : 1 }); board.refresh(null); await settle()
         const cpu = [], intervals = [], rebuilds = [], drift = []
         const render = board.renderCommitted.bind(board), rebuild = board.rebuildCache.bind(board)
         board.renderCommitted = () => { const t = performance.now(); render(); cpu.push(performance.now() - t) }
@@ -115,13 +115,13 @@ try {
     const captures = []
     board.doc.replaceAll([])
     for (const dark of [false, true]) for (const mode of ['dots', 'lines']) {
-      S.bgColor.value = dark ? '#1f232b' : '#ffffff'; S.grid.value = mode
+      board.setColor(dark ? '#1f232b' : '#ffffff'); board.setPaper(mode)
       board.setView({ x: -150, y: -50, zoom: 1.3 }); board.refresh(null); board.renderCommitted()
       const cv = document.createElement('canvas'); cv.width = board.gridCv.width; cv.height = board.gridCv.height
       const ctx = cv.getContext('2d'); ctx.fillStyle = S.bgColor.value; ctx.fillRect(0, 0, cv.width, cv.height); ctx.drawImage(board.gridCv, 0, 0)
       captures.push({ name: `s0-${mode}-${dark ? 'dark' : 'light'}`, png: cv.toDataURL().split(',')[1] })
     }
-    S.grid.value = 'none'; board.renderCommitted()
+    board.setPaper('none'); board.renderCommitted()
     const empty = board.gctx.getImageData(0, 0, board.gridCv.width, board.gridCv.height).data.every(v => v === 0)
     board.setView({ x: 1e6, y: -1e6, zoom: 1 }); await settle()
     return { benchmarks, captures, empty, distant: { ...board.view } }

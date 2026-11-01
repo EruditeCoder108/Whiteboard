@@ -11,7 +11,7 @@ try {
   await app.evaluate(({BrowserWindow}) => {const w=BrowserWindow.getAllWindows()[0];w.setSize(1280,800);w.hide()})
   await page.route(/^https?:\/\//, route=>route.abort())
   await fw(page,w=>{
-    w.S.radialEnabled.value=false;w.S.bgColor.value='#fbfcff';w.S.grid.value='none'
+    w.S.radialEnabled.value=false;w.board.setColor('#fbfcff');w.board.setPaper('none')
     w.board.setView({x:0,y:0,zoom:1});w.board.setTool('select')
     let n=0
     const add=it=>w.board.commitAdd({...it,id:`readme-sample-${++n}`,w:it.w??1,c:it.c??'#17263e'})

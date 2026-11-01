@@ -1,5 +1,5 @@
 import { itemBounds, translateItem } from './items'
-import { DEFAULT_FRAME, MAX_EXTENT, PAGE_H, PAGE_W, frameForContent, frameRect } from './pages'
+import { DEFAULT_FRAME, MAX_EXTENT, PAGE_H, PAGE_W, STYLE_KEYS, frameForContent, frameRect } from './pages'
 import type { Frame, LookFrame, PageLook } from './pages'
 import type { Paper } from './grid'
 import type { Item, Rect } from './types'
@@ -25,6 +25,13 @@ const moved = (origin: [number, number] | undefined, dx: number, dy: number): [n
   return x || y ? [x, y] : undefined
 }
 
+/** The paper settings (spacing, strength, line colour) of a look, to travel with its paper. */
+const paperStyle = (look: PageLook): PageLook => {
+  const out: PageLook = {}
+  for (const k of STYLE_KEYS) if (look[k] !== undefined) (out as Record<string, unknown>)[k] = look[k]
+  return out
+}
+
 /** Where the next frame goes on a canvas: to the right of the last frame, or of the drawing. */
 export function nextFrameSlot(frames: Frame[], items: Item[]): { x: number; y: number } {
   const last = frames.at(-1)
@@ -45,9 +52,10 @@ export function notebookToCanvas(pages: ({ items: Item[]; frame?: Frame } & Page
     const dx = x - f.x, dy = -f.y
     for (const it of pg.items) items.push(translateItem(it, dx, dy))
     const frame: LookFrame = { x, y: 0, extent: f.extent }
-    if (pg.paper) { frame.paper = pg.paper; const origin = moved(pg.origin, dx, dy); if (origin) frame.origin = origin }
+    if (pg.paper) { frame.paper = pg.paper; Object.assign(frame, paperStyle(pg)); const origin = moved(pg.origin, dx, dy); if (origin) frame.origin = origin }
     if (pg.color) frame.color = pg.color
     if (pg.title) frame.title = pg.title
+    if (pg.art) frame.art = pg.art // placed on the sheet, so it moves with it
     frames.push(frame)
     x += PAGE_W + FRAME_GAP
   }
@@ -69,9 +77,11 @@ export function tileFrames(b: Rect): Frame[] {
  * Canvas → notebook: every frame becomes a page holding what is drawn in it (judged by each
  * object's centre) with the frame's paper, colour and title. Frames without a paper of their own
  * show the canvas paper (`surface`), so the page looks as the frame did. Drawing outside all
- * frames is covered by extra pages, so nothing is lost.
+ * frames is covered by extra pages, so nothing is lost. `surface` is the canvas's own look (or just
+ * its paper); a canvas without frames hands its background picture to the first page.
  */
-export function canvasToNotebook(items: Item[], frames: LookFrame[], surface: Paper = 'none'): ({ items: Item[]; frame: Frame } & PageLook)[] {
+export function canvasToNotebook(items: Item[], frames: LookFrame[], surface: Paper | PageLook = 'none'): ({ items: Item[]; frame: Frame } & PageLook)[] {
+  const base: PageLook = typeof surface === 'string' ? { paper: surface } : surface
   const sheets = frames.map(f => ({ f, items: [] as Item[] }))
   const rest: Item[] = []
   for (const it of items) {
@@ -85,15 +95,19 @@ export function canvasToNotebook(items: Item[], frames: LookFrame[], surface: Pa
     for (const it of rest) (extra.find(s => holds(s.f, centre(it))) ?? extra[0]).items.push(it)
     sheets.push(...extra.filter(s => s.items.length))
   }
-  if (!sheets.length) return [{ items: [], frame: { ...DEFAULT_FRAME }, paper: surface }]
-  return sheets.map(({ f, items: inside }) => {
+  const surfaceArt = !frames.length && base.art ? { art: base.art } : {}
+  if (!sheets.length) return [{ items: [], frame: { ...DEFAULT_FRAME }, paper: base.paper ?? 'none', ...paperStyle(base), ...surfaceArt }]
+  return sheets.map(({ f, items: inside }, i) => {
     const page: { items: Item[]; frame: Frame } & PageLook = {
-      items: inside.map(it => translateItem(it, -f.x, -f.y)), frame: { x: 0, y: 0, extent: f.extent }, paper: f.paper ?? surface
+      items: inside.map(it => translateItem(it, -f.x, -f.y)), frame: { x: 0, y: 0, extent: f.extent },
+      paper: f.paper ?? base.paper ?? 'none', ...paperStyle(f.paper ? f : base)
     }
-    const origin = moved(f.paper ? f.origin : undefined, -f.x, -f.y)
+    const origin = moved(f.paper ? f.origin : base.origin, -f.x, -f.y)
     if (origin) page.origin = origin
     if (f.color) page.color = f.color
     if (f.title) page.title = f.title
+    if (f.art) page.art = f.art
+    else if (i === 0) Object.assign(page, surfaceArt)
     return page
   })
 }

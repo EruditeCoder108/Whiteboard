@@ -11,6 +11,14 @@ import { exportName, lesson } from './lesson'
 /** Below this board opacity (percent) the board counts as "writing over the screen". */
 export const OVERLAY_ALPHA = 20
 
+/** How the paper in view is drawn becomes how new lessons start. */
+function rememberPaperStyle(): void {
+  const s = S.here.value.style
+  S.defaultSpacing.value = s.spacing
+  S.defaultStrength.value = s.strength
+  S.defaultLines.value = s.lines ?? ''
+}
+
 /** Everything a user can *do*.  Buttons, shortcuts and the radial menu all call these. */
 export const actions = {
   retrySave(): void {
@@ -48,6 +56,18 @@ export const actions = {
   setPaper(paper: GridMode, everywhere = false): void {
     board.setPaper(paper, everywhere)
     S.defaultPaper.value = paper
+    rememberPaperStyle()
+  },
+
+  /** Spacing, strength or line colour of the paper (`null`: back to the preset); new lessons follow. */
+  setPaperStyle(patch: { spacing?: number | null; strength?: number | null; lines?: string | null }, everywhere = false): void {
+    board.setPaperStyle(patch, everywhere)
+    rememberPaperStyle()
+  },
+
+  resetPaper(everywhere = false): void {
+    board.resetPaper(everywhere)
+    rememberPaperStyle()
   },
 
   setColor(c: string): void {

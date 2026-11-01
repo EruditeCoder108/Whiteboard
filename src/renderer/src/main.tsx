@@ -10,6 +10,7 @@ import { MODELS, modelState, modelDuration, labState, labDuration } from './engi
 import { paintLab } from './engine/science/scene'
 import * as insert from './state/insert'
 import * as lessonState from './state/lesson'
+import { background } from './state/background'
 
 // Test/debug hook (the renderer is local-only and context-isolated, so this is safe).
 ;(window as unknown as Record<string, unknown>).__fw = {
@@ -18,6 +19,7 @@ import * as lessonState from './state/lesson'
   replay,
   insert,
   lessonState,
+  background,
   science: { launchHandle, labToWorld, evaluate, flight, models: MODELS, modelState, modelDuration, labState, labDuration, paintLab },
   itemCount: () => board.doc.items.length
 }
