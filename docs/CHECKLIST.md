@@ -32,10 +32,11 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - ✅ Easier graph entry, without leaving the board
 
 **E. Pages and templates**
-- ⬜ Templates: Venn diagram, KWL chart, worksheet
-- ⬜ Reusable timeline, for history and processes
-- ⬜ More papers: logarithmic, polar, outline maps of India and the world, sports fields
-- ⬜ Crop a background picture by hand
+- ✅ Templates: Venn diagram, KWL chart, worksheet, steps, cycle
+- ✅ Reusable timeline, for history and processes
+- ✅ More papers: logarithmic, polar, playing fields (football, cricket, basketball, kabaddi)
+- ⬜ Outline maps of India and the world *(waits for the owner: the borders must follow an official source)*
+- ✅ Crop a picture by hand, on the page or behind the writing
 
 **F. Everyday classroom tools**
 - ⬜ Magnifier

@@ -42,6 +42,44 @@ export function safeLink(raw: unknown): string | null {
   } catch { return null }
 }
 
+// ── crop ──────────────────────────────────────────────────────────────────────
+export type CropRect = [number, number, number, number]
+export type CropCorner = 'nw' | 'ne' | 'sw' | 'se'
+export const FULL_CROP: CropRect = [0, 0, 1, 1]
+export const isWholeCrop = (c: CropRect): boolean => c[0] <= .001 && c[1] <= .001 && c[2] >= .999 && c[3] >= .999
+const MIN_CROP = .04
+
+/** Where a crop frame goes when a corner or its middle is dragged. It stays on the picture and never closes up. */
+export function dragCrop(start: CropRect, mode: CropCorner | 'move', to: [number, number], from: [number, number]): CropRect {
+  const [x0, y0, x1, y1] = start
+  if (mode === 'move') {
+    const dx = Math.max(-x0, Math.min(1 - x1, to[0] - from[0])), dy = Math.max(-y0, Math.min(1 - y1, to[1] - from[1]))
+    return [x0 + dx, y0 + dy, x1 + dx, y1 + dy]
+  }
+  const west = mode.endsWith('w'), north = mode.startsWith('n')
+  return [
+    west ? Math.min(to[0], x1 - MIN_CROP) : x0, north ? Math.min(to[1], y1 - MIN_CROP) : y0,
+    west ? x1 : Math.max(to[0], x0 + MIN_CROP), north ? y1 : Math.max(to[1], y0 + MIN_CROP)
+  ]
+}
+
+/** A frame drawn on a mirrored picture, in the coordinates of the picture as stored. */
+export function cropInSource(c: CropRect, flipX: boolean, flipY: boolean): CropRect {
+  const [x0, x1] = flipX ? [1 - c[2], 1 - c[0]] : [c[0], c[2]]
+  const [y0, y1] = flipY ? [1 - c[3], 1 - c[1]] : [c[1], c[3]]
+  return [x0, y0, x1, y1]
+}
+
+/** Where the cropped part of a box sits on the board, so nothing around it moves (and it stays put when turned). */
+export function croppedBox(it: { p: Rect; angle?: number }, c: CropRect): Rect {
+  const [x0, y0, x1, y1] = it.p, w = x1 - x0, h = y1 - y0
+  const nw = w * (c[2] - c[0]), nh = h * (c[3] - c[1])
+  const dx = ((c[0] + c[2]) / 2 - .5) * w, dy = ((c[1] + c[3]) / 2 - .5) * h
+  const [ox, oy] = rotatePoint(dx, dy, 0, 0, it.angle ?? 0)
+  const cx = (x0 + x1) / 2 + ox, cy = (y0 + y1) / 2 + oy
+  return [cx - nw / 2, cy - nh / 2, cx + nw / 2, cy + nh / 2]
+}
+
 // ── mind maps ─────────────────────────────────────────────────────────────────
 export const NODE_W = 250
 export const NODE_H = 86

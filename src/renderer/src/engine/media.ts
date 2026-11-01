@@ -99,6 +99,16 @@ export function rasterize(source: CanvasImageSource, width: number, height: numb
 
 const keys = new Map<string, string>()
 /** Content key for a picture: FNV-1a over the data URL, cached per string. */
+/** The part of a picture inside `crop` (fractions), at its full resolution. */
+export function cropImage(image: HTMLImageElement, crop: [number, number, number, number]): { src: string; aspect: number } {
+  const [x0, y0, x1, y1] = crop
+  const sx = image.naturalWidth * x0, sy = image.naturalHeight * y0, sw = Math.max(1, image.naturalWidth * (x1 - x0)), sh = Math.max(1, image.naturalHeight * (y1 - y0))
+  const cv = document.createElement('canvas')
+  cv.width = Math.round(sw); cv.height = Math.round(sh)
+  cv.getContext('2d')!.drawImage(image, sx, sy, sw, sh, 0, 0, cv.width, cv.height)
+  return { src: cv.toDataURL('image/webp', .92), aspect: sw / sh }
+}
+
 export function assetKey(src: string): string {
   let key = keys.get(src)
   if (key) return key

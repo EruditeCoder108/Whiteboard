@@ -1,5 +1,5 @@
 import {
-  Network, Archive, Atom, Axis3d, Blinds, Calculator, EyeOff, Table2, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileText, FlaskConical, GripVertical, FilePlus2, Library, Pencil, SaveAll, Share2,
+  LayoutTemplate, Network, Archive, Atom, Axis3d, Blinds, Calculator, EyeOff, Table2, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileText, FlaskConical, GripVertical, FilePlus2, Library, Pencil, SaveAll, Share2,
   Highlighter, MoveHorizontal, Image as ImageIcon, Laptop, LayoutGrid, LineChart, LogOut, Minus, MousePointer2, MousePointerClick, Pen, Plus,
   Presentation, GraduationCap, Redo2, ArrowDownToLine, ArrowUpToLine, Infinity as InfinityIcon, BookOpen, Frame, Focus, Ruler, Shapes, SlidersHorizontal, Sigma, Sparkles, Spotlight, Timer, Trash2, Type, Undo2, MonitorUp, Layers
 } from 'lucide-preact'
@@ -176,6 +176,7 @@ function BoardMenu(): JSX.Element {
         <Tile icon={FileText} label="PDF / worksheet" onClick={close(() => pickFiles('application/pdf,.pdf', false).then(files => insertFiles(files)))} />
         <Tile icon={Table2} label="Table" onClick={() => (S.popover.value = 'table')} />
         <Tile icon={Network} label="Mind map" onClick={close(() => board.startMindMap())} />
+        <Tile icon={LayoutTemplate} label="Templates" onClick={() => (S.popover.value = 'templates')} />
         <Tile icon={Sigma} label="Equation" onClick={() => editEquation(null)} />
         <Tile icon={LineChart} label="Graph" onClick={() => editGraph(null)} />
         <Tile icon={MoveHorizontal} label="Number line" onClick={() => editScale(null, 'line')} />

@@ -1204,6 +1204,18 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .table-count .scale-bump { width: 56px; height: 52px; }
 .table-count .scale-bump:disabled { opacity: .4; }
 .table-head-choice { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 16px; font-weight: 600; }
+/* ── templates and crop ── */
+.templates-card { width: min(860px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; }
+.template-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.template-tile { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 14px; background: var(--hover); touch-action: manipulation; }
+.template-tile:active { transform: scale(.97); }
+.template-tile span { font-size: 14px; font-weight: 600; text-align: center; }
+.template-sample { display: block; width: 100%; height: 118px; border-radius: 9px; }
+.crop-card { width: min(900px, 100%); }
+.crop-stage { position: relative; align-self: center; line-height: 0; touch-action: none; margin: 10px; }
+.crop-stage img { display: block; max-width: 100%; max-height: calc(100vh - 240px); }
+.crop-frame { position: absolute; cursor: move; touch-action: none; }
+
 /* ── graph editor ── */
 .graph-editor { width: min(760px, calc(100% - 24px)); }
 .graph-curves { display: flex; flex-wrap: wrap; gap: 4px; }

@@ -8,6 +8,8 @@ import { S, applySettings, boardMode, darkUi, showToast, startPersisting } from 
 import { BoardBar, BoardSaveChip, EdgeTabs, LayoutChooser } from '@/ui/Board'
 import { PalmCalibration } from '@/ui/Calibrate'
 import { InputsSheet } from '@/ui/Inputs'
+import { TemplatesSheet } from '@/ui/Templates'
+import { CropSheet } from '@/ui/Crop'
 import { Autosave } from '@/state/autosave'
 import { Radial } from '@/ui/Radial'
 import { ResizeHandles, Toast } from '@/ui/Chrome'
@@ -257,6 +259,8 @@ export function App(): JSX.Element {
       {S.popover.value === 'periodic' && <PeriodicSheet />}
       {S.popover.value === 'table' && <TableChooser />}
       {S.popover.value === 'inputs' && <InputsSheet />}
+      {S.popover.value === 'templates' && <TemplatesSheet />}
+      {S.popover.value === 'crop' && <CropSheet />}
       {S.popover.value === 'shelf' && <ShelfSheet />}
       {S.popover.value === 'shelf-save' && <ShelfSaveSheet />}
       <Dialog />

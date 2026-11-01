@@ -1,6 +1,6 @@
 import {
   AArrowDown, AArrowUp, AlignCenter, AlignLeft, AlignRight, Archive, ArrowDownToLine, ArrowUpToLine, Bold, Check,
-  Columns3, Copy, Ellipsis, ExternalLink, EyeOff, FlipHorizontal2, FlipVertical2, GitBranchPlus, Group, Heading, Link2, Minus, Rows3, Italic, List, ListOrdered, LockKeyhole, Palette, Pencil,
+  Columns3, Copy, Crop, Ellipsis, ExternalLink, EyeOff, FlipHorizontal2, FlipVertical2, GitBranchPlus, Group, Heading, Link2, Minus, Rows3, Italic, List, ListOrdered, LockKeyhole, Palette, Pencil,
   RotateCw, Scan, Trash2, Ungroup, UnlockKeyhole, X
 } from 'lucide-preact'
 import type { JSX } from 'preact'
@@ -14,6 +14,7 @@ import { MAX_TEXT_LENGTH } from '@/engine/serialize'
 import type { EditableItem, Item } from '@/engine/types'
 import { isBox } from '@/engine/types'
 import { safeLink } from '@/engine/objects'
+import { openCrop } from './Crop'
 import { PALETTE, S, boardMode, showToast } from '@/state/store'
 import { shelf } from '@/state/shelf'
 import { RevealOptions } from './Reveal'
@@ -265,6 +266,7 @@ export function SelectionToolbar(): JSX.Element | null {
         <Act icon={AArrowDown} label="Smaller" title="Smaller text" onClick={() => board.patchSelection({ fontSize: Math.max(6, Math.round(textSize / 1.2)) }, 'text')} />
         <Act icon={Bold} label="Bold" title="Bold text" active={!!single?.bold} onClick={() => board.patchSelection({ bold: !single?.bold }, 'text')} />
       </>}
+      {only?.t === 'i' && only.latex === undefined && <Act icon={Crop} label="Crop" title="Crop the picture" disabled={locked} onClick={() => openCrop(only)} />}
       {shape && <Act icon={GitBranchPlus} label="Branch" title="Add a branch" disabled={locked} onClick={() => board.addBranch(shape)} />}
       {only?.t === 'b' && <Btn icon={Pencil} title="Type in the table" disabled={locked} onClick={() => board.openCell(only, board.lastCell?.id === only.id ? board.lastCell.r : 0, board.lastCell?.id === only.id ? board.lastCell.c : 0)} />}
       {media && <Btn icon={Pencil} title={media.t === 'n' ? 'Change the scale' : media.t === 'g' ? 'Edit graph' : 'Edit equation'} disabled={locked} onClick={() => board.onEditMedia?.(media)} />}

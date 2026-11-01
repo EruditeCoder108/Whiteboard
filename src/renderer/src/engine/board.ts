@@ -4,7 +4,7 @@ import { effect } from '@preact/signals'
 import { Doc, History, opBounds, restyleItems } from './doc'
 import type { EditOp, HistoryState } from './doc'
 import { clamp, inflate, lerp, rectsHit, unionRect } from './geometry'
-import { BRANCH_FILLS, NODE_H, NODE_W, branchSpot, flipItem, mindNode } from './objects'
+import { BRANCH_FILLS, NODE_H, NODE_W, branchSpot, croppedBox, flipItem, mindNode } from './objects'
 import { cloneItem, concealed, isHidden, itemBounds, paintItem, hitObject, setHiddenMode, translateItem } from './items'
 import { fitTextHeight, textAlign, textColor } from './text'
 import { transformItem } from './transforms'
@@ -790,6 +790,18 @@ export class Board implements ToolHost {
   }
 
   nudgeSelection(dx: number, dy: number): void { this.editSelection(it => translateItem(it, dx, dy)) }
+
+  /** Replace a picture by its cropped part, shown where that part was. Undo brings the whole picture back. */
+  cropPicture(it: ImageItem, src: string, crop: [number, number, number, number], aspect: number): void {
+    const before = this.doc.snapshot()
+    const current = before.find(o => o.id === it.id)
+    if (!current || current.t !== 'i' || current.locked) return
+    const next: ImageItem = { ...current, src, aspect, p: croppedBox(current, crop) }
+    this.doc.replaceAll(before.map(o => o === current ? next : o))
+    this.commit(this.doc.diff(before), 'Crop picture')
+    this.setSelection([next])
+    this.refresh(null)
+  }
 
   /** Mirror the selection left to right, or turn it upside down. */
   flipSelection(axis: 'h' | 'v'): void {
