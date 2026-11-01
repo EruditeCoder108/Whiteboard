@@ -79,6 +79,7 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Templates: Venn diagram, timeline, KWL chart, worksheet | ⏳ |
 | **My lessons:** every lesson filed by subject with a first-page picture and date; search, open, rename, copy, show in folder, delete to the Recycle Bin | ✅ |
 | New lesson with a name, subject or class, and notebook or canvas | ✅ |
+| **Tables:** typed text in rows and columns; Tab between cells; rows grow to fit; add, remove, drag lines, heading row; Hindi; behaves like any other object | ✅ |
 | **Prepared reveals:** hide objects until named steps; large Next button, clicker support, cards to tap; state saved in the lesson; exports keep answers hidden unless asked | ✅ |
 | **Light and dark mode** for the whole app: Auto follows the board, or Light or Dark | ✅ |
 | **Export preview** with sheets to leave out, and **print-friendly PDFs** of dark boards | ✅ |

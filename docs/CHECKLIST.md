@@ -24,7 +24,7 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 ## Step 2: reusable teaching content
 
 - ✅ My shelf: save a drawing, diagram or whole page once, reuse it in any lesson, carry it to another PC
-- ⬜ Tables *(brief ready for the second agent)*
+- ✅ Tables (type in cells, Hindi too; rows grow to fit; add, remove and drag rows and columns)
 - ✅ Arrows that stay attached when boxes move (mind maps, flowcharts, labels on diagrams)
 - ✅ Number line and coordinate axes as real tools (fractions, units, marked points)
 - ✅ Prepared reveals (hide an answer, tap to show, one big Next button)

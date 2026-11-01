@@ -1,6 +1,6 @@
 # Next chat handoff
 
-**Updated 1 November 2026 (Step 2 all but Tables, on branch `feature/step2-finish`; 1.6.0-beta.10).** Read this first in every new chat, then update it before the chat ends
+**Updated 1 November 2026 (Step 2 finished; 1.6.0-beta.10).** Read this first in every new chat, then update it before the chat ends
 (see the last section). Paths are relative to the repository root
 `D:\Projects 2\whiteboard\app` unless they start with a drive letter.
 
@@ -32,9 +32,9 @@ The gesture ring is a separate college project and is **not** part of the produc
 | 3D/asset licence research | `docs/EDUCATIONAL-3D-ASSETS-RESEARCH.md` |
 | Release history | `CHANGELOG.md` |
 | **The owner's progress checklist (plain language)** | `docs/CHECKLIST.md`. **Work through it in order; tick it after every milestone.** |
-| GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#13 merged, `main` = 1.6.0-beta.9 |
+| GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#14 merged, `main` = 1.6.0-beta.10 |
 | Installed app (owner's laptop) | `%LOCALAPPDATA%\Programs\Floating Whiteboard` (per-user NSIS install, Start menu + desktop shortcut) |
-| Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.7.exe` (ignored by git). **Not rebuilt per milestone: see §6.** |
+| Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.10.exe` (ignored by git). **Rebuilt per whole checklist step: see §6.** |
 | Older unrelated projects in the parent folder | `..\android-library`, `..\*.pyw` (the original Python board). Leave them alone. |
 
 ## 3. State right now
@@ -42,7 +42,7 @@ The gesture ring is a separate college project and is **not** part of the produc
 - **`docs/CHECKLIST.md` is the owner's plain-language progress list and the plan.** Step 1 is done (apart from
   three items moved to the end of Step 2). Tick items (✅ / 🔄 / ⬜) whenever a milestone starts or finishes; keep it
   short and jargon-free. `FEATURES.md` stays the detailed feature list.
-- **Branch `feature/step2-finish` (1.6.0-beta.10, not merged)** holds reveals, light/dark mode, print-friendly PDFs, export preview, calculator, periodic table, writing strips. `main` = 1.6.0-beta.9; the laptop has 1.6.0-beta.7. **Only Tables (second agent) is left in Step 2: when it arrives, review and merge it into this branch, then one PR for the branch and one laptop install (owner's decision).** My shelf (PR #11), attached arrows (PR #12) and number line and axes (PR #13) are on `main`. Built before them (see `CHANGELOG.md`):
+- `main` = **1.6.0-beta.10**, installed on the owner's laptop. **Step 2 is finished** (PRs #11–#14): My shelf, attached arrows, number line and axes, tables, reveals, light/dark mode, print-friendly PDFs, export preview, calculator, periodic table, writing strips. **Next is Step 3 (real-panel testing).** The only open Step 2 line is the Note 3 study, whose report the second agent has not finished. Built before them (see `CHANGELOG.md`):
   - lesson integrity (F1–F6, F9; PR #4);
   - Background & paper (§6; PR #5);
   - Share to phones (second agent; PR #6);
@@ -68,8 +68,7 @@ The gesture ring is a separate college project and is **not** part of the produc
   - **`note3-study.md` is unfinished:** `D:\Projects 2\whiteboard\note3-study\REPORT.md` (no code) is marked "in progress",
     last written 1 Nov 12:32, with most in-use checks listed as "Not yet checked". When the owner pastes its summary, read the
     report and turn its "Top 10" into checklist items (Step 2 or the end of Step 2).
-  - **Next brief, ready to paste: `tables.md`** (branch `feature/tables`, worktree `app-tables`). Review it when the owner pastes
-    the report back. It adds a new item type `t: 'b'`, so review the engine and file-reading parts closely.
+  - The lead built Tables itself at the owner's request, so the second agent has no brief waiting. Good next tasks for it: logarithmic, polar and map papers (mostly new files).
   - **Keep it busy:** when it finishes, give it the next independent Step 2 item, with files that don't overlap
     yours, in a new brief in `docs/agent-tasks/`.
 - **Note 3 is installed on this PC** (Start menu name "Note"; its window belongs to `note.exe` /
@@ -85,8 +84,8 @@ The gesture ring is a separate college project and is **not** part of the produc
     - a check at 125/150/200% Windows scaling on hardware;
     - capture polish: grabbing one window requests full-size thumbnails of every window, which is slow with many open.
 - **Checks green on `main`:**
-  - typecheck clean, vitest 364;
-  - e2e: tools 19, export 18, reveals 34, theme 19, scale 25, connectors 33, shelf 31, lesson 44, papers 34, capture 26, board 25, share 21, track-a 15, run 46, phase1 23, phase2 35, grid 30,
+  - typecheck clean, vitest 377;
+  - e2e: tables 33, tools 19, export 18, reveals 34, theme 19, scale 25, connectors 33, shelf 31, lesson 44, papers 34, capture 26, board 25, share 21, track-a 15, run 46, phase1 23, phase2 35, grid 30,
     canvas 13, replay 30, agent 40, laser 15;
   - phase2 and laser can flake once when run straight after many suites; a rerun passes.
 - **Never tested on a real touch panel.** Swipe feel, palm threshold, soft-pen width, IR pens and tile sizes are
@@ -114,7 +113,7 @@ Read the whole document first, not just §7. Work through it iteratively, one mi
 each.** Step 2 is the deep dive's §8 ("Teaching tools and reusable content"); read §8.1–8.6 for each item's
 required outcome:
 1. **My shelf**: done.
-2. **Tables**: with the second agent (`docs/agent-tasks/tables.md`).
+2. **Tables**: done.
 3. **Attached arrows**: done.
 4. **Number line and coordinate axes**: done.
 5. **Prepared reveals (done)**: hide an answer behind a cover that is tapped away during class.
@@ -124,7 +123,7 @@ required outcome:
    - export preview.
 7. **Step 3**: real-panel acceptance with the owner (pen/palm, two writers F7, scaling, a slow PC).
 
-Then **make a new checklist for the big tracks** (B below) with the owner. After tables, the second agent's next good task is export preview or logarithmic, polar and map papers (mostly new files).
+Then **make a new checklist for the big tracks** (B below) with the owner.
 The look of a page is `PageLook` (`engine/pages.ts`): paper, color, title, origin, spacing, strength, lines, art.
 `engine/scene.ts` turns it into a `Backdrop` painted everywhere; `engine/grid.ts` plans each paper as `PaperPass`es
 (testable without a canvas). Extend these; never add a parallel paper path.
@@ -186,6 +185,7 @@ Electron 44 + electron-vite, Preact + `@preact/signals`, Canvas2D, TypeScript.
   `freshCopies` (new ids and groups, unlocked), `placeInView`, `readableOn` (ink that would vanish on this board changes), `pageAt`. `state/shelf.ts` and
   `ui/Shelf.tsx` are the rest (popover names `shelf`, `shelf-save`); board hooks are in the "my shelf" part of `board.ts`. Teacher items stay apart from
   the future reviewed Lesson Kit. Not built from §8.2: folders/tags (subject and search cover it for now) and credits.
+- **Tables:** `TableItem` (`t: 'b'`): `cols`/`rows` are shares of the size, `cells` the text. `engine/table.ts` is pure and also paints; `ui/Table.tsx` has the size chooser and the cell field. `fitItem` grows rows through `fitTable`. A tap on a cell of the selected table comes from `SelectTool` (`editTableCell`); so does dragging a divider. A long table can run past the page: teachers widen it or use "more space below".
 - **Prepared reveals:** `ObjectMeta.step` (`RevealStep`: n, name, shown, cover) lives on each object. `engine/reveals.ts` is pure; `items.ts` holds the hidden mode (`hide`/`ghost`/`show`) and `concealed()`, which every hit test respects. Exports flip the mode only for one synchronous paint (`renderRect`), so the classroom screen can never flash an answer.
 - **Theme:** `darkUi` in `store.ts` sets the `dark` class on `.window`; the variables are at the "light and dark mode" block of `styles.css`. **Ink colours still follow `isDarkBg`, the board, not the theme.** New colours: use the variables; `npm run e2e:theme` measures contrast on every surface, so add new popovers to its list.
 - **Export:** `exportPages` takes `print`, `hidden`, `scale`, `onSheet`, `cancelled`; `ui/ExportPreview.tsx` uses the same path at a small scale, so the preview cannot disagree with the PDF.
@@ -272,6 +272,7 @@ npm run e2e:reveals        # prepared reveals
 npm run e2e:theme          # light and dark: every surface readable
 npm run e2e:export         # export preview and print-friendly
 npm run e2e:tools          # calculator, periodic table, writing strips
+npm run e2e:tables         # tables
 npm run e2e:share          # share to phones: local server, QR, stop/expiry
 npm run e2e:track-a        # pictures, PDF, equations, graphs, instruments, pages
 node e2e/run.mjs; node e2e/phase1.mjs; node e2e/phase2.mjs; node e2e/laser-audit.mjs; node e2e/agent.mjs; node e2e/replay.mjs
