@@ -47,7 +47,15 @@ export interface ShareAddress { name: string; address: string }
 export interface ShareStatus { active: boolean; url: string; downloads: number; expiresAt: number }
 export type ShareStart = { ok: true; url: string; expiresAt: number } | { ok: false; error: string }
 
+export interface CaptureSource { id: string; kind: 'screen' | 'window'; name: string; thumbnail: string; icon?: string }
+export interface CapturedImage { src: string; width: number; height: number }
+export type CaptureResult = ({ ok: true } & CapturedImage) | { ok: false; error: string }
+
 export interface Api {
+  capture: {
+    sources(): Promise<CaptureSource[]>
+    grab(sourceId: string): Promise<CaptureResult>
+  }
   share: {
     addresses(): Promise<ShareAddress[]>
     start(pages: ArrayBuffer[], name: string, address: string): Promise<ShareStart>

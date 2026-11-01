@@ -6,6 +6,7 @@ import {
   ipcMain,
   screen,
   clipboard,
+  desktopCapturer,
   safeStorage
 } from 'electron'
 import { promises as fs } from 'node:fs'
@@ -15,6 +16,7 @@ import { DiskStore, MAX_FILE_BYTES, saveError } from './storage'
 import { Lessons } from './lessons'
 import { pagesToPdf } from './pdf'
 import { ShareServer, listAddresses } from './share'
+import { Capture, CaptureError } from './capture'
 import { randomUUID } from 'node:crypto'
 import { AgentBridge } from './agent-bridge'
 import { Assistant } from './assistant'
@@ -40,6 +42,25 @@ let assistant: Assistant
 const share = new ShareServer()
 let shareRequest = 0
 const stopShare = (): void => { shareRequest++; share.stop() }
+let capturing = false
+const capture = new Capture({
+  sources: options => desktopCapturer.getSources(options),
+  displays: () => screen.getAllDisplays(),
+  ownWindows: () => {
+    const windows = BrowserWindow.getAllWindows().filter(w => !w.isDestroyed())
+    return { ids: windows.map(w => w.getMediaSourceId()), titles: ['Floating Whiteboard', ...windows.map(w => w.getTitle()).filter(Boolean)] }
+  },
+  async withoutBoard(grab) {
+    const windows = [win, controlWin].filter((w): w is BrowserWindow => !!w && !w.isDestroyed())
+      .map(w => ({ w, opacity: w.getOpacity() }))
+    try {
+      // Opacity leaves bounds, fullscreen, always-on-top and pass-through exactly as they were.
+      windows.forEach(({ w }) => w.setOpacity(0))
+      await new Promise(resolve => setTimeout(resolve, 200))
+      return await grab()
+    } finally { windows.forEach(({ w, opacity }) => { if (!w.isDestroyed()) w.setOpacity(opacity) }) }
+  }
+})
 const agentRequests = new Map<string, { resolve: (result: AgentResult) => void; timer: NodeJS.Timeout }>()
 function callBoard(call: AgentCall): Promise<AgentResult> {
   if (!win || win.isDestroyed() || closing || agentRequests.size > 8) return Promise.resolve({ ok: false, error: 'Board is unavailable or busy' })
@@ -392,6 +413,17 @@ function registerIpc(): void {
   ipcMain.handle('lessons:set-link', (_e, link: unknown) => lessons.setLink(link))
 
   ipcMain.handle('share:addresses', () => listAddresses())
+  ipcMain.handle('capture:sources', e => {
+    if (e.sender !== w()?.webContents) return []
+    return capture.list()
+  })
+  ipcMain.handle('capture:grab', async (e, id: unknown) => {
+    if (e.sender !== w()?.webContents || typeof id !== 'string' || id.length > 256 || capturing || closing || quitting) return { ok: false, error: 'Capture is unavailable. Please try again.' }
+    capturing = true
+    try { return { ok: true, ...await capture.grab(id) } }
+    catch (error) { return { ok: false, error: error instanceof CaptureError ? error.message : 'Could not capture that screen or window. Refresh and try again.' } }
+    finally { capturing = false }
+  })
   ipcMain.handle('share:status', () => share.status())
   ipcMain.handle('share:stop', () => stopShare())
   ipcMain.handle('share:start', async (e, pages: unknown, name: unknown, address: unknown) => {

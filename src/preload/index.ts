@@ -8,6 +8,10 @@ function subscribe<T>(channel: string, cb: (v: T) => void): () => void {
 }
 
 const api: Api = {
+  capture: {
+    sources: () => ipcRenderer.invoke('capture:sources'),
+    grab: (sourceId) => ipcRenderer.invoke('capture:grab', sourceId)
+  },
   share: {
     addresses: () => ipcRenderer.invoke('share:addresses'),
     start: (pages, name, address) => ipcRenderer.invoke('share:start', pages, name, address),
