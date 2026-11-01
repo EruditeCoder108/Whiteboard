@@ -20,7 +20,8 @@
   1. **Section I needs a panel.** The owner tests pen, palm, thick end, two writers, scaling and a slow PC.
   2. **Left out for now, by the owner's decision (1 Nov 2026):** outline maps. India's border must follow an official source; do not draw or download one without their say.
 - **Not verified, say so if asked:** the Office route for exact PowerPoint slides (no Office on this PC; `main/slides.ts` has never run against real Office); OpenBoard import (tested on a sample built to the format, not a real file); handwriting quality (tested on a stand-in model); contact sizes and simultaneous writers (simulated touches only).
-- **Next is the owner's call.** On the checklist, that is Step 3, the animation library. Start a new branch from `main`.
+- **Next: Step 2b, the polish pass, before the animation library** (owner, 1 Nov). The lead is on `feature/tools-polish`; the second agent is on `feature/tools-audit` from `docs/agent-tasks/tools-audit.md`.
+- **The GitHub repository is going private** (owner, 1 Nov). The app does not use it at run time.
 
 ---
 
@@ -53,7 +54,7 @@ The gesture ring is a separate college project and is **not** part of the produc
 | **The owner's progress checklist (plain language)** | `docs/CHECKLIST.md` (Checklist 2). **Work through it in order; tick it after every milestone.** The finished first list: `docs/CHECKLIST-1-done.md`. |
 | GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#16 merged, `main` = 1.7.0-beta.1 |
 | Installed app (owner's laptop) | `%LOCALAPPDATA%\Programs\Floating Whiteboard` (per-user NSIS install, Start menu + desktop shortcut) |
-| Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.10.exe` (ignored by git). **Rebuilt per whole checklist step: see §6.** |
+| Latest installer | `dist\Floating Whiteboard Setup 1.7.0-beta.1.exe` (ignored by git). **Rebuilt per whole checklist step: see §6.** |
 | Older unrelated projects in the parent folder | `..\android-library`, `..\*.pyw` (the original Python board). Leave them alone. |
 
 ## 3. State right now

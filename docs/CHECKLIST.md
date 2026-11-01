@@ -71,6 +71,16 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - ✅ Ready-made examples to start from (circuits, rays, titration, heating)
 - ⬜ Pictures for the apparatus tiles and more parts, if teachers ask for them
 
+## Step 2b: polish before the library
+
+*The owner tested 1.7.0-beta.1. The tools we have come first, then the 3D library.*
+
+- 🔄 Toolbar fits every screen, including 1280 wide
+- 🔄 Brush without the streak; quieter side tabs; pictures only where they help
+- 🔄 Radial menu rebuilt
+- 🔄 Panel check screen for the real board
+- 🔄 Audit of every tool and part; science accuracy *(second agent)*
+
 ## Step 3: the animation library (Lesson Kit)
 
 - ⬜ 3D heart, mitosis, ray optics, 3D glassware
