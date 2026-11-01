@@ -31,6 +31,13 @@
   - Erasing and *Clear ink* leave it alone, and the message says so. Removing it can be undone.
 - The paper picker shows the page in view with its writing and a live sample on every paper tile,
   painted by the same code as the board.
+- **Share to phones** (Export → Share to phones).
+  - The board PC shares the lesson PDF on the school Wi-Fi with a big QR code and a link students can type.
+  - Nothing goes to the cloud, but phones must be on the same network.
+  - The link lasts 30 minutes, shows how many phones downloaded it, and stops with **Stop sharing**, closing the panel, opening another lesson or quitting.
+  - Only that one PDF is reachable, behind an unguessable link.
+  - The panel explains guest Wi-Fi and firewall problems and keeps **Save PDF instead** one tap away.
+  - Built by a second agent from a written brief, reviewed and merged.
 
 ## 1.6.0-beta.2 — lesson integrity (Note 3 deep dive F1–F6, F9) — 2026-11-01
 

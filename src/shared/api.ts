@@ -43,7 +43,17 @@ export interface BackupInfo {
   itemCount: number
 }
 
+export interface ShareAddress { name: string; address: string }
+export interface ShareStatus { active: boolean; url: string; downloads: number; expiresAt: number }
+export type ShareStart = { ok: true; url: string; expiresAt: number } | { ok: false; error: string }
+
 export interface Api {
+  share: {
+    addresses(): Promise<ShareAddress[]>
+    start(pages: ArrayBuffer[], name: string, address: string): Promise<ShareStart>
+    stop(): Promise<void>
+    status(): Promise<ShareStatus>
+  }
   agent: {
     status(): Promise<import('./agent').BridgeStatus>
     enable(): Promise<import('./agent').BridgeStatus>

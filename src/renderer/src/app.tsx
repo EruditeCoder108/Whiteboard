@@ -18,6 +18,7 @@ import { AgentPanel } from '@/ui/AgentPanel'
 import { replay } from '@/state/replay'
 import { ReplayPanel, ReplayCanvas, ReplayControls, RecordingControls } from '@/ui/Replay'
 import { Dialog } from '@/ui/Dialog'
+import { SharePanel } from '@/ui/Share'
 import { lesson } from '@/state/lesson'
 import { ScienceUI } from '@/ui/science/Science'
 import { PageBar, ImportStatus } from '@/ui/Insert'
@@ -235,6 +236,7 @@ export function App(): JSX.Element {
       <Toast />
       <PalmCalibration />
       <Dialog />
+      <SharePanel />
       {S.ready.value && !S.layoutChosen.value && <LayoutChooser />}
       {(!S.ready.value || S.closing.value) && <div class="loading-cover" role="status">
         <span>{S.closing.value ? 'Saving before closing…' : S.saveError.value ? 'Could not load your board' : 'Loading your board…'}</span>

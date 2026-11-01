@@ -13,6 +13,8 @@ import { join } from 'node:path'
 import type { Bounds, MainCommand, WinState } from '../shared/api'
 import { DiskStore, MAX_FILE_BYTES, saveError } from './storage'
 import { Lessons } from './lessons'
+import { pagesToPdf } from './pdf'
+import { ShareServer, listAddresses } from './share'
 import { randomUUID } from 'node:crypto'
 import { AgentBridge } from './agent-bridge'
 import { Assistant } from './assistant'
@@ -35,6 +37,9 @@ let restoreBounds: Bounds | null = null
 let flushTimer: NodeJS.Timeout | null = null
 let agentBridge: AgentBridge
 let assistant: Assistant
+const share = new ShareServer()
+let shareRequest = 0
+const stopShare = (): void => { shareRequest++; share.stop() }
 const agentRequests = new Map<string, { resolve: (result: AgentResult) => void; timer: NodeJS.Timeout }>()
 function callBoard(call: AgentCall): Promise<AgentResult> {
   if (!win || win.isDestroyed() || closing || agentRequests.size > 8) return Promise.resolve({ ok: false, error: 'Board is unavailable or busy' })
@@ -218,6 +223,8 @@ async function createWindow(): Promise<void> {
   win.webContents.setVisualZoomLevelLimits(1, 1)
   win.once('ready-to-show', () => win?.show())
   win.webContents.on('did-finish-load', pushState)
+  win.webContents.on('render-process-gone', stopShare)
+  win.webContents.on('did-start-loading', stopShare)
   win.on('resize', () => {
     scheduleSaveWindowState()
     placeControlWin()
@@ -243,6 +250,7 @@ async function createWindow(): Promise<void> {
     }, 15_000)
   })
   win.on('closed', () => {
+    stopShare()
     if (controlWin && !controlWin.isDestroyed()) controlWin.destroy()
     controlWin = null
     win = null
@@ -356,7 +364,7 @@ function registerIpc(): void {
   ipcMain.handle('store:save-board', (_e, json: string, assets?: unknown) => storage.saveBoard(json, assets))
   ipcMain.handle('store:list-backups', () => storage.listBackups())
   ipcMain.handle('store:load-backup', (_e, id: string) => storage.loadBackup(id))
-  ipcMain.handle('store:archive-board', () => storage.keepNextBackup())
+  ipcMain.handle('store:archive-board', () => { stopShare(); return storage.keepNextBackup() })
 
   ipcMain.handle('lessons:recent', () => lessons.recent())
   ipcMain.handle('lessons:pick-save-path', async (_e, name: unknown) => {
@@ -374,13 +382,32 @@ function registerIpc(): void {
     const r = await dialog.showOpenDialog(owner, { title: 'Open lesson', properties: ['openFile'], filters: [{ name: 'Whiteboard lesson', extensions: ['wbd', 'json'] }] })
     if (r.canceled || !r.filePaths[0]) return null
     lessons.allow(r.filePaths[0])
+    stopShare()
     return lessons.open(r.filePaths[0])
   })
-  ipcMain.handle('lessons:open', (_e, path: unknown) => lessons.open(path))
+  ipcMain.handle('lessons:open', (_e, path: unknown) => { stopShare(); return lessons.open(path) })
   ipcMain.handle('lessons:save', (_e, path: unknown, json: unknown) => lessons.save(path, json))
   ipcMain.handle('lessons:forget', (_e, path: string) => lessons.forget(path))
   ipcMain.handle('lessons:get-link', () => lessons.link())
   ipcMain.handle('lessons:set-link', (_e, link: unknown) => lessons.setLink(link))
+
+  ipcMain.handle('share:addresses', () => listAddresses())
+  ipcMain.handle('share:status', () => share.status())
+  ipcMain.handle('share:stop', () => stopShare())
+  ipcMain.handle('share:start', async (e, pages: unknown, name: unknown, address: unknown) => {
+    if (e.sender !== w()?.webContents || !Array.isArray(pages) || !pages.length || pages.length > 500 ||
+      !pages.every(p => p instanceof ArrayBuffer) || typeof name !== 'string' || !name.trim() || name.length > 200 ||
+      typeof address !== 'string' || !listAddresses().some(n => n.address === address)) return { ok: false, error: 'Choose an available network and try again.' }
+    stopShare()
+    const request = shareRequest
+    try {
+      const pdf = await pagesToPdf(pages)
+      if (request !== shareRequest || quitting) return { ok: false, error: 'Sharing was stopped.' }
+      return { ok: true, ...await share.start({ pdf, name: name.trim(), address }) }
+    } catch {
+      return { ok: false, error: 'Could not share on this network. Try another network or save the PDF instead.' }
+    }
+  })
 
   ipcMain.on('main:flushed', async (e, ok: boolean) => {
     if (!closing || e.sender !== w()?.webContents) return
@@ -423,21 +450,8 @@ function registerIpc(): void {
     if (!owner || !Array.isArray(pages) || !pages.length || pages.length > 500 || !pages.every(p => p instanceof ArrayBuffer)) return null
     const r = await dialog.showSaveDialog(owner, { title: 'Export PDF', defaultPath: join(app.getPath('documents'), name), filters: [{ name: 'PDF document', extensions: ['pdf'] }] })
     if (r.canceled || !r.filePath) return null
-    // Lay each page image on its own landscape A4 sheet in a hidden window, then print to PDF.
-    const dir = await fs.mkdtemp(join(app.getPath('temp'), 'whiteboard-pdf-'))
-    const printer = new BrowserWindow({ show: false, webPreferences: { offscreen: false, javascript: false } })
-    try {
-      await Promise.all(pages.map((png, i) => fs.writeFile(join(dir, `page-${i + 1}.png`), Buffer.from(png))))
-      const html = `<!doctype html><meta charset="utf-8"><style>@page{size:A4 landscape;margin:0}html,body{margin:0}.page{width:297mm;height:210mm;display:flex;align-items:center;justify-content:center;page-break-after:always;overflow:hidden}.page:last-child{page-break-after:auto}img{max-width:285mm;max-height:198mm;object-fit:contain}</style>${pages.map((_, i) => `<div class="page"><img src="page-${i + 1}.png"></div>`).join('')}`
-      await fs.writeFile(join(dir, 'index.html'), html, 'utf8')
-      await printer.loadFile(join(dir, 'index.html'))
-      const pdf = await printer.webContents.printToPDF({ landscape: true, pageSize: 'A4', printBackground: true, margins: { top: 0, bottom: 0, left: 0, right: 0 } })
-      await fs.writeFile(r.filePath, pdf)
-      return r.filePath
-    } finally {
-      printer.destroy()
-      await fs.rm(dir, { recursive: true, force: true }).catch(() => {})
-    }
+    await fs.writeFile(r.filePath, await pagesToPdf(pages))
+    return r.filePath
   })
   ipcMain.handle('files:open-recording', async () => {
     const owner = w()
@@ -518,5 +532,6 @@ if (!app.requestSingleInstanceLock()) {
   })
 
   app.on('window-all-closed', () => app.quit())
+  app.on('before-quit', stopShare)
   app.on('will-quit', () => { globalShortcut.unregisterAll(); assistant?.cancel(); void agentBridge?.disable() })
 }

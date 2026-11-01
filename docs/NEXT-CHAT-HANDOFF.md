@@ -38,12 +38,14 @@ The gesture ring is a separate college project and is **not** part of the produc
 
 ## 3. State right now
 
-- Lesson integrity (1.6.0-beta.2) is merged (PR #4). Branch **`feature/papers-backgrounds`** (version
-  **1.6.0-beta.3**) holds the **Background & paper** milestone (§6); see `CHANGELOG.md`. Merge it via a PR.
-- **A second agent (ChatGPT) works in parallel** on its own worktree `D:\Projects 2\whiteboard\app-qr-share`, branch
-  `feature/qr-share`: "Share to phones" (local Wi-Fi + QR, §9). Its brief is `docs/agent-tasks/qr-share.md`. It
-  pushes but never merges; **review its branch** (security of the local server, the file list it was given, tests),
-  then merge it, add its changelog entry and tick FEATURES.
+- `main` holds 1.6.0-beta.3: Lesson integrity (PR #4), **Background & paper** (§6, PR #5) and **Share to phones**
+  (local Wi-Fi + QR, built by the second agent, reviewed and merged). See `CHANGELOG.md`.
+- **A second agent (ChatGPT) works in parallel** from written briefs in `docs/agent-tasks/`. It works in its own
+  worktree (`D:\Projects 2\whiteboard\app-<task>`), pushes its branch, never merges. The lead reviews (security,
+  the file list it was given, tests), merges through a PR, and writes the changelog/FEATURES/handoff entries.
+  Done: `qr-share.md` (`src/main/share.ts`, `pdf.ts`, `ui/Share.tsx`). **In progress: `capture.md`**, "Capture to
+  lesson", branch `feature/capture`, worktree `D:\Projects 2\whiteboard\app-capture`. While it runs, stay out of
+  its files (main capture IPC, `ui/Capture.tsx`, `state/capture.ts`, the end of `styles.css`).
 - **Deep dive progress:** §7 **F1–F6 and F9 done**. **§6 done:** spacing/strength/line colour with scope and restore,
   isometric papers, lesson layouts, graph renderer fixed (§6.5), writing papers adapt to zoom on the canvas, custom
   background picture with full lifecycle (§6.4), one backdrop description everywhere (§6.8). **Not done:** F7, F8,
@@ -75,8 +77,8 @@ Read the whole document first, not just §7. Work through it iteratively, one mi
 
 **A. Next deep-dive milestones.** Lesson integrity (F1–F6, F9) and §6 Background & paper are done.
 Pick from the deep dive in this order, one branch each, and tell the owner in plain words after each:
-1. §9 output and capture: **Capture to lesson** (screen/window → locked reference), print-friendly export of dark
-   boards, export preview. (QR share is being built by the second agent.)
+1. §9 output: print-friendly export of dark boards, export preview (page size and pagination), page sections.
+   (Capture to lesson is with the second agent; review and merge its branch when it reports.)
 2. §8 reusable content: personal resource shelf, tables, connectors/mind maps, number line/axes, prepared reveals.
 3. Page sections (rest of F9); F8 and F7 when the foundations/panel exist.
 The look of a page is `PageLook` (`engine/pages.ts`): paper, color, title, origin, spacing, strength, lines, art.
@@ -189,6 +191,7 @@ npx vitest run
 npm run e2e:board          # board layout, notebook/canvas, palm, paper, subjects
 npm run e2e:papers         # paper settings, zoom-adaptive papers, background picture lifecycle
 npm run e2e:lesson         # lesson files, appearance in the file, export
+npm run e2e:share          # share to phones: local server, QR, stop/expiry
 npm run e2e:track-a        # pictures, PDF, equations, graphs, instruments, pages
 node e2e/run.mjs; node e2e/phase1.mjs; node e2e/phase2.mjs; node e2e/laser-audit.mjs; node e2e/agent.mjs; node e2e/replay.mjs
 npx electron-vite build && npx electron-builder --win nsis --x64 --publish never   # installer in dist/
