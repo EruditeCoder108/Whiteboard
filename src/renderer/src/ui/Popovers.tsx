@@ -1,4 +1,4 @@
-import { ArrowUpRight, Circle, FilePlus2, FolderOpen, Keyboard, Plus, Save, SaveAll, Share2, Slash, Square, Trash2, History, Diamond, Triangle, UnlockKeyhole, Clapperboard } from 'lucide-preact'
+import { ArrowUpRight, Circle, FilePlus2, FolderOpen, Keyboard, Plus, Save, SaveAll, Share2, Slash, Square, Trash2, History, Diamond, Triangle, UnlockKeyhole, Clapperboard } from './icons'
 import type { JSX } from 'preact'
 import { useEffect, useLayoutEffect, useState } from 'preact/hooks'
 import type { BackupInfo } from '@shared/api'

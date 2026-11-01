@@ -1,4 +1,5 @@
-import { BookOpen, Copy, FileDown, FolderOpen, FolderSearch, Image as ImageIcon, Infinity as InfinityIcon, MoreHorizontal, Pencil, Plus, QrCode, Search, Tag, Trash2, X } from 'lucide-preact'
+import { ArtPicture } from './icons'
+import { BookOpen, Copy, FileDown, FolderOpen, FolderSearch, Image as ImageIcon, Infinity as InfinityIcon, MoreHorizontal, RenameArt, Plus, QrCode, Search, Tag, Trash2, X } from './icons'
 import type { JSX } from 'preact'
 import { useEffect, useMemo, useState } from 'preact/hooks'
 import type { LibraryLesson } from '@shared/api'
@@ -112,7 +113,7 @@ function LessonCard({ l, subjects }: { l: LibraryLesson; subjects: string[] }): 
         <button type="button" class="lesson-more nodrag" aria-label={`More for ${l.name}`} aria-expanded={menu} onClick={() => setMenu(!menu)}><MoreHorizontal size={20} /></button>
       </div>
       {menu && <div class="lesson-actions">
-        <button type="button" class="nodrag" onClick={() => { setMenu(false); setEditing('name') }}><Pencil size={15} /> Rename</button>
+        <button type="button" class="nodrag" onClick={() => { setMenu(false); setEditing('name') }}><RenameArt size={15} /> Rename</button>
         <button type="button" class="nodrag" onClick={() => { setMenu(false); setEditing('subject') }}><Tag size={15} /> Subject</button>
         <button type="button" class="nodrag" onClick={() => { setMenu(false); void lesson.duplicate(l.path) }}><Copy size={15} /> Make a copy</button>
         <button type="button" class="nodrag" onClick={() => { setMenu(false); void window.api.lessons.reveal(l.path) }}><FolderSearch size={15} /> Show in folder</button>
@@ -157,7 +158,7 @@ export function LessonLibrary(): JSX.Element {
         </header>
         <div class="library-body">
           {all === null ? <p class="pop-hint">Loading your lessons…</p>
-            : !all.length ? <p class="library-empty">No lessons yet. Start one with <b>New lesson</b>; it saves itself as you teach.</p>
+            : !all.length ? <p class="library-empty"><ArtPicture name="empty-lessons" />No lessons yet. Start one with <b>New lesson</b>; it saves itself as you teach.</p>
             : !groups.length ? <p class="library-empty">No lesson matches “{query}”.</p>
             : groups.map(([subject, list]) => (
               <section key={subject || '-'} class="library-group">

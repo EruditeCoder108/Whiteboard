@@ -1,8 +1,8 @@
 import {
   AArrowDown, AArrowUp, AlignCenter, AlignLeft, AlignRight, Archive, ArrowDownToLine, ArrowUpToLine, Bold, Check,
-  Columns3, Copy, Crop, Ellipsis, ExternalLink, EyeOff, FlipHorizontal2, FlipVertical2, GitBranchPlus, Group, Heading, Link2, Minus, Play, ScanText, Sigma, SlidersHorizontal, Rows3, Italic, List, ListOrdered, LockKeyhole, Palette, Pencil,
+  Columns3, Copy, Crop, Ellipsis, EyeOff, FlipHorizontal2, FlipVertical2, GitBranchPlus, Group, Heading, Link2, Minus, Play, ScanText, Sigma, SlidersHorizontal, Rows3, Italic, List, ListOrdered, LockKeyhole, Palette, RenameArt, ArtLink,
   RotateCw, Scan, Trash2, Ungroup, UnlockKeyhole, X
-} from 'lucide-preact'
+} from './icons'
 import type { JSX } from 'preact'
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
 import { board } from '@/engine/instance'
@@ -264,9 +264,9 @@ export function SelectionToolbar(): JSX.Element | null {
     <div class="selection-actions panel" role="toolbar" aria-label="Selection actions">
       <span class="selection-caption" title={locked ? 'Selection includes locked objects' : `${items.length} selected`}>{allLocked ? <LockKeyhole size={13} /> : items.length === 1 ? items[0].t === 'l' ? 'Lab' : items[0].t === 's' ? 'Stroke' : items[0].t === 't' ? items[0].note ? 'Note' : 'Text' : items[0].t === 'i' ? items[0].latex !== undefined ? 'Equation' : 'Picture' : items[0].t === 'g' ? 'Graph' : items[0].t === 'a' ? partOf(items[0].kind)?.name ?? 'Apparatus' : items[0].t === 'm' ? items[0].kind === 'audio' ? 'Audio' : 'Video' : items[0].t === 'b' ? 'Table' : items[0].t === 'n' ? items[0].y ? 'Axes' : 'Number line' : isConnector(items[0]) ? items[0].k === 'arrow' ? 'Arrow' : 'Line' : 'Shape' : `${items.length} selected`}</span>
       <div class="grow" />
-      {only?.link && <Act icon={ExternalLink} label="Open link" title={`Open ${only.link}`} onClick={() => openLink(only.link!)} />}
+      {only?.link && <Act icon={ArtLink} label="Open link" title={`Open ${only.link}`} onClick={() => openLink(only.link!)} />}
       <Act icon={Palette} label="Style" title="Object style" active={panel === 'style'} disabled={allLocked} onClick={() => setPanel(panel === 'style' ? null : 'style')} />
-      {single && <Act icon={Pencil} label={single.text ? 'Edit' : 'Type'} title={single.text ? 'Edit text  (Enter)' : 'Add text  (Enter)'} disabled={locked} onClick={() => board.editText(single)} />}
+      {single && <Act icon={RenameArt} label={single.text ? 'Edit' : 'Type'} title={single.text ? 'Edit text  (Enter)' : 'Add text  (Enter)'} disabled={locked} onClick={() => board.editText(single)} />}
       {big && textSize > 0 && <>
         <Act icon={AArrowUp} label="Bigger" title="Bigger text" onClick={() => board.patchSelection({ fontSize: Math.min(512, Math.round(textSize * 1.2)) }, 'text')} />
         <Act icon={AArrowDown} label="Smaller" title="Smaller text" onClick={() => board.patchSelection({ fontSize: Math.max(6, Math.round(textSize / 1.2)) }, 'text')} />
@@ -280,8 +280,8 @@ export function SelectionToolbar(): JSX.Element | null {
       {only?.t === 'm' && <Act icon={Play} label="Play" title="Play the clip" onClick={() => { playing.value = only }} />}
       {only?.t === 'i' && only.latex === undefined && <Act icon={Crop} label="Crop" title="Crop the picture" disabled={locked} onClick={() => openCrop(only)} />}
       {shape && <Act icon={GitBranchPlus} label="Branch" title="Add a branch" disabled={locked} onClick={() => board.addBranch(shape)} />}
-      {only?.t === 'b' && <Act icon={Pencil} label="Type" title="Type in the table" disabled={locked} onClick={() => board.openCell(only, board.lastCell?.id === only.id ? board.lastCell.r : 0, board.lastCell?.id === only.id ? board.lastCell.c : 0)} />}
-      {media && <Act icon={Pencil} label="Edit" title={media.t === 'n' ? 'Change the scale' : media.t === 'g' ? 'Edit graph' : 'Edit equation'} disabled={locked} onClick={() => board.onEditMedia?.(media)} />}
+      {only?.t === 'b' && <Act icon={RenameArt} label="Type" title="Type in the table" disabled={locked} onClick={() => board.openCell(only, board.lastCell?.id === only.id ? board.lastCell.r : 0, board.lastCell?.id === only.id ? board.lastCell.c : 0)} />}
+      {media && <Act icon={RenameArt} label="Edit" title={media.t === 'n' ? 'Change the scale' : media.t === 'g' ? 'Edit graph' : 'Edit equation'} disabled={locked} onClick={() => board.onEditMedia?.(media)} />}
       {items.length > 1 && <Btn icon={grouped ? Ungroup : Group} title={grouped ? 'Ungroup  (Ctrl+Shift+G)' : 'Group  (Ctrl+G)'} disabled={locked} onClick={() => grouped ? board.ungroupSelection() : board.groupSelection()} />}
       <Act icon={Copy} label="Copy" title="Duplicate selection  (Ctrl+D)" onClick={() => board.duplicateSelection()} />
       {big && <>

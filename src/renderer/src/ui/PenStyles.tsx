@@ -1,4 +1,4 @@
-import { ChevronRight, Paintbrush, Pen, PenLine, PenTool, Pencil } from 'lucide-preact'
+import { ArtPencil, Chalk, ChevronRight, FeltMarker, Paintbrush, Pen } from './icons'
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { board } from '@/engine/instance'
@@ -11,7 +11,7 @@ import { Tile } from './kit'
 
 type Icon = typeof Pen
 
-export const PEN_ICON: Record<PenChoice, Icon> = { pen: Pen, pencil: Pencil, brush: Paintbrush, chalk: PenLine, felt: PenTool }
+export const PEN_ICON: Record<PenChoice, Icon> = { pen: Pen, pencil: ArtPencil, brush: Paintbrush, chalk: Chalk, felt: FeltMarker }
 export const penLabel = (style: PenChoice): string => PEN_CHOICES.find(c => c.id === style)?.label ?? 'Pen'
 
 export function PenStylePicker(): JSX.Element {

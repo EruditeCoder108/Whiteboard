@@ -1,6 +1,6 @@
 # Changelog
 
-## Not released yet — Checklist 2, Step 1 (branch `feature/checklist2-step1`)
+## 1.7.0-beta.1 — Real pictures, working apparatus, classroom tools, PowerPoint — 2026-11-01
 
 - **Pen styles:** pencil, brush, chalk and a chisel marker. Tap the pen in hand to choose; the preview shows the real ink on your board colour. They survive erasing part of a stroke, saving and export.
 - **A tool per input:** the thin tip, thick end and finger can each have their own tool and colour (Settings › Pen and finger). On IR panels they are told apart by contact size, measured once.
@@ -29,6 +29,7 @@
   - **Chemistry:** glassware you can fill by dragging, a burette that really titrates, with worked-out pH and true indicator colours. A burner heats what stands above it, and a thermometer or pH paper reads the vessel it is in. Balance, atomic shells up to krypton.
   - **Biology:** microscope with a focus knob and three slides, labelled plant and animal cells, bacterium, nerve cell, flower, inside a leaf, a stoma that opens and closes, a breathing model, osmosis, DNA.
   - **Ready-made set-ups** to start from: Ohm's law, series and parallel, charging a capacitor, rays through a lens, a prism, titration, heating water.
+- **Real pictures on the buttons:** 108 classroom objects, from a gear for Settings to a wooden duster for the eraser, on both layouts, in light and dark. They come to about 0.7 MB in all. Tiny symbols such as close and tick stay as simple marks.
 - **One look:** quiet, warm panels and one way of showing what is selected. Touch targets grow on the board; the type does not. Plainer wording throughout.
 
 ## 1.6.0-beta.10 — Tables, reveals, light and dark mode, export preview, classroom tools — 2026-11-01

@@ -1,4 +1,4 @@
-import { Eraser, Pen, Undo2 } from 'lucide-preact'
+import { Eraser, Pen, Undo2 } from './icons'
 import type { JSX } from 'preact'
 import { useState } from 'preact/hooks'
 import { ZONE_CHOICES } from '@/engine/classroom'

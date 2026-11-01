@@ -1,6 +1,6 @@
 # Next chat handoff
 
-**Updated 1 November 2026 (Checklist 2: Step 1 sections A to H and Step 2 built on a branch, not merged; `main` is 1.6.0-beta.10).** Read this first in every new chat, then update it before the chat ends
+**Updated 1 November 2026 (Checklist 2: Step 2 done, Step 1 done apart from panel testing; `main` is 1.7.0-beta.1).** Read this first in every new chat, then update it before the chat ends
 (see the last section). Paths are relative to the repository root
 `D:\Projects 2\whiteboard\app` unless they start with a drive letter.
 
@@ -13,15 +13,14 @@
 3. **Step 4, last: the large collection of scientific tools.** Not before.
 
 - **The Note 3 study is finished:** `D:\Projects 2\whiteboard\note3-study\Note-3-Final-Report.pdf` (4 pages). **Do not open or list the images in that folder.** `study-export.pdf` there is only a one-page test export. The owner says the report is **not fully right and the lead decides**: treat it as input, not orders. Its ratings of our app come from the docs, not the code. The lead's main changes are in the checklist: it adds a tool per input, student zones, PowerPoint import and a phone poll, and it puts writing feel ahead of new features.
-- **Icons belong to the second agent,** on `feature/organic-icons`, from `docs/agent-tasks/organic-icons.md`. It generates transparent pictures for the buttons and adds `ui/icons.tsx`, which exports the same names as `lucide-preact`. **Do not do icon work here.** New UI code imports icons from `./icons` once that branch is merged.
-- **Built on `feature/checklist2-step1` (pushed, not merged, not installed):** sections A to H of Step 1 and the working apparatus. See `CHANGELOG.md` under "Not released yet". Details of how they work are in §5.
-- **Also built on that branch:** section A (one look, selected state, wording, with a test of every sheet) and **Step 2 of the checklist: working apparatus**. The owner moved scientific tools up to now, ahead of the animation library. See §5.
+- **Icons are merged into the Step 1 branch** (second agent's work). `ui/icons.tsx` exports the same names as `lucide-preact`, with pictures where they exist and the plain mark otherwise, so **all UI code imports from `./icons`**. To use a picture, use its `Art…` export or `art('name')`. The art is `assets/art/*.webp`, rebuilt by `build/make-art.cjs` from the masters in `D:\Projects 2\whiteboard\art-masters` (outside the repo). `assets/art/SOURCES.md` records each picture.
+- **Merged and installed as 1.7.0-beta.1:** sections A to H of Step 1, the icons and the working apparatus. See `CHANGELOG.md`. Details of how they work are in §5.
+- **The owner moved scientific tools up to Step 2,** ahead of the animation library.
 - **What is left in Step 1, in order:**
-  1. **Merge the icon branch when the owner brings the agent's result.** It changes `lucide-preact` import lines to `./icons`, including on files this branch changed, so expect small conflicts there. Files new on this branch import `lucide-preact` directly (`PenStyles`, `Inputs`, `Zones`, `ClassTools`, `Clips`, `Templates`, `Crop`): point them at `./icons` too, and use the art the brief already asked for (`pencil`, `paintbrush`, `chalk`, `felt-marker`, `magnifier`, `clock`, `stopwatch`, `name-picker`, `dice`, `scoreboard`, `split-board`, `poll`, `mind-map`, `timeline`, `slides`, `video`, `audio`, `link`). New tiles are in the More menu in `ui/Board.tsx`.
-  2. **Section I needs a panel.** The owner tests pen, palm, thick end, two writers, scaling and a slow PC.
-  3. **Left out for now, by the owner's decision (1 Nov 2026):** outline maps. India's border must follow an official source; do not draw or download one without their say.
+  1. **Section I needs a panel.** The owner tests pen, palm, thick end, two writers, scaling and a slow PC.
+  2. **Left out for now, by the owner's decision (1 Nov 2026):** outline maps. India's border must follow an official source; do not draw or download one without their say.
 - **Not verified, say so if asked:** the Office route for exact PowerPoint slides (no Office on this PC; `main/slides.ts` has never run against real Office); OpenBoard import (tested on a sample built to the format, not a real file); handwriting quality (tested on a stand-in model); contact sizes and simultaneous writers (simulated touches only).
-- **PR and install:** the whole of Step 1 is one PR and one install (§6), so do them after sections A and I, or sooner if the owner asks.
+- **Next is the owner's call.** On the checklist, that is Step 3, the animation library. Start a new branch from `main`.
 
 ---
 
@@ -52,7 +51,7 @@ The gesture ring is a separate college project and is **not** part of the produc
 | Release history | `CHANGELOG.md` |
 | Licences: the circuit solver and all apparatus drawing are our own code, no outside code or art. Falstad's CircuitJS is GPL; if anything outside is added later, check its LICENSE file first. | |
 | **The owner's progress checklist (plain language)** | `docs/CHECKLIST.md` (Checklist 2). **Work through it in order; tick it after every milestone.** The finished first list: `docs/CHECKLIST-1-done.md`. |
-| GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#14 merged, `main` = 1.6.0-beta.10 |
+| GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#16 merged, `main` = 1.7.0-beta.1 |
 | Installed app (owner's laptop) | `%LOCALAPPDATA%\Programs\Floating Whiteboard` (per-user NSIS install, Start menu + desktop shortcut) |
 | Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.10.exe` (ignored by git). **Rebuilt per whole checklist step: see §6.** |
 | Older unrelated projects in the parent folder | `..\android-library`, `..\*.pyw` (the original Python board). Leave them alone. |
@@ -61,7 +60,7 @@ The gesture ring is a separate college project and is **not** part of the produc
 
 - **`docs/CHECKLIST.md` is the owner's plain-language progress list and the plan.** Checklist 1 is finished and archived. Tick items (✅ / 🔄 / ⬜) whenever a milestone starts or finishes; keep it
   short and jargon-free. `FEATURES.md` stays the detailed feature list.
-- `main` = **1.6.0-beta.10**, installed on the owner's laptop. **All of Step 2 is built and merged** (PRs #11–#14): My shelf, attached arrows, number line and axes, tables, reveals, light/dark mode, print-friendly PDFs, export preview, calculator, periodic table, writing strips. Built before it (see `CHANGELOG.md`):
+- `main` = **1.7.0-beta.1**, installed on the owner's laptop. **All of Step 2 is built and merged** (PRs #11–#14): My shelf, attached arrows, number line and axes, tables, reveals, light/dark mode, print-friendly PDFs, export preview, calculator, periodic table, writing strips. Built before it (see `CHANGELOG.md`):
   - lesson integrity (F1–F6, F9; PR #4);
   - Background & paper (§6; PR #5);
   - Share to phones (second agent; PR #6);
@@ -87,7 +86,7 @@ The gesture ring is a separate college project and is **not** part of the produc
     - manual crop of a filled background picture (position presets only today);
     - a check at 125/150/200% Windows scaling on hardware;
     - capture polish: grabbing one window requests full-size thumbnails of every window, which is slow with many open.
-- **Checks green on `feature/checklist2-step1` (1 Nov):** typecheck clean, vitest 467; e2e adds ink 33, objects 25, instruments 15, templates 25, classroom 28, imports 32, recognize 16, labels 8, apparatus 31, and all the suites below pass with it.
+- **New checks, green on `main` (1 Nov):** typecheck clean, vitest 470; e2e adds icons, ink 33, objects 25, instruments 15, templates 25, classroom 28, imports 32, recognize 16, labels 8, apparatus 31, and all the suites below pass with it.
 - **Checks green on `main`:**
   - typecheck clean, vitest 377;
   - e2e: tables 33, tools 19, export 18, reveals 34, theme 19, scale 25, connectors 33, shelf 31, lesson 44, papers 34, capture 26, board 25, share 21, track-a 15, run 46, phase1 23, phase2 35, grid 30,
@@ -279,6 +278,7 @@ npm run e2e:imports        # PowerPoint, OpenBoard, clips
 npm run e2e:recognize      # handwriting, against a stand-in model
 npm run e2e:apparatus      # circuits by hand, titration, heating, optics, biology
 npm run e2e:labels         # every sheet: nothing cut off
+npm run e2e:icons          # pictures load, on both layouts, light and dark
 npm run e2e:share          # share to phones: local server, QR, stop/expiry
 npm run e2e:track-a        # pictures, PDF, equations, graphs, instruments, pages
 node e2e/run.mjs; node e2e/phase1.mjs; node e2e/phase2.mjs; node e2e/laser-audit.mjs; node e2e/agent.mjs; node e2e/replay.mjs

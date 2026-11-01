@@ -10,7 +10,7 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 *Compared with Note 3, SMART Notebook, Promethean, myViewBoard, BenQ EZWrite, OpenBoard, Xournal++ and Microsoft Whiteboard.*
 
 **A. It looks natural**
-- 🔄 Real pictures for buttons: a paintbrush looks like a paintbrush, settings is a gear *(second agent)*
+- ✅ Real pictures for buttons: a paintbrush looks like a paintbrush, settings is a gear *(second agent)*
 - ✅ One look for every panel and sheet: quiet, warm surfaces, light and dark
 - ✅ Clear buttons at sensible sizes (touch targets grow on the board, the type does not); one look for "this is selected"
 - ✅ Clean up clipped labels and awkward wording; a test now checks every sheet
@@ -85,4 +85,4 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 **Not planned for now:** Flash, a built-in browser, novelty stamps, page-turn sounds, decorative frames, Word export.
 
 ---
-*Updated 2026-11-01 · version 1.6.0-beta.10.*
+*Updated 2026-11-01 · version 1.7.0-beta.1.*

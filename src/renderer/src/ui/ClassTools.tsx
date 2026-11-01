@@ -1,5 +1,5 @@
 import { signal } from '@preact/signals'
-import { GripHorizontal, Minus, Plus, RotateCcw, X } from 'lucide-preact'
+import { GripHorizontal, Minus, Plus, RotateCcw, X } from './icons'
 import type { ComponentChildren, JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { PIPS, clockHands, parseNames, pickFrom, rollDice, rollNumbers } from '@/engine/classroom'

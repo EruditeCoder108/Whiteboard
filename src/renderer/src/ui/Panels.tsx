@@ -2,7 +2,7 @@ import {
   Crosshair, Eraser, Eye, EyeOff, Hand, Highlighter, Menu, Minimize2,
   MousePointer2, MousePointerClick, Pen, Pin, PinOff, Redo2, Scan, SlidersHorizontal, Undo2, X, Minus, Plus,
   Slash, ArrowUpRight, Square, Circle, Maximize2, Diamond, Triangle, Type, StickyNote, Lasso, Sparkles, Clapperboard, FlaskConical, ImagePlus, Ruler, Presentation
-} from 'lucide-preact'
+} from './icons'
 import type { JSX } from 'preact'
 import { board } from '@/engine/instance'
 import { actions } from '@/state/actions'

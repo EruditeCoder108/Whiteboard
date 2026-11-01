@@ -1,4 +1,6 @@
-import { Clock, Columns2, Dices, Search, Trophy, UserRoundCheck, Vote, Blinds, Calculator, EyeOff, DraftingCompass, Gauge, LineChart, Pause, Play, RotateCcw, Ruler, Sigma, Spotlight, Timer, TriangleRight, X } from 'lucide-preact'
+import { ArtClock, ArtDice, ArtMagnifier, ArtNamePicker, ArtPoll, ArtScoreboard, ArtSplitBoard } from './icons'
+import { RevealArt } from './icons'
+import { Blinds, Calculator, DraftingCompass, Gauge, LineChart, Pause, Play, RotateCcw, Ruler, Sigma, Spotlight, Timer, TriangleRight, X } from './icons'
 import { calculatorOn } from './Tools'
 import { clockOn, diceOn, magnifierOn, pickerOn, scoreOn } from './ClassTools'
 import { signal } from '@preact/signals'
@@ -47,16 +49,16 @@ export function PresentPopover(): JSX.Element {
     <div class="popover panel ui present" data-popover-keep="">
       <ToggleRow icon={Spotlight} label="Spotlight" hint="dims all but the pointer" on={spotlightOn.value} onClick={() => { spotlightOn.value = !spotlightOn.value; S.popover.value = null }} />
       <ToggleRow icon={Calculator} label="Calculator" on={calculatorOn.value} onClick={() => { calculatorOn.value = !calculatorOn.value; S.popover.value = null }} />
-      <ToggleRow icon={EyeOff} label="Prepare reveals" hint="hide answers" on={S.preparing.value} onClick={() => { board.setPreparing(!S.preparing.value); S.popover.value = null }} />
+      <ToggleRow icon={RevealArt} label="Prepare reveals" hint="hide answers" on={S.preparing.value} onClick={() => { board.setPreparing(!S.preparing.value); S.popover.value = null }} />
       <ToggleRow icon={Blinds} label="Screen cover" hint="drag to reveal" on={curtainOn.value} onClick={() => { curtainOn.value = !curtainOn.value; S.popover.value = null }} />
       <ToggleRow icon={Timer} label="Timer" on={timerOn.value} onClick={() => { timerOn.value = !timerOn.value; S.popover.value = null }} />
-      <ToggleRow icon={Clock} label="Clock" on={clockOn.value} onClick={() => { clockOn.value = !clockOn.value; S.popover.value = null }} />
-      <ToggleRow icon={Search} label="Magnifier" on={magnifierOn.value} onClick={() => { magnifierOn.value = !magnifierOn.value; S.popover.value = null }} />
-      <ToggleRow icon={UserRoundCheck} label="Name picker" on={pickerOn.value} onClick={() => { pickerOn.value = !pickerOn.value; S.popover.value = null }} />
-      <ToggleRow icon={Dices} label="Dice" on={diceOn.value} onClick={() => { diceOn.value = !diceOn.value; S.popover.value = null }} />
-      <ToggleRow icon={Trophy} label="Scoreboard" on={scoreOn.value} onClick={() => { scoreOn.value = !scoreOn.value; S.popover.value = null }} />
-      <ToggleRow icon={Columns2} label="Students at the board" on={S.zones.value > 0} onClick={() => { S.popover.value = 'zones' }} />
-      <ToggleRow icon={Vote} label="Ask the class" hint="phones over Wi-Fi" on={false} onClick={() => { S.popover.value = 'poll' }} />
+      <ToggleRow icon={ArtClock} label="Clock" on={clockOn.value} onClick={() => { clockOn.value = !clockOn.value; S.popover.value = null }} />
+      <ToggleRow icon={ArtMagnifier} label="Magnifier" on={magnifierOn.value} onClick={() => { magnifierOn.value = !magnifierOn.value; S.popover.value = null }} />
+      <ToggleRow icon={ArtNamePicker} label="Name picker" on={pickerOn.value} onClick={() => { pickerOn.value = !pickerOn.value; S.popover.value = null }} />
+      <ToggleRow icon={ArtDice} label="Dice" on={diceOn.value} onClick={() => { diceOn.value = !diceOn.value; S.popover.value = null }} />
+      <ToggleRow icon={ArtScoreboard} label="Scoreboard" on={scoreOn.value} onClick={() => { scoreOn.value = !scoreOn.value; S.popover.value = null }} />
+      <ToggleRow icon={ArtSplitBoard} label="Students at the board" on={S.zones.value > 0} onClick={() => { S.popover.value = 'zones' }} />
+      <ToggleRow icon={ArtPoll} label="Ask the class" hint="phones over Wi-Fi" on={false} onClick={() => { S.popover.value = 'poll' }} />
       <div class="pop-hint">Esc closes the spotlight and curtain. PgUp/PgDn (or a presentation clicker) turns pages.</div>
     </div>
   )

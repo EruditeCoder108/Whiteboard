@@ -1,6 +1,6 @@
 import {
   Eraser, Grid3x3, Highlighter, MousePointer2, Pen, Redo2, Trash2, Undo2
-} from 'lucide-preact'
+} from './icons'
 import type { JSX } from 'preact'
 import { RADIAL, RADIAL_ACTIONS, RADIAL_SIZE, radialState } from '@/engine/radial'
 import { RADIAL_COLORS, S, activeTool, currentColor, luminance } from '@/state/store'

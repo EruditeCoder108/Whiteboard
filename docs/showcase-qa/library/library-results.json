@@ -1,5 +1,5 @@
 {
-  "recordedAt": "2026-10-12T04:01:31.937Z",
+  "recordedAt": "2026-11-01T15:17:31.934Z",
   "checks": [
     {
       "name": "Three showcases are featured on library entry",
@@ -644,9 +644,9 @@
       26,
       10
     ],
-    "bytes": 170687,
-    "width": 1354,
-    "height": 882
+    "bytes": 538082,
+    "width": 3184,
+    "height": 1541
   },
   "compact": {
     "left": 75.33333587646484,

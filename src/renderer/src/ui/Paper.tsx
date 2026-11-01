@@ -1,6 +1,6 @@
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { Crop, ImagePlus, Images, Minus, Plus, RotateCcw, Trash2 } from 'lucide-preact'
+import { Crop, ImagePlus, Images, Minus, Plus, RotateCcw, Trash2 } from './icons'
 import { sameColor } from '@/engine/colour'
 import { board } from '@/engine/instance'
 import { PRESET, SPACING_RANGE, hasSpacing, isLayout } from '@/engine/grid'

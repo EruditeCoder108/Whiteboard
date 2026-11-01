@@ -1,6 +1,6 @@
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { FileDown, QrCode, Square, X } from 'lucide-preact'
+import { FileDown, QrCode, Square, X } from './icons'
 import QRCode from 'qrcode'
 import { exportPdf } from '@/state/insert'
 import { dialog } from '@/state/dialog'

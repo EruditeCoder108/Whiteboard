@@ -1,5 +1,5 @@
 import { signal } from '@preact/signals'
-import { X } from 'lucide-preact'
+import { X } from './icons'
 import type { JSX } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import { clipBlob } from '@/engine/clip'

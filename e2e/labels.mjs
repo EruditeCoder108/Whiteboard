@@ -28,6 +28,8 @@ for (const [layout, list] of Object.entries(SHEETS)) for (const size of [[1920, 
           const off = (r.right > innerWidth + 1 || r.left < -1 || r.bottom > innerHeight + 1) && !el.closest('.popover, .chooser-card, .agent-panel, .replay-panel, .tiles, .science-card, .catalogue')
           if (cut || off) out.push(`${cut ? 'cut' : 'off'}: "${text.slice(0, 36)}"`)
         }
+        // A panel may scroll down, but never sideways: that hides the end of a row.
+        for (const box of document.querySelectorAll('.popover, .chooser-card, .agent-panel, .replay-panel, .board-sheet')) if (box.scrollWidth > box.clientWidth + 2) out.push(`sideways: ${box.className.split(' ').slice(0, 3).join('.')} ${box.scrollWidth}>${box.clientWidth}`)
         const panel = document.querySelector('.popover, .chooser-card, .agent-panel, .replay-panel')
         if (panel) { const r = panel.getBoundingClientRect(); if (r.bottom > innerHeight + 1 || r.right > innerWidth + 1 || r.left < -1 || r.top < -1) out.push('panel runs off the window') }
         return out
