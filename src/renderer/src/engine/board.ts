@@ -29,6 +29,7 @@ import { ART_DEFAULTS, DEFAULT_FRAME, MAX_EXTENT, MAX_TITLE, PAGE_H, PAGE_W, STY
 import type { Artwork, BoardKind, Frame, LookFrame, PageLook } from './pages'
 import { canvasToNotebook, nextFrameSlot, notebookToCanvas } from './convert'
 import { pageAt } from './shelf'
+import { followConnectors, isConnector, remapAnchors, withNewIds } from './connectors'
 import { LabRuntime, supportedLab } from './science/runtime'
 import { activeLabId, scienceInspector } from '@/state/science'
 
@@ -265,6 +266,7 @@ export class Board implements ToolHost {
   }
 
   setSelection(items: Item[]): void {
+    items = items.map(it => this.currentOf(it))
     if (items.length === 1 && items[0].t === 'l') { activeLabId.value = items[0].id; scienceInspector.value = true }
     this.selection = items
     S.selection.value = items
@@ -290,9 +292,33 @@ export class Board implements ToolHost {
     this.setView(panView(this.view, dsx, dsy))
   }
 
+  /** Connectors that an edit moved: a selection taken before the edit still finds them. */
+  private rerouted = new WeakMap<Item, Item>()
+
+  /** The live version of a connector; Undo can bring back an older one, which is then the live one again. */
+  private currentOf(it: Item): Item {
+    while (this.rerouted.has(it) && !this.doc.items.includes(it)) it = this.rerouted.get(it)!
+    return it
+  }
+
+  /** Connectors follow the objects an edit changed, as part of the same undo step. */
+  private withConnectors(op: EditOp): EditOp {
+    const touched = new Set([...op.removed, ...op.added].map(e => e.it.id))
+    const next = followConnectors(this.doc.items, touched, (from, to) => this.rerouted.set(from, to))
+    if (next === this.doc.items) return op
+    const was = new Doc()
+    was.items = this.doc.items.slice()
+    was.undo(op)
+    this.doc.replaceAll(next)
+    const merged = this.doc.diff(was.items) ?? op
+    this.refresh(opBounds(merged))
+    if (this.selection.some(it => this.rerouted.has(it))) this.setSelection(this.selection)
+    return merged
+  }
+
   commit(op: EditOp | null, label = 'Edit objects'): void {
     if (!op) return
-    this.history.push(op)
+    this.history.push(this.withConnectors(op))
     this.afterEdit(label)
   }
 
@@ -638,15 +664,26 @@ export class Board implements ToolHost {
   duplicateSelection(): void {
     if (!this.selection.length) return
     const before = this.doc.snapshot()
-    const groups = new Map<string, string>()
-    const copies = this.selection.map((it) => {
+    const groups = new Map<string, string>(), ids = new Map<string, string>()
+    const copies = remapAnchors(this.selection.map((it) => {
       if (it.group && !groups.has(it.group)) groups.set(it.group, newId())
-      return { ...cloneItem(it, 28, 28), locked: false, group: it.group ? groups.get(it.group) : undefined }
-    })
+      const copy = cloneItem(it, 28, 28)
+      ids.set(it.id, copy.id)
+      return { ...copy, locked: false, group: it.group ? groups.get(it.group) : undefined }
+    }), ids)
     this.doc.replaceAll([...this.doc.items, ...copies])
     this.commit(this.doc.diff(before))
     this.setSelection(copies)
     this.refresh(this.doc.bounds(copies))
+  }
+
+  /** Selected arrows and lines: a straight run or square corners. */
+  setElbow(on: boolean): void {
+    this.editSelection(it => {
+      if (!isConnector(it)) return it
+      const { elbow: _elbow, ...rest } = it
+      return on ? { ...rest, elbow: Math.abs(it.p[2] - it.p[0]) >= Math.abs(it.p[3] - it.p[1]) ? 'h' : 'v' } : rest
+    })
   }
 
   /** Recolour the selection (used when a colour is picked while items are selected). */
@@ -1223,7 +1260,7 @@ export class Board implements ToolHost {
     if (!pg) return
     const { items, view, history: _h, frame, ...look } = pg
     // The copy belongs to the same section: it does not start another one.
-    this.pages.splice(i + 1, 0, { ...without(look, 'section'), items: items.map(it => ({ ...it, id: newId() })), view: { ...view }, history: { undo: [], redo: [] }, frame: frame && { ...frame } })
+    this.pages.splice(i + 1, 0, { ...without(look, 'section'), items: withNewIds(items), view: { ...view }, history: { undo: [], redo: [] }, frame: frame && { ...frame } })
     this.showPage(i + 1)
     this.changed({ label: `Copied page ${i + 1}`, snap })
   }
@@ -1348,6 +1385,8 @@ export class Board implements ToolHost {
   /** A new frame: after the last one (like a new page), or around what is on screen now. */
   addFrame(where: 'next' | 'here' = 'next'): void {
     if (this.paged) return
+    // Framing what is already framed would only stack identical frames.
+    if (where === 'here' && S.frameIndex.value >= 0) return showToast(`This is already frame ${S.frameIndex.value + 1}. Move to another part of the board to add one.`, 4000)
     const [cx, cy] = this.viewCentre()
     const slot = where === 'here' ? { x: Math.round(cx - PAGE_W / 2), y: Math.round(cy - PAGE_H / 2) } : nextFrameSlot(this.frames, this.doc.items)
     const snap = this.structure()
@@ -1355,6 +1394,20 @@ export class Board implements ToolHost {
     this.framesChanged()
     this.goToFrame(this.frames.length - 1)
     this.changed({ label: 'Added a frame', snap })
+    showToast(`Frame ${this.frames.length} added · ‹ › step through frames like slides`, 3500)
+  }
+
+  /** Remove every frame at this spot of the board at once: stacked ones cannot be told apart. Your drawing stays. */
+  removeFramesHere(): void {
+    const [cx, cy] = this.viewCentre()
+    const here = (f: Frame): boolean => { const r = frameRect(f); return cx >= r[0] && cx <= r[2] && cy >= r[1] && cy <= r[3] }
+    const gone = this.frames.filter(here).length
+    if (!gone) return
+    const snap = this.structure()
+    this.frames = this.frames.filter(f => !here(f))
+    this.framesChanged()
+    this.changed({ label: gone === 1 ? 'Removed a frame' : `Removed ${gone} frames`, snap })
+    showToast(`${gone === 1 ? 'Frame' : `${gone} frames`} removed · your drawing stays`, 7000, { label: 'Undo', run: () => this.undoStructure() })
   }
 
   /** Remove a frame; what is drawn inside it stays on the canvas. */
@@ -1756,8 +1809,9 @@ export class Board implements ToolHost {
     const map = new Map<Item, Item>()
     this.doc.replaceAll(this.doc.items.map(it => { if (!set.has(it)) return it; const next = edit(it); map.set(it, next); return next }))
     this.setSelection(this.selection.map(it => map.get(it) ?? it))
-    const op = this.doc.diff(before)
-    if (!op) return
+    const change = this.doc.diff(before)
+    if (!change) return
+    const op = this.withConnectors(change)
     this.history.push(op)
     this.refresh(opBounds(op))
     this.afterEdit(label)

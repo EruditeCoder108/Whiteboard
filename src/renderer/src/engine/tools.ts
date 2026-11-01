@@ -1,4 +1,5 @@
 import { clamp, rectsHit, unionRect } from './geometry'
+import { anchorFor, attachAt, followersOf, isConnector, letGo, routeConnector } from './connectors'
 import { hitCircle, hitObject, itemBounds, paintItem, splitErase, translateItem } from './items'
 import { expandGroups, transformItem } from './transforms'
 import { handleCursor, HANDLE_ORDER, insideSelection, itemInLasso, pickSelectionHandle, resizeSelection, selectionHandles } from './selection'
@@ -8,7 +9,7 @@ import { isBox, newId } from './types'
 import type { Item, Rect, ShapeItem, ShapeKind, StrokeItem, LabItem } from './types'
 import type { Ptr, Tool, ToolHost } from './tool-types'
 import { recognize } from './recognize'
-import { S, isDarkBg } from '@/state/store'
+import { S, isDarkBg, showToast } from '@/state/store'
 import { launchHandle, labToWorld, worldToLab } from './science/scene'
 import { supportedLab } from './science/runtime'
 import { labState } from './science/models'
@@ -206,11 +207,34 @@ export class PenTool implements Tool {
 }
 
 // ── shapes ────────────────────────────────────────────────────────────────────
+let toldAttached = false
+
+/** How near an end must land to attach: more forgiving for a finger. */
+const attachReach = (p: Ptr, zoom: number): number => (p.type === 'touch' ? 16 : 9) / zoom
+
+/** The object an end would attach to, outlined so the teacher sees it before letting go. */
+function paintAttachHint(ctx: CanvasRenderingContext2D, host: ToolHost, target: Item | null): void {
+  if (!target) return
+  const b = itemBounds(target), z = host.view.zoom
+  ctx.save()
+  ctx.strokeStyle = '#4262ff'
+  ctx.fillStyle = 'rgba(66,98,255,0.10)'
+  ctx.lineWidth = 2.5
+  ctx.beginPath()
+  ctx.roundRect((b[0] - host.view.x) * z - 6, (b[1] - host.view.y) * z - 6, (b[2] - b[0]) * z + 12, (b[3] - b[1]) * z + 12, 8)
+  ctx.fill(); ctx.stroke()
+  ctx.restore()
+}
+
 export class ShapeTool implements Tool {
   readonly allowsRadial = true
   readonly animating = false
   readonly name: string
   private draft: ShapeItem | null = null
+  /** arrows and lines: where the pointer pressed, and what each end would attach to */
+  private pressed: [number, number] = [0, 0]
+  private startOn: Item | null = null
+  private endOn: Item | null = null
 
   constructor(
     private host: ToolHost,
@@ -228,13 +252,16 @@ export class ShapeTool implements Tool {
 
   down(p: Ptr): void {
     this.draft = { t: 'h', id: newId(), c: S.penColor.value, w: S.penSize.value, k: this.kind, p: [p.wx, p.wy, p.wx, p.wy] }
+    this.pressed = [p.wx, p.wy]
+    this.startOn = this.endOn = null
+    if (this.joins) this.startOn = attachAt(this.host.doc.items, p.wx, p.wy, attachReach(p, this.host.view.zoom))
     this.host.requestOverlay()
   }
 
   move(p: Ptr): void {
     const d = this.draft
     if (!d) return
-    const [x0, y0] = d.p
+    const [x0, y0] = this.pressed
     let x = p.wx
     let y = p.wy
     if (p.shift) {
@@ -251,25 +278,53 @@ export class ShapeTool implements Tool {
         y = y0 + Math.sign(dy || 1) * m
       }
     }
-    this.draft = { ...d, p: [x0, y0, x, y] }
+    this.draft = this.joins ? this.joined(d, x, y, p) : { ...d, p: [x0, y0, x, y] }
     this.host.requestOverlay()
+  }
+
+  private get joins(): boolean { return this.kind === 'line' || this.kind === 'arrow' }
+
+  /** The connector as it would be dropped here. Both ends inside one object is a line drawn on it: nothing attaches. */
+  private joined(d: ShapeItem, x: number, y: number, p: Ptr): ShapeItem {
+    const items = this.host.doc.items
+    const hit = attachAt(items, p.wx, p.wy, attachReach(p, this.host.view.zoom))
+    const same = !!hit && hit === this.startOn
+    this.endOn = same ? null : hit
+    const { from: _from, to: _to, ...plain } = d
+    const c: ShapeItem = {
+      ...plain, p: [this.pressed[0], this.pressed[1], x, y],
+      ...(this.startOn && !same ? { from: anchorFor(this.startOn, this.pressed[0], this.pressed[1]) } : {}),
+      ...(this.endOn ? { to: anchorFor(this.endOn, p.wx, p.wy) } : {})
+    }
+    return routeConnector(c, id => id === this.startOn?.id ? this.startOn : id === this.endOn?.id ? this.endOn : undefined)
   }
 
   up(): void {
     const d = this.draft
     this.draft = null
-    if (d && Math.hypot(d.p[2] - d.p[0], d.p[3] - d.p[1]) * this.host.view.zoom >= 3) this.host.commitAdd(d)
+    this.startOn = this.endOn = null
+    if (d && Math.hypot(d.p[2] - d.p[0], d.p[3] - d.p[1]) * this.host.view.zoom >= 3) {
+      this.host.commitAdd(d)
+      if ((d.from || d.to) && !toldAttached) {
+        toldAttached = true
+        showToast('Attached: it follows when the object moves. Select it and drag an end to change that.', 4500)
+      }
+    }
     this.host.requestOverlay()
   }
 
   cancel(): void {
     this.draft = null
+    this.startOn = this.endOn = null
     this.host.requestOverlay()
   }
 
   paintOverlay(ctx: CanvasRenderingContext2D): void {
     const d = this.draft
-    if (d) this.host.withWorld(ctx, () => paintItem(ctx, d))
+    if (!d) return
+    paintAttachHint(ctx, this.host, this.startOn)
+    paintAttachHint(ctx, this.host, this.endOn)
+    this.host.withWorld(ctx, () => paintItem(ctx, d))
   }
 }
 
@@ -434,10 +489,23 @@ export class EraserTool implements Tool {
 }
 
 // ── select / move ─────────────────────────────────────────────────────────────
+/** One arrow or line on its own, free to edit: it gets end handles instead of a box. */
+const soloConnector = (sel: Item[]): ShapeItem | null => {
+  const it = sel.length === 1 ? sel[0] : null
+  return it && isConnector(it) && !it.locked ? it : null
+}
+
 export class SelectTool implements Tool {
   readonly allowsRadial = true
   readonly animating = false
-  private mode: 'none' | 'move' | 'resize' | 'rotate' | 'marquee' | 'lasso' | 'launch' | 'magnet' = 'none'
+  private mode: 'none' | 'move' | 'resize' | 'rotate' | 'marquee' | 'lasso' | 'launch' | 'magnet' | 'end' = 'none'
+  /** a selected arrow's end being dragged, and the object it would attach to */
+  private end: 0 | 1 = 0
+  private endOn: Item | null = null
+  /** arrows attached to what is being dragged: they follow on screen, and the edit itself moves them for good */
+  private followers: ShapeItem[] = []
+  private following: ShapeItem[] = []
+  private known = new Map<string, Item>()
   private launch: LabItem | null = null
   private magnetStart = 0
   private magnetOffset = 0
@@ -501,8 +569,14 @@ export class SelectTool implements Tool {
         this.host.pauseLab?.(lab); this.launch = lab; this.mode = 'launch'; this.host.requestOverlay(); return
       }
     }
+    const solo = soloConnector(sel)
+    if (solo) {
+      const reach = (p.type === 'touch' ? 26 : 14) / this.host.view.zoom
+      const d0 = Math.hypot(p.wx - solo.p[0], p.wy - solo.p[1]), d1 = Math.hypot(p.wx - solo.p[2], p.wy - solo.p[3])
+      if (Math.min(d0, d1) <= reach) { this.end = d0 <= d1 ? 0 : 1; this.mode = 'end'; this.host.requestOverlay(); return }
+    }
     const sb = this.host.doc.bounds(sel)
-    const grip = sb && !sel.some(it => it.locked) ? pickSelectionHandle(sb, this.host.view.zoom, p.wx, p.wy, p.type === 'touch') : null
+    const grip = sb && !solo && !sel.some(it => it.locked) ? pickSelectionHandle(sb, this.host.view.zoom, p.wx, p.wy, p.type === 'touch') : null
     if (grip) {
       this.handle = grip
       this.bounds = sb
@@ -553,15 +627,37 @@ export class SelectTool implements Tool {
       this.preview = [{ ...lab, params: { ...lab.params, speed, angle }, frozenTime: 0 }]
       this.host.requestOverlay(); return
     }
-    if (this.mode === 'move' || this.mode === 'resize' || this.mode === 'rotate') {
+    if (this.mode === 'end') {
+      if (!this.started) {
+        if (Math.hypot(p.x - this.originScreen[0], p.y - this.originScreen[1]) < 3) return
+        this.started = true
+        this.floating = this.host.selection.slice()
+        this.host.setExcluded(this.floating)
+        this.host.refresh(this.host.doc.bounds(this.floating))
+      }
+      const c = this.floating[0] as ShapeItem, other = this.end === 0 ? c.to : c.from
+      const hit = attachAt(this.host.doc.items, p.wx, p.wy, attachReach(p, this.host.view.zoom), c.id)
+      this.endOn = hit && hit.id !== other?.id ? hit : null
+      const { from, to, ...plain } = c
+      const anchor = this.endOn ? anchorFor(this.endOn, p.wx, p.wy) : undefined
+      const moved: ShapeItem = {
+        ...plain, p: this.end === 0 ? [p.wx, p.wy, c.p[2], c.p[3]] : [c.p[0], c.p[1], p.wx, p.wy],
+        ...(this.end === 0 ? { ...(anchor ? { from: anchor } : {}), ...(to ? { to } : {}) } : { ...(from ? { from } : {}), ...(anchor ? { to: anchor } : {}) })
+      }
+      const items = this.host.doc.items
+      this.preview = [routeConnector(moved, id => items.find(it => it.id === id))]
+      this.host.requestOverlay()
+    } else if (this.mode === 'move' || this.mode === 'resize' || this.mode === 'rotate') {
       if (!this.started) {
         if (Math.hypot(p.x - this.originScreen[0], p.y - this.originScreen[1]) < 3) return
         this.started = true
         this.floating = this.host.selection.filter(it => !it.locked)
         for (const it of this.floating) if (it.t === 'l') this.host.pauseLab?.(it)
         this.bounds ??= this.host.doc.bounds(this.floating)
-        this.host.setExcluded(this.floating)
-        this.host.refresh(this.host.doc.bounds(this.floating))
+        this.followers = followersOf(this.host.doc.items, this.floating)
+        this.known = new Map(this.host.doc.items.map(it => [it.id, it]))
+        this.host.setExcluded([...this.floating, ...this.followers])
+        this.host.refresh(this.host.doc.bounds([...this.floating, ...this.followers]))
       }
       const [dx, dy] = [p.wx - this.origin[0], p.wy - this.origin[1]]
       if (this.mode === 'move') {
@@ -578,6 +674,10 @@ export class SelectTool implements Tool {
         if (p.shift) angle = Math.round(angle / (Math.PI / 12)) * (Math.PI / 12)
         this.preview = this.floating.map(it => transformItem(it, center, 1, 1, angle))
       }
+      const moving = new Set(this.floating.map(it => it.id))
+      this.preview = this.preview.map(it => letGo(it, moving))
+      const now = new Map(this.preview.map(it => [it.id, it]))
+      this.following = this.followers.map(c => routeConnector(c, id => now.get(id) ?? this.known.get(id)))
       this.host.requestOverlay()
     } else if (this.mode === 'marquee' && this.marq) {
       this.marq = [this.marq[0], this.marq[1], p.wx, p.wy]
@@ -591,7 +691,7 @@ export class SelectTool implements Tool {
 
   hover(p: Ptr): void {
     const sel = this.host.selection, bounds = this.host.doc.bounds(sel)
-    const handle = bounds && !sel.some(it => it.locked) ? pickSelectionHandle(bounds, this.host.view.zoom, p.wx, p.wy, p.type === 'touch') : null
+    const handle = bounds && !soloConnector(sel) && !sel.some(it => it.locked) ? pickSelectionHandle(bounds, this.host.view.zoom, p.wx, p.wy, p.type === 'touch') : null
     const hit = this.hitTop(p.wx, p.wy, 7 / this.host.view.zoom)
     this.hoverCursor = handle ? handleCursor(handle) : hit ? hit.locked ? 'default' : 'move' : this.name === 'lasso' ? 'crosshair' : 'default'
     if (hit?.t === 'l' && hit.model === 'flux-studio' && !hit.locked && supportedLab(hit)) {
@@ -620,10 +720,11 @@ export class SelectTool implements Tool {
     const host = this.host
     if (this.started && this.floating.length && this.preview.length) {
       const moving = this.floating
+      const others = [...this.followers, ...this.following]
       host.setExcluded([])
       const changed = moving.some((it, i) => {
         const next = this.preview[i]
-        return it.w !== next.w || it.p.some((v, j) => Math.abs(v - next.p[j]) > 1e-6) || (it.t !== 's' && next.t !== 's' && (it.angle ?? 0) !== (next.angle ?? 0)) || (it.t === 'l' && next.t === 'l' && (JSON.stringify(it.params) !== JSON.stringify(next.params) || JSON.stringify(it.gesture) !== JSON.stringify(next.gesture) || it.frozenTime !== next.frozenTime))
+        return (it.t === 'h' && next.t === 'h' && (it.from?.id !== next.from?.id || it.to?.id !== next.to?.id)) || it.w !== next.w || it.p.some((v, j) => Math.abs(v - next.p[j]) > 1e-6) || (it.t !== 's' && next.t !== 's' && (it.angle ?? 0) !== (next.angle ?? 0)) || (it.t === 'l' && next.t === 'l' && (JSON.stringify(it.params) !== JSON.stringify(next.params) || JSON.stringify(it.gesture) !== JSON.stringify(next.gesture) || it.frozenTime !== next.frozenTime))
       })
       if (changed) {
         const before = host.doc.snapshot()
@@ -635,7 +736,7 @@ export class SelectTool implements Tool {
         host.setSelection(moved)
         host.refresh(unionRect(oldBounds, host.doc.bounds(moved)))
       } else {
-        host.refresh(host.doc.bounds(moving))
+        host.refresh(host.doc.bounds([...moving, ...others]))
       }
     } else if (this.mode === 'marquee' && this.marq) {
       const [a, b, c, d] = this.marq
@@ -653,7 +754,7 @@ export class SelectTool implements Tool {
   cancel(): void {
     if (this.started) {
       this.host.setExcluded([])
-      this.host.refresh(unionRect(this.host.doc.bounds(this.floating), this.host.doc.bounds(this.preview)))
+      this.host.refresh(unionRect(this.host.doc.bounds([...this.floating, ...this.followers]), this.host.doc.bounds([...this.preview, ...this.following])))
     }
     if (this.mode !== 'none') this.host.setSelection(this.baseSelection.filter(it => this.host.doc.items.includes(it)))
     this.reset()
@@ -671,13 +772,19 @@ export class SelectTool implements Tool {
     this.preview = []
     this.launch = null
     this.magnetTrace = []
+    this.endOn = null
+    this.followers = []
+    this.following = []
+    this.known = new Map()
   }
 
   paintOverlay(ctx: CanvasRenderingContext2D): void {
     const host = this.host
     const z = host.view.zoom
+    if (this.mode === 'end') paintAttachHint(ctx, host, this.endOn)
     if (this.preview.length) {
       host.withWorld(ctx, () => {
+        for (const it of this.following) paintItem(ctx, it)
         for (const it of this.preview) {
           const original = this.floating.find(x => x.id === it.id)
           const time = this.mode === 'launch' ? 0 : this.mode === 'magnet' && it.t === 'l' ? it.frozenTime : original?.t === 'l' ? this.host.labTime?.(original) : undefined
@@ -693,7 +800,19 @@ export class SelectTool implements Tool {
       ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke()
       ctx.beginPath(); ctx.moveTo(x - 4, y); ctx.lineTo(x + 4, y); ctx.moveTo(x, y - 4); ctx.lineTo(x, y + 4); ctx.stroke(); ctx.restore()
     }
-    if (sel.length) {
+    const solo = soloConnector(sel)
+    if (solo) {
+      // An arrow is held by its two ends: filled where attached, hollow where free.
+      const c = (this.preview[0] as ShapeItem | undefined) ?? solo
+      ctx.save()
+      ctx.strokeStyle = '#4262ff'
+      ctx.lineWidth = 2
+      for (const [x, y, held] of [[c.p[0], c.p[1], !!c.from], [c.p[2], c.p[3], !!c.to]] as [number, number, boolean][]) {
+        ctx.fillStyle = held ? '#4262ff' : '#ffffff'
+        ctx.beginPath(); ctx.arc((x - host.view.x) * z, (y - host.view.y) * z, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke()
+      }
+      ctx.restore()
+    } else if (sel.length) {
       const map = new Map(this.floating.map((it, i) => [it, this.preview[i]]))
       const b = host.doc.bounds(sel.map(it => map.get(it) ?? it))
       if (b) {

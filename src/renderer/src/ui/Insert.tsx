@@ -36,7 +36,9 @@ export function PageBar(): JSX.Element | null {
           <span class="pageval" title="Frame">{frame < 0 ? '–' : frame + 1} / {frames}</span>
           <Btn icon={ChevronRight} title="Next frame  (PgDn)" disabled={frame >= frames - 1} onClick={() => board.turnFrame(1)} />
         </>}
-        <Btn icon={Focus} title="Frame what's on screen (step through frames like slides)" onClick={() => board.addFrame('here')} />
+        {frame >= 0
+          ? <Btn icon={Trash2} title="Remove this frame (your drawing stays)" onClick={() => board.removeFramesHere()} />
+          : <Btn icon={Focus} title="Add a frame around what's on screen (step through frames like slides)" onClick={() => board.addFrame('here')} />}
       </div>
     )
   }
