@@ -15,6 +15,7 @@ import type { BarSide, ToolName } from '@/state/store'
 import { editEquation, editGraph, insertFiles, pickFiles } from '@/state/insert'
 import { fileState, lessonDirty, lessonName, lessonPath, lessonSubject, lesson } from '@/state/lesson'
 import { ExportSheet } from './Lessons'
+import { capture } from '@/state/capture'
 import { Section, Tile } from './kit'
 import { ShapesPopover, PropsPopover } from './Popovers'
 import { MathsPopover, curtainOn, spotlightOn, timerOn } from './Present'
@@ -162,6 +163,7 @@ function BoardMenu(): JSX.Element {
       </div>
       <Section title="Add to the page">
         <Tile icon={ImageIcon} label="Picture" onClick={close(() => pickFiles('image/*').then(files => insertFiles(files)))} />
+        <Tile icon={MonitorUp} label="Capture" onClick={() => { void capture.open() }} />
         <Tile icon={FileText} label="PDF / worksheet" onClick={close(() => pickFiles('application/pdf,.pdf', false).then(files => insertFiles(files)))} />
         <Tile icon={Sigma} label="Equation" onClick={() => editEquation(null)} />
         <Tile icon={LineChart} label="Graph" onClick={() => editGraph(null)} />

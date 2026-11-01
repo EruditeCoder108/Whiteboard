@@ -6,12 +6,14 @@ import { compile, GRAPH_COLORS } from '@/engine/graph'
 import { S, currentColor } from '@/state/store'
 import { editEquation, editGraph, equationTarget, graphTarget, importing, insertFiles, loadTypesetter, pickFiles, svgDataUrl } from '@/state/insert'
 import { Btn, MenuItem, Sep } from './kit'
+import { capture } from '@/state/capture'
 
 export function InsertPopover(): JSX.Element {
   const close = (fn: () => void) => () => { S.popover.value = null; fn() }
   return (
     <div class="popover panel ui menu insert-menu" data-popover-keep="">
       <MenuItem icon={ImageIcon} label="Picture…" hint="or paste / drop" onClick={close(() => void pickFiles('image/*').then(files => insertFiles(files)))} />
+      <MenuItem icon={ImageIcon} label="Capture screen…" hint="Ctrl+Shift+C" onClick={() => { void capture.open() }} />
       <MenuItem icon={FileText} label="PDF worksheet…" hint="one page each" onClick={close(() => void pickFiles('application/pdf,.pdf', false).then(files => insertFiles(files)))} />
       <MenuItem icon={Sigma} label="Equation" hint="maths & chemistry" onClick={() => editEquation(null)} />
       <MenuItem icon={LineChart} label="Graph of a function" onClick={() => editGraph(null)} />
