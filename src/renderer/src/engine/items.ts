@@ -16,6 +16,7 @@ import { paintImage } from './media'
 import { paintGraph } from './graph'
 import { paintScale } from './scale'
 import { paintTable } from './table'
+import { paintClip } from './clip'
 
 export function rotatePoint(x: number, y: number, cx: number, cy: number, angle: number): [number, number] {
   const c = Math.cos(angle), s = Math.sin(angle)
@@ -285,6 +286,7 @@ function paintObject(ctx: CanvasRenderingContext2D, it: Item, alpha: number, lab
   if (it.t === 'g') { ctx.globalAlpha = alpha; paintGraph(ctx, it); ctx.restore(); return }
   if (it.t === 'n') { ctx.globalAlpha = alpha; paintScale(ctx, it); ctx.restore(); return }
   if (it.t === 'b') { ctx.globalAlpha = alpha; paintTable(ctx, it); ctx.restore(); return }
+  if (it.t === 'm') { ctx.globalAlpha = alpha; paintClip(ctx, it); ctx.restore(); return }
   const path = itemPath(it)
   if (it.t === 's') {
     ctx.globalAlpha = alpha * (it.m ? MARKER_ALPHA : 1)

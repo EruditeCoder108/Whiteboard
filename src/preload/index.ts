@@ -9,6 +9,7 @@ function subscribe<T>(channel: string, cb: (v: T) => void): () => void {
 
 const api: Api = {
   openLink: (link) => ipcRenderer.invoke('link:open', link),
+  slides: { toPdf: (bytes, name) => ipcRenderer.invoke('slides:to-pdf', bytes, name) },
   poll: {
     start: (question, options, address) => ipcRenderer.invoke('poll:start', question, options, address),
     stop: () => ipcRenderer.invoke('poll:stop'),

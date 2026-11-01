@@ -341,7 +341,7 @@ export class InputRouter {
     // the rest of that touch is not a stroke.
     if (this.mode === 'idle' && !this.touches.size && !this.space && e.button === 0 && activeTool.value !== 'hand') {
       const p = this.toPtr(e)
-      if (this.board.revealAt(p.wx, p.wy)) { this.tapped = e.pointerId; return }
+      if (this.board.revealAt(p.wx, p.wy) || this.board.playClipAt(p.wx, p.wy)) { this.tapped = e.pointerId; return }
     }
 
     if (S.zones.value) return this.zoneDown(e)

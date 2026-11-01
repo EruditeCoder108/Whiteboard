@@ -19,6 +19,7 @@ import { Shelf } from './shelf'
 import { pagesToPdf } from './pdf'
 import { ShareServer, listAddresses } from './share'
 import { PollServer, validPoll } from './poll'
+import { slidesToPdf } from './slides'
 import { Capture, CaptureError } from './capture'
 import { randomUUID } from 'node:crypto'
 import { AgentBridge } from './agent-bridge'
@@ -467,6 +468,10 @@ function registerIpc(): void {
     try { return { ok: true, ...await capture.grab(id) } }
     catch (error) { return { ok: false, error: error instanceof CaptureError ? error.message : 'Could not capture that screen or window. Refresh and try again.' } }
     finally { capturing = false }
+  })
+  ipcMain.handle('slides:to-pdf', async (e, bytes: unknown, name: unknown) => {
+    if (e.sender !== w()?.webContents || !(bytes instanceof ArrayBuffer) || typeof name !== 'string' || process.env.FW_E2E_OFFSCREEN) return null
+    return slidesToPdf(bytes, name)
   })
   ipcMain.handle('poll:status', () => poll.status())
   ipcMain.handle('poll:stop', () => poll.stop())

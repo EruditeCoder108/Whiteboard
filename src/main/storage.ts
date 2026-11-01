@@ -100,7 +100,7 @@ export class DiskStore {
     if (assets === undefined) return
     if (!assets || typeof assets !== 'object' || Array.isArray(assets)) throw new Error('Invalid pictures')
     for (const [key, data] of Object.entries(assets as Record<string, unknown>)) {
-      if (!ASSET_KEY.test(key) || typeof data !== 'string' || data.length > MAX_ASSET_CHARS || !/^data:image\/(?:png|jpeg|webp|gif|svg\+xml)[;,]/.test(data)) throw new Error('Invalid picture data')
+      if (!ASSET_KEY.test(key) || typeof data !== 'string' || data.length > MAX_ASSET_CHARS || !/^data:(?:image\/(?:png|jpeg|webp|gif|svg\+xml)|video\/(?:mp4|webm|ogg)|audio\/(?:mpeg|mp3|mp4|x-m4a|wav|x-wav|ogg|webm|aac))[;,]/.test(data)) throw new Error('Invalid picture data')
       const name = join('assets', key + '.txt')
       try { await fs.access(join(this.dir, name)) } catch { await fs.mkdir(join(this.dir, 'assets'), { recursive: true }); await this.atomic(name, data) }
     }

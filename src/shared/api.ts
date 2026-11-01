@@ -93,6 +93,7 @@ export interface PollStatus { active: boolean; url: string; question: string; op
 
 export interface Api {
   openLink(link: string): Promise<boolean>
+  slides: { toPdf(bytes: ArrayBuffer, name: string): Promise<ArrayBuffer | null> }
   poll: {
     start(question: string, options: string[], address: string): Promise<{ ok: true; url: string; expiresAt: number } | { ok: false; error: string }>
     stop(): Promise<void>

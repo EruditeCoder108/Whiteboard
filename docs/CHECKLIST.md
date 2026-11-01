@@ -46,10 +46,10 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - ✅ Quick poll from students' phones over school Wi-Fi (no cloud, no sign-in)
 
 **G. Bring lessons in**
-- ⬜ PowerPoint slides as pages
-- ⬜ Video and audio clips on a page
-- ⬜ Open OpenBoard lessons
-- ⬜ Faster window capture
+- ✅ PowerPoint slides as pages: exact when Office is on the PC *(Office route not tested: no Office here)*, editable text and pictures without it
+- ✅ Video and audio clips on a page (up to 28 MB each, kept in the lesson)
+- ✅ Open OpenBoard lessons as pictures to write on *(tested on a sample built to the format, not a real OpenBoard file)*
+- ✅ Faster window capture
 
 **H. Handwriting recognition (optional, with correction)**
 - ⬜ Handwriting to typed text, English and Hindi

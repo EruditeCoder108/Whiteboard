@@ -1,5 +1,8 @@
 import { signal } from '@preact/signals'
 import { board } from '@/engine/instance'
+import { CLIP_SOURCE, MAX_CLIP_BYTES, isClipFile } from '@/engine/clip'
+import type { ClipItem } from '@/engine/types'
+import { importOpenBoard, importSlides, isOpenBoard, isSlides } from './slides'
 import { imageFromBlob, rasterize } from '@/engine/media'
 import { MAX_EXTENT, PAGE_H, PAGE_W } from '@/engine/pages'
 import type { Frame } from '@/engine/pages'
@@ -33,9 +36,62 @@ const isPdf = (f: File): boolean => f.type === 'application/pdf' || /\.pdf$/i.te
 const isImage = (f: File | Blob): boolean => f.type.startsWith('image/')
 
 /** Pictures land side by side around the drop point; PDFs become pages. */
+/** A video or audio clip, kept inside the lesson, with a frame from the video as its picture on the page. */
+export async function insertClip(file: File, at?: [number, number]): Promise<void> {
+  if (file.size > MAX_CLIP_BYTES) return showToast(`${file.name} is too large (over ${Math.round(MAX_CLIP_BYTES / 1048576)} MB). Lessons must stay quick to save: use a shorter clip.`, 7000)
+  const video = file.type.startsWith('video/') || /\.(mp4|webm|ogv)$/i.test(file.name)
+  const src = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+  const fixed = fixClipType(src, file.name)
+  if (!CLIP_SOURCE.test(fixed)) return showToast(`${file.name} is not a kind of clip this app can play. Use MP4, WebM, MP3 or WAV.`, 6000)
+  const name = file.name.replace(/\.[^.]+$/, '').slice(0, 200)
+  const shown = video ? await videoFrame(file) : null
+  if (video && !shown) return showToast(`${file.name} could not be played here. Use an MP4 or WebM video.`, 6000)
+  const [cx, cy] = at ?? board.viewCentre()
+  const aspect = shown?.aspect ?? 3
+  const r = board.visibleRect(), w = Math.min((r[2] - r[0]) * .5, video ? 720 : 560), h = w / aspect
+  const clip: ClipItem = { t: 'm', id: crypto.randomUUID(), c: '#111827', w: 1, p: [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2], kind: video ? 'video' : 'audio', src: fixed, name, aspect, ...(shown?.poster ? { poster: shown.poster } : {}) }
+  board.insertSaved([clip])
+}
+
+const fixClipType = (src: string, name: string): string => {
+  if (!/^data:(;|application\/octet-stream)/.test(src)) return src
+  const ext = name.split('.').pop()?.toLowerCase() ?? ''
+  const type = { mp4: 'video/mp4', webm: 'video/webm', ogv: 'video/ogg', mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav', ogg: 'audio/ogg', aac: 'audio/aac' }[ext]
+  return type ? `data:${type}${src.slice(src.indexOf(';'))}` : src
+}
+
+/** A frame from just after the start: the very first is often black. */
+function videoFrame(file: File): Promise<{ poster: string; aspect: number } | null> {
+  return new Promise(resolve => {
+    const url = URL.createObjectURL(file), v = document.createElement('video')
+    let settled = false
+    const done = (out: { poster: string; aspect: number } | null): void => { if (settled) return; settled = true; URL.revokeObjectURL(url); v.removeAttribute('src'); resolve(out) }
+    v.muted = true; v.preload = 'auto'
+    v.onloadedmetadata = () => { v.currentTime = Math.min(1, (v.duration || 1) / 4) }
+    v.onseeked = () => {
+      const k = Math.min(1, 720 / (v.videoWidth || 720))
+      const cv = document.createElement('canvas')
+      cv.width = Math.max(1, Math.round(v.videoWidth * k)); cv.height = Math.max(1, Math.round(v.videoHeight * k))
+      cv.getContext('2d')?.drawImage(v, 0, 0, cv.width, cv.height)
+      done({ poster: cv.toDataURL('image/webp', .8), aspect: (v.videoWidth || 16) / (v.videoHeight || 9) })
+    }
+    v.onerror = () => done(null)
+    setTimeout(() => done(null), 15000)
+    v.src = url
+  })
+}
+
 export async function insertFiles(files: File[], at?: [number, number]): Promise<void> {
   const pictures = files.filter(isImage), pdfs = files.filter(isPdf)
-  if (!pictures.length && !pdfs.length) return showToast('Drop pictures (PNG, JPEG, WebP, SVG) or a PDF')
+  const clips = files.filter(f => isClipFile(f.type, f.name)), decks = files.filter(isSlides), old = files.filter(isOpenBoard)
+  if (!pictures.length && !pdfs.length && !clips.length && !decks.length && !old.length) return showToast('Drop pictures, a PDF, PowerPoint slides, an OpenBoard lesson, or a video or audio clip')
+  for (const file of clips) await insertClip(file, at).catch(() => showToast(`Could not read ${file.name}`))
+  for (const file of decks) await importSlides(file)
+  for (const file of old) await importOpenBoard(file)
   let [x, y] = at ?? board.viewCentre()
   for (const file of pictures) {
     try {

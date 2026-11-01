@@ -201,11 +201,26 @@ export interface TableItem extends ObjectMeta {
   head?: boolean
 }
 
-export type Item = StrokeItem | ShapeItem | TextItem | LabItem | ImageItem | GraphItem | ScaleItem | TableItem
-export type BoxItem = TextItem | LabItem | ImageItem | GraphItem | ScaleItem | TableItem
+/** A video or audio clip kept in the lesson. On the page it is a picture with a play button (see clip.ts). */
+export interface ClipItem extends ObjectMeta {
+  t: 'm'
+  id: string
+  c: string
+  w: number
+  p: Rect
+  angle?: number
+  kind: 'video' | 'audio'
+  src: string
+  name: string
+  poster?: string
+  aspect: number
+}
+
+export type Item = StrokeItem | ShapeItem | TextItem | LabItem | ImageItem | GraphItem | ScaleItem | TableItem | ClipItem
+export type BoxItem = TextItem | LabItem | ImageItem | GraphItem | ScaleItem | TableItem | ClipItem
 
 /** Objects whose geometry is just their rectangle. */
-export const isBox = (it: Item): it is BoxItem => it.t === 't' || it.t === 'l' || it.t === 'i' || it.t === 'g' || it.t === 'n' || it.t === 'b'
+export const isBox = (it: Item): it is BoxItem => it.t === 't' || it.t === 'l' || it.t === 'i' || it.t === 'g' || it.t === 'n' || it.t === 'b' || it.t === 'm'
 
 export const MARKER_ALPHA = 0.4
 

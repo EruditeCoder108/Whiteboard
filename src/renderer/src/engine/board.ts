@@ -4,6 +4,7 @@ import { effect } from '@preact/signals'
 import { Doc, History, opBounds, restyleItems } from './doc'
 import type { EditOp, HistoryState } from './doc'
 import { clamp, inflate, lerp, rectsHit, unionRect } from './geometry'
+import { playSpot } from './clip'
 import { keepInZone, zoneAt, zoneInks } from './classroom'
 import { BRANCH_FILLS, NODE_H, NODE_W, branchSpot, croppedBox, flipItem, mindNode } from './objects'
 import { cloneItem, concealed, isHidden, itemBounds, paintItem, hitObject, setHiddenMode, translateItem } from './items'
@@ -14,7 +15,7 @@ import type { BoardMeta, PageData, ParsedBoard } from './serialize'
 import { EraserTool, HandTool, LaserTool, PenTool, SelectTool, ShapeTool, TextTool } from './tools'
 import type { Ptr, Tool, ToolHost } from './tool-types'
 import { newId } from './types'
-import type { Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, LabItem, ImageItem, GraphItem, ScaleItem, TableItem } from './types'
+import type { ClipItem, Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, LabItem, ImageItem, GraphItem, ScaleItem, TableItem } from './types'
 import { MAX_COLS, MAX_ROWS, addCol, addRow, cellAt, fitTable, newTable, removeCol, removeRow, setCell, tableFont } from './table'
 import { onImageReady, preloadImages } from './media'
 import { Instruments } from './instruments'
@@ -884,6 +885,25 @@ export class Board implements ToolHost {
     ctx.setTransform(zoom, 0, 0, zoom, -view.x * zoom, -view.y * zoom)
     for (const it of this.doc.items) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
     ctx.setTransform(1, 0, 0, 1, 0, 0)
+  }
+
+  /** The clip whose play button is here, if any. */
+  clipAt(wx: number, wy: number): ClipItem | null {
+    for (let i = this.doc.items.length - 1; i >= 0; i--) {
+      const it = this.doc.items[i]
+      if (it.t !== 'm' || concealed(it)) continue
+      const { x, y, r } = playSpot(it.p)
+      if (Math.hypot(wx - x, wy - y) <= r) return it
+    }
+    return null
+  }
+  onPlayClip?: (it: ClipItem) => void
+  /** A tap on a play button plays the clip, with whatever tool is in hand. */
+  playClipAt(wx: number, wy: number): boolean {
+    const it = this.clipAt(wx, wy)
+    if (!it || !this.onPlayClip || S.tool.value === 'select' || S.tool.value === 'lasso') return false
+    this.onPlayClip(it)
+    return true
   }
 
   /** Replace a picture by its cropped part, shown where that part was. Undo brings the whole picture back. */

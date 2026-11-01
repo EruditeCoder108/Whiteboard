@@ -8,6 +8,8 @@ import { S, applySettings, boardMode, darkUi, showToast, startPersisting } from 
 import { BoardBar, BoardSaveChip, EdgeTabs, LayoutChooser } from '@/ui/Board'
 import { PalmCalibration } from '@/ui/Calibrate'
 import { InputsSheet } from '@/ui/Inputs'
+import { ClipPlayer, playing } from '@/ui/Clips'
+board.onPlayClip = it => { playing.value = it }
 import { ClockWidget, DiceWidget, Magnifier, NamePicker, Scoreboard } from '@/ui/ClassTools'
 import { ZonesLayer, ZonesSheet } from '@/ui/Zones'
 import { PollSheet } from '@/ui/Poll'
@@ -258,6 +260,7 @@ export function App(): JSX.Element {
       <DiceWidget />
       <Scoreboard />
       <ZonesLayer />
+      <ClipPlayer />
       <ImportStatus />
       <Toast />
       <PalmCalibration />

@@ -1,10 +1,11 @@
+import { CLIP_SOURCE } from './clip'
 import { safeLink } from './objects'
 import { validStep } from './reveals'
 import { MAX_POINTS, validAxis } from './scale'
 import { validTable } from './table'
 import type { TableItem } from './types'
 import { PEN_STYLES } from './types'
-import type { Anchor, GraphItem, ImageItem, Item, ObjectMeta, PenStyle, ScaleAxis, ScaleItem, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
+import type { Anchor, ClipItem, GraphItem, ImageItem, Item, ObjectMeta, PenStyle, ScaleAxis, ScaleItem, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
 import { assetKey } from './media'
 import { artJson, hasLook, isBoardKind, lookJson, validArt, validLook, validLookFrame } from './pages'
 import type { Artwork, BoardKind, Frame, LookFrame, PageLook } from './pages'
@@ -46,6 +47,7 @@ export function itemToJson(it: Item): unknown {
   const meta: ObjectMeta = { group: it.group, locked: it.locked, opacity: it.opacity, step: it.step, ...(it.link ? { link: it.link } : {}) }
   if (it.t === 'l') return { ...it, p: [...it.p], params: { ...it.params }, reveal: { ...it.reveal }, ...(it.gesture ? { gesture: it.gesture.map(p => ({ ...p })) } : {}) }
   if (it.t === 'i') return { t: 'i', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, src: it.src, aspect: it.aspect, latex: it.latex, ...(it.flipX ? { flipX: true } : {}), ...(it.flipY ? { flipY: true } : {}), ...meta }
+  if (it.t === 'm') return { t: 'm', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, kind: it.kind, src: it.src, name: it.name, poster: it.poster, aspect: it.aspect, ...meta }
   if (it.t === 'b') return { t: 'b', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, cols: [...it.cols], rows: [...it.rows], cells: it.cells.map(row => [...row]), fontSize: it.fontSize, textColor: it.textColor, head: it.head, ...meta }
   if (it.t === 'n') return { t: 'n', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, x: { ...it.x }, y: it.y && { ...it.y }, grid: it.grid, equal: it.equal, points: it.points?.map(q => [...q]), coords: it.coords, ...meta }
   if (it.t === 'g') return { t: 'g', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, fns: [...it.fns], xr: [...it.xr], yr: [...it.yr], ...meta }
@@ -178,6 +180,14 @@ export function itemFromJson(raw: unknown): Item | null {
     if (o.points !== undefined) scale.points = (o.points as [number, number][]).map(q => [q[0], q[1]])
     return scale
   }
+  if (o.t === 'm') {
+    const p = o.p as number[]
+    if (p.length !== 4 || !p.every(isCoord) || p[2] <= p[0] || p[3] <= p[1] || (o.kind !== 'video' && o.kind !== 'audio')) return null
+    if (typeof o.src !== 'string' || o.src.length > MAX_IMAGE_CHARS || !CLIP_SOURCE.test(o.src) || !isNum(o.aspect) || o.aspect <= 0 || o.aspect > 1e4) return null
+    const clip: ClipItem = { t: 'm', id, c: o.c, w: o.w, p: [p[0], p[1], p[2], p[3]], kind: o.kind, src: o.src, name: typeof o.name === 'string' ? o.name.slice(0, 200) : '', aspect: o.aspect, ...meta, ...(o.angle !== undefined && isNum(o.angle) ? { angle: o.angle } : {}) }
+    if (typeof o.poster === 'string' && o.poster.length < 2_000_000 && /^data:image\/(?:png|jpeg|webp)[;,]/.test(o.poster)) clip.poster = o.poster
+    return clip
+  }
   if (o.t === 'i' || o.t === 'g') {
     const p = o.p as number[]
     if (p.length !== 4 || !p.every(isCoord) || p[2] <= p[0] || p[3] <= p[1]) return null
@@ -272,7 +282,7 @@ export interface BoardMeta { kind: BoardKind; frames: LookFrame[]; color?: strin
 export function serializePages(pages: PageData[], page: number, inline: boolean, meta: BoardMeta = { kind: 'canvas', frames: [] }): { json: string; assets: Record<string, string> } {
   const plain = meta.kind === 'canvas' && !meta.frames.length && pages.length === 1
   const bare = !hasLook(pages[0]) && (!meta.color || sameColor(meta.color, DEFAULT_BOARD_COLOR)) && (!meta.texture || meta.texture === 'none')
-  if (plain && bare && !pages[0].items.some(it => it.t === 'i') && (!pages[0].frame || isDefaultFrame(pages[0].frame))) return { json: serializeBoard(pages[0].items, pages[0].view), assets: {} }
+  if (plain && bare && !pages[0].items.some(it => it.t === 'i' || it.t === 'm') && (!pages[0].frame || isDefaultFrame(pages[0].frame))) return { json: serializeBoard(pages[0].items, pages[0].view), assets: {} }
   const assets: Record<string, string> = {}
   // A background picture is stored with the other pictures, under its content key.
   const look = (l: PageLook): Record<string, unknown> => {
@@ -286,7 +296,7 @@ export function serializePages(pages: PageData[], page: number, inline: boolean,
     ...look(pg),
     ...(pg.frame ? { frame: { x: r2(pg.frame.x), y: r2(pg.frame.y), extent: pg.frame.extent } } : {}),
     items: pg.items.map(it => {
-      if (it.t !== 'i') return itemToJson(it)
+      if (it.t !== 'i' && it.t !== 'm') return itemToJson(it)
       const key = assetKey(it.src)
       assets[key] = it.src
       const { src: _src, ...rest } = itemToJson(it) as Record<string, unknown>
@@ -342,8 +352,8 @@ function parsePages(f: Record<string, unknown>, externalAssets: boolean): Parsed
     const items: Item[] = []
     for (const rawItem of pg.items) {
       let source = rawItem as Record<string, unknown>
-      if (source && typeof source === 'object' && source.t === 'i') {
-        const src = isAssetKey(source.a) ? (externalAssets ? (source.latex !== undefined ? 'data:image/svg+xml,' : PLACEHOLDER) : assets[source.a]) : undefined
+      if (source && typeof source === 'object' && (source.t === 'i' || source.t === 'm')) {
+        const src = isAssetKey(source.a) ? (externalAssets ? (source.t === 'm' ? 'data:video/mp4;base64,' : source.latex !== undefined ? 'data:image/svg+xml,' : PLACEHOLDER) : assets[source.a]) : undefined
         source = { ...source, src, a: undefined }
       }
       const it = itemFromJson(source)
