@@ -1,6 +1,6 @@
 import type { JSX } from 'preact'
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
-import { Check, Maximize, Monitor, RefreshCw, X } from 'lucide-preact'
+import { Check, Maximize, Monitor, RefreshCw, X } from './icons'
 import type { CapturedImage, CaptureSource } from '@shared/api'
 import { capture, captureBusy, captureError, captureOpen, captureRegion, captureSources, captureStill, cropPixels } from '@/state/capture'
 import type { Region } from '@/state/capture'

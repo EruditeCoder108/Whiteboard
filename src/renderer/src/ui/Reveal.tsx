@@ -1,4 +1,4 @@
-import { Check, ChevronRight, EyeOff, RotateCcw } from 'lucide-preact'
+import { Check, ChevronRight, EyeOff, RotateCcw } from './icons'
 import type { JSX } from 'preact'
 import { board } from '@/engine/instance'
 import { MAX_STEP, stepLabel, stepsOf } from '@/engine/reveals'

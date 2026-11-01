@@ -1,4 +1,5 @@
-import { Archive, BookOpen, Download, FileInput, MoreHorizontal, Pencil, Search, Tag, Trash2, X } from 'lucide-preact'
+import { ArtPicture } from './icons'
+import { Archive, BookOpen, Download, FileInput, MoreHorizontal, RenameArt, Search, Tag, Trash2, X } from './icons'
 import type { JSX } from 'preact'
 import { useEffect, useMemo, useState } from 'preact/hooks'
 import type { ShelfItem } from '@shared/api'
@@ -73,7 +74,7 @@ function ShelfCard({ it }: { it: ShelfItem }): JSX.Element {
         <button type="button" class="lesson-more nodrag" aria-label={`More for ${it.title}`} aria-expanded={menu} onClick={() => setMenu(!menu)}><MoreHorizontal size={20} /></button>
       </div>
       {menu && <div class="lesson-actions">
-        <button type="button" class="nodrag" onClick={() => { setMenu(false); setEditing('title') }}><Pencil size={15} /> Rename</button>
+        <button type="button" class="nodrag" onClick={() => { setMenu(false); setEditing('title') }}><RenameArt size={15} /> Rename</button>
         <button type="button" class="nodrag" onClick={() => { setMenu(false); setEditing('subject') }}><Tag size={15} /> Subject</button>
         <button type="button" class="nodrag danger" onClick={() => { setMenu(false); void shelf.remove(it.id) }}><Trash2 size={15} /> Delete</button>
       </div>}
@@ -117,7 +118,7 @@ export function ShelfSheet(): JSX.Element {
         <div class="library-body">
           {all === null ? <p class="pop-hint">Opening your shelf…</p>
             : !all.length ? <div class="library-empty shelf-empty">
-              <Archive size={40} strokeWidth={1.4} />
+              <ArtPicture name="empty-shelf" />
               <p><b>Draw it once, use it in every lesson.</b></p>
               <p>Select a diagram on the board and tap the <Archive size={15} /> button, or save a whole page from here. Then tap it here to put a fresh copy in any lesson.</p>
             </div>

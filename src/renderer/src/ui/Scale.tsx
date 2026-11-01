@@ -1,4 +1,4 @@
-import { Minus, Plus } from 'lucide-preact'
+import { Minus, Plus } from './icons'
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { board } from '@/engine/instance'

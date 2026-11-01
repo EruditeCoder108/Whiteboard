@@ -1,8 +1,5 @@
-import {
-  Archive, Atom, Axis3d, Blinds, Calculator, EyeOff, Table2, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileText, FlaskConical, GripVertical, FilePlus2, Library, Pencil, SaveAll, Share2,
-  Highlighter, MoveHorizontal, Image as ImageIcon, Laptop, LayoutGrid, LineChart, LogOut, Minus, MousePointer2, MousePointerClick, Pen, Plus,
-  Presentation, GraduationCap, Redo2, ArrowDownToLine, ArrowUpToLine, Infinity as InfinityIcon, BookOpen, Frame, Focus, Ruler, Shapes, SlidersHorizontal, Sigma, Sparkles, Spotlight, Timer, Trash2, Type, Undo2, MonitorUp, Layers
-} from 'lucide-preact'
+import { PeriodicTable, WriteOverScreen, RevealArt, HideToolbar, MinimiseArt, GeometryBox, PageBack, PageNext, NewPage, ArtPicture } from './icons'
+import { Archive, Axis3d, Blinds, Calculator, Table2, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, FileText, FlaskConical, GripVertical, FilePlus2, Library, RenameArt, SaveAll, Share2, Highlighter, MoveHorizontal, Image as ImageIcon, Laptop, LayoutGrid, LineChart, LogOut, MousePointer2, MousePointerClick, Pen, Plus, GraduationCap, Redo2, ArrowDownToLine, ArrowUpToLine, Infinity as InfinityIcon, BookOpen, Frame, Focus, Shapes, SlidersHorizontal, Sigma, Sparkles, Spotlight, Timer, Trash2, Type, Undo2, MonitorUp, Layers } from './icons'
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { signal } from '@preact/signals'
@@ -119,20 +116,20 @@ export function BoardBar(): JSX.Element {
         <BBtn icon={Redo2} label="Redo" disabled={!S.canRedo.value} onClick={() => board.redo()} />
         <div class="bb-sep" />
         {S.kind.value === 'notebook' ? <>
-          <BBtn icon={ChevronLeft} label="Back" disabled={S.page.value === 0} onClick={() => board.turnPage(-1)} />
+          <BBtn icon={PageBack} label="Back" disabled={S.page.value === 0} onClick={() => board.turnPage(-1)} />
           <button type="button" class={`bb-page nodrag ${p === 'pages' ? 'active' : ''}`} data-popover-keep="" aria-label="All pages" onClick={() => toggle('pages')}>
             <b>{S.page.value + 1}<small> / {S.pageCount.value}</small></b><span>Pages</span>
           </button>
           {S.page.value < S.pageCount.value - 1
-            ? <BBtn icon={ChevronRight} label="Next" onClick={() => board.turnPage(1)} />
-            : <BBtn icon={Plus} label="New page" onClick={() => board.addPage()} />}
+            ? <BBtn icon={PageNext} label="Next" onClick={() => board.turnPage(1)} />
+            : <BBtn icon={NewPage} label="New page" onClick={() => board.addPage()} />}
         </> : S.frameCount.value ? <>
-          <BBtn icon={ChevronLeft} label="Back" disabled={S.frameIndex.value === 0} onClick={() => board.turnFrame(-1)} />
+          <BBtn icon={PageBack} label="Back" disabled={S.frameIndex.value === 0} onClick={() => board.turnFrame(-1)} />
           <button type="button" class={`bb-page nodrag ${p === 'pages' ? 'active' : ''}`} data-popover-keep="" aria-label="All frames" onClick={() => toggle('pages')}>
             <b>{S.frameIndex.value < 0 ? '–' : S.frameIndex.value + 1}<small> / {S.frameCount.value}</small></b><span>Frames</span>
           </button>
           {S.frameIndex.value < S.frameCount.value - 1
-            ? <BBtn icon={ChevronRight} label="Next" onClick={() => board.turnFrame(1)} />
+            ? <BBtn icon={PageNext} label="Next" onClick={() => board.turnFrame(1)} />
             : <BBtn icon={Frame} label="New frame" onClick={() => board.addFrame()} />}
         </> : <BBtn icon={Frame} label="Add frame" onClick={() => board.addFrame('here')} />}
         <div class="bb-sep" />
@@ -172,18 +169,18 @@ function BoardMenu(): JSX.Element {
         <Tile icon={LineChart} label="Graph" onClick={() => editGraph(null)} />
         <Tile icon={MoveHorizontal} label="Number line" onClick={() => editScale(null, 'line')} />
         <Tile icon={Axis3d} label="Axes" onClick={() => editScale(null, 'axes')} />
-        <Tile icon={Atom} label="Periodic table" onClick={() => (S.popover.value = 'periodic')} />
-        <Tile icon={Ruler} label="Ruler & compass" on={instrumentsShown.value.length > 0} onClick={() => (S.popover.value = 'maths')} />
+        <Tile icon={PeriodicTable} label="Periodic table" onClick={() => (S.popover.value = 'periodic')} />
+        <Tile icon={GeometryBox} label="Ruler & compass" on={instrumentsShown.value.length > 0} onClick={() => (S.popover.value = 'maths')} />
         <Tile icon={FlaskConical} label="Science labs" onClick={() => (S.popover.value = 'science')} />
       </Section>
       <Section title="Teach">
         <Tile icon={Spotlight} label="Spotlight" on={spotlightOn.value} onClick={close(() => (spotlightOn.value = !spotlightOn.value))} />
-        <Tile icon={EyeOff} label="Prepare reveals" on={S.preparing.value} onClick={close(() => board.setPreparing(!S.preparing.value))} />
+        <Tile icon={RevealArt} label="Prepare reveals" on={S.preparing.value} onClick={close(() => board.setPreparing(!S.preparing.value))} />
         <Tile icon={Blinds} label="Screen cover" on={curtainOn.value} onClick={close(() => (curtainOn.value = !curtainOn.value))} />
         <Tile icon={Calculator} label="Calculator" on={calculatorOn.value} onClick={close(() => (calculatorOn.value = !calculatorOn.value))} />
         <Tile icon={Timer} label="Timer" on={timerOn.value} onClick={close(() => (timerOn.value = !timerOn.value))} />
         <Tile icon={Clapperboard} label="Record & replay" onClick={() => (S.popover.value = 'replay')} />
-        <Tile icon={MonitorUp} label={overlay ? 'Back to board' : 'Write over screen'} on={overlay} onClick={actions.toggleOverlay} />
+        <Tile icon={WriteOverScreen} label={overlay ? 'Back to board' : 'Write over screen'} on={overlay} onClick={actions.toggleOverlay} />
         {overlay && <Tile icon={MousePointerClick} label="Use apps below" onClick={() => actions.setPassthrough(true)} />}
         <Tile icon={Sparkles} label="Assistant" onClick={() => (S.popover.value = 'agent')} />
       </Section>
@@ -193,9 +190,9 @@ function BoardMenu(): JSX.Element {
           ? <Tile icon={InfinityIcon} label="Turn into canvas" onClick={() => actions.convertBoard('canvas')} />
           : <Tile icon={BookOpen} label="Turn into notebook" onClick={() => actions.convertBoard('notebook')} />}
         <Tile icon={SlidersHorizontal} label="Settings" onClick={() => (S.popover.value = 'settings')} />
-        <Tile icon={Eye} label="Hide toolbar" onClick={actions.toggleUi} />
+        <Tile icon={HideToolbar} label="Hide toolbar" onClick={actions.toggleUi} />
         <Tile icon={Laptop} label="Laptop layout" onClick={() => actions.chooseLayout('laptop')} />
-        <Tile icon={Minus} label="Minimise" onClick={close(() => window.api.win.minimize())} />
+        <Tile icon={MinimiseArt} label="Minimise" onClick={close(() => window.api.win.minimize())} />
         <Tile icon={LogOut} label="Exit" danger onClick={() => window.api.win.close()} />
       </Section>
     </div>
@@ -213,7 +210,7 @@ function ThumbTitle({ i, fallback }: { i: number; fallback: string }): JSX.Eleme
       ref={el => el?.focus()} onBlur={e => done((e.target as HTMLInputElement).value)}
       onKeyDown={e => { if (e.key === 'Enter') done((e.target as HTMLInputElement).value); else if (e.key === 'Escape') setEditing(false); e.stopPropagation() }} />
   )
-  return <button type="button" class={`thumb-title nodrag ${title ? '' : 'plain'}`} aria-label={`Rename ${title || fallback}`} onClick={() => setEditing(true)}><span>{title || fallback}</span><Pencil size={12} /></button>
+  return <button type="button" class={`thumb-title nodrag ${title ? '' : 'plain'}`} aria-label={`Rename ${title || fallback}`} onClick={() => setEditing(true)}><span>{title || fallback}</span><RenameArt size={12} /></button>
 }
 
 const THUMB_W = 176
@@ -285,7 +282,7 @@ function SectionHead({ i, count }: { i: number; count: number }): JSX.Element {
         ? <input class="thumb-input nodrag" type="text" maxLength={120} defaultValue={name} aria-label="Section name" ref={el => { el?.focus(); el?.select() }}
           onBlur={e => done((e.target as HTMLInputElement).value)}
           onKeyDown={e => { if (e.key === 'Enter') done((e.target as HTMLInputElement).value); else if (e.key === 'Escape') editingSection.value = -1; e.stopPropagation() }} />
-        : <button type="button" class="section-name nodrag" aria-label={`Rename section ${name}`} onClick={() => (editingSection.value = i)}><b>{name}</b><Pencil size={13} /></button>}
+        : <button type="button" class="section-name nodrag" aria-label={`Rename section ${name}`} onClick={() => (editingSection.value = i)}><b>{name}</b><RenameArt size={13} /></button>}
       <small>{count} {count === 1 ? unit : `${unit}s`}</small>
       <button type="button" class="section-remove nodrag" aria-label={`Remove the section heading ${name}`} title="Remove the heading (the pages stay)" onClick={() => board.setSection(i, '')}><X size={15} /></button>
     </div>
@@ -398,12 +395,12 @@ export function LayoutChooser(): JSX.Element {
         <p>This sets up the board for your screen. You can change it later in Settings.</p>
         <div class="chooser-options">
           <button type="button" class="chooser-option nodrag" onClick={() => actions.chooseLayout('board')}>
-            <Presentation size={44} strokeWidth={1.5} />
+            <ArtPicture name="welcome-board" />
             <b>Smart board</b>
             <span>A big classroom touch screen. Full screen, large buttons, toolbar at the bottom.</span>
           </button>
           <button type="button" class="chooser-option nodrag" onClick={() => actions.chooseLayout('laptop')}>
-            <Laptop size={44} strokeWidth={1.5} />
+            <ArtPicture name="welcome-laptop" />
             <b>Laptop or PC</b>
             <span>A floating window that can sit over other apps. Mouse, touch or pen tablet.</span>
           </button>

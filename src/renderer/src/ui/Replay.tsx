@@ -1,7 +1,7 @@
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { effect } from '@preact/signals'
-import { Play, Pause, SkipBack, SkipForward, X, Circle, Square, Download, FolderOpen, RotateCcw } from 'lucide-preact'
+import { Play, Pause, SkipBack, SkipForward, X, Circle, Square, Download, FolderOpen, RotateCcw } from './icons'
 import { replay, message, formatTime } from '@/state/replay'
 import { S, showToast } from '@/state/store'
 import { paintReplay, replayBounds } from '@/engine/replay-render'
