@@ -37,6 +37,7 @@
     "e2e:export": "electron-vite build && node e2e/export.mjs",
     "e2e:tools": "electron-vite build && node e2e/tools.mjs",
     "e2e:ink": "electron-vite build && node e2e/ink.mjs",
+    "e2e:labels": "electron-vite build && node e2e/labels.mjs",
     "e2e:recognize": "electron-vite build && node e2e/recognize.mjs",
     "e2e:imports": "electron-vite build && node e2e/imports.mjs",
     "e2e:classroom": "electron-vite build && node e2e/classroom.mjs",

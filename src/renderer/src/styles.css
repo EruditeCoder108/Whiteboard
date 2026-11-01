@@ -1206,6 +1206,25 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .table-count .scale-bump { width: 56px; height: 52px; }
 .table-count .scale-bump:disabled { opacity: .4; }
 .table-head-choice { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 16px; font-weight: 600; }
+/* ── one look: panels, sheets and "this is selected" ──
+   Warm, quiet surfaces and one way of showing what is chosen, everywhere. Sizes stay modest:
+   only touch targets grow on the board, never the type. */
+:root { --panel: rgba(253, 252, 249, .98); --hover: rgba(60, 50, 30, .065); --line: rgba(50, 40, 20, .12); --radius: 16px; --control: 10px; --sel-bg: var(--accent-soft); --sel-ink: var(--accent); --sel-ring: inset 0 0 0 1.5px var(--accent); }
+.panel { border-radius: var(--radius); }
+.chooser-card { border-radius: 20px; }
+.tile, .sel-act, .bbtn, .zone-btn, .template-tile, .paper-tile { border-radius: var(--control); }
+.dialog-btn, .primary-btn { border-radius: var(--control); }
+:is(.btn.active, .tile.on, .chip.on, .sel-act.active, .style-choice.active, .menu-item.on, .paper-tile.on, .kind-option.on, .zone-btn.on, .bbtn.active, .bbtn.active:hover, .bb-size.sel, .timer-row.presets button.on) {
+  background: var(--sel-bg); color: var(--sel-ink); box-shadow: var(--sel-ring);
+}
+.window.dark { --sel-ink: #c4d0ff; --sel-bg: rgba(140, 160, 255, .2); --sel-ring: inset 0 0 0 1.5px #a9b8ff; }
+.window.board :is(.chip, .style-choice) { min-height: 40px; }
+.window.board .popover .btn { width: 40px; height: 40px; }
+.window.board .popover .menu-item { min-height: 42px; font-size: 13px; }
+.window.board .swatch { width: 30px; height: 30px; }
+.window.board .pop-title { font-size: 14px; }
+.window.board .pop-sub, .window.board .row-label { font-size: 12px; }
+
 /* ── handwriting to text ── */
 .read-card { width: min(720px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; }
 .read-picture { display: block; max-width: 100%; max-height: 220px; align-self: center; border-radius: 10px; border: 1px solid var(--line); }

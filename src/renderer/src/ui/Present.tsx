@@ -48,7 +48,7 @@ export function PresentPopover(): JSX.Element {
       <ToggleRow icon={Spotlight} label="Spotlight" hint="dims all but the pointer" on={spotlightOn.value} onClick={() => { spotlightOn.value = !spotlightOn.value; S.popover.value = null }} />
       <ToggleRow icon={Calculator} label="Calculator" on={calculatorOn.value} onClick={() => { calculatorOn.value = !calculatorOn.value; S.popover.value = null }} />
       <ToggleRow icon={EyeOff} label="Prepare reveals" hint="hide answers" on={S.preparing.value} onClick={() => { board.setPreparing(!S.preparing.value); S.popover.value = null }} />
-      <ToggleRow icon={Blinds} label="Curtain" hint="drag to reveal" on={curtainOn.value} onClick={() => { curtainOn.value = !curtainOn.value; S.popover.value = null }} />
+      <ToggleRow icon={Blinds} label="Screen cover" hint="drag to reveal" on={curtainOn.value} onClick={() => { curtainOn.value = !curtainOn.value; S.popover.value = null }} />
       <ToggleRow icon={Timer} label="Timer" on={timerOn.value} onClick={() => { timerOn.value = !timerOn.value; S.popover.value = null }} />
       <ToggleRow icon={Clock} label="Clock" on={clockOn.value} onClick={() => { clockOn.value = !clockOn.value; S.popover.value = null }} />
       <ToggleRow icon={Search} label="Magnifier" on={magnifierOn.value} onClick={() => { magnifierOn.value = !magnifierOn.value; S.popover.value = null }} />
@@ -99,7 +99,7 @@ export function CurtainLayer(): JSX.Element | null {
     <div class="curtain" style={{ height: `${cover * 100}%` }}>
       <div class="curtain-handle ui" onPointerDown={onDown as never} onPointerMove={onMove as never} onPointerUp={onUp} onPointerCancel={onUp}>
         <span>Drag to reveal</span>
-        <Btn icon={X} title="Remove curtain (Esc)" size={14} onClick={() => (curtainOn.value = false)} />
+        <Btn icon={X} title="Remove the screen cover (Esc)" size={14} onClick={() => (curtainOn.value = false)} />
       </div>
     </div>
   )

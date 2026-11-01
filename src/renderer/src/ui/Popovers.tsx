@@ -59,7 +59,7 @@ export function PropsPopover(): JSX.Element {
         <>
           <div class="pop-sub">Eraser type  <i>(press E again to switch)</i></div>
           <Segmented
-            options={[{ value: 'stroke', label: 'Stroke' }, { value: 'pixel', label: 'Pixel' }]}
+            options={[{ value: 'stroke', label: 'Whole stroke' }, { value: 'pixel', label: 'Rub out' }]}
             value={S.eraserMode.value}
             onChange={(v) => (S.eraserMode.value = v)}
           />
@@ -137,7 +137,7 @@ export function MenuPopover(): JSX.Element {
       <MenuItem icon={SaveAll} label="Save a copy…" hint="Ctrl+Shift+S" onClick={close(actions.saveLessonAs)} />
       <Sep />
       <MenuItem icon={Share2} label="Export picture or PDF…" hint="Ctrl+E" onClick={() => (S.popover.value = 'export')} />
-      <MenuItem icon={History} label="Recovery backups…" onClick={() => (S.popover.value = 'recovery')} />
+      <MenuItem icon={History} label="Earlier saves…" onClick={() => (S.popover.value = 'recovery')} />
       <MenuItem icon={Clapperboard} label="Record and replay…" onClick={() => (S.popover.value = 'replay')} />
       <MenuItem icon={UnlockKeyhole} label="Unlock all objects" onClick={close(() => board.unlockAll())} />
       <Sep />
@@ -170,12 +170,12 @@ export function SettingsPopover(): JSX.Element {
         onChange={(v) => actions.convertBoard(v)}
       />
       <PaperPicker />
-      <Row label="Opacity" hint="Lower it to see the screen through the board">
+      <Row label="Board opacity" hint="Lower it to see the screen through the board">
         <Slider min={0} max={100} value={S.bgAlpha.value} onChange={(v) => (S.bgAlpha.value = v)} />
         <span class="val">{S.bgAlpha.value}%</span>
       </Row>
       <Sep />
-      <Row label="Smoothing" hint="Steadies shaky handwriting. 0 = raw input">
+      <Row label="Steady hand" hint="Steadies shaky handwriting. 0 = raw input">
         <Slider min={0} max={10} value={S.smoothing.value} onChange={(v) => (S.smoothing.value = v)} />
         <span class="val">{S.smoothing.value}</span>
       </Row>
@@ -194,11 +194,11 @@ export function SettingsPopover(): JSX.Element {
       {S.palmErase.value && <button type="button" class="link-btn nodrag" onClick={() => { S.popover.value = null; calibrating.value = true }}>Calibrate palm size…</button>}
       <button type="button" class="link-btn nodrag" onClick={() => (S.popover.value = 'inputs')}>Pen and finger: a tool for each…</button>
       <Sep />
-      <Row label="Hold for menu">
+      <Row label="Press and hold for a menu">
         <span class="grow" />
         <Switch on={S.radialEnabled.value} onChange={(v) => (S.radialEnabled.value = v)} />
       </Row>
-      {S.radialEnabled.value && <Row label="Hold delay" hint="Increase this if the menu opens while you are writing">
+      {S.radialEnabled.value && <Row label="How long to hold" hint="Increase this if the menu opens while you are writing">
         <Slider label="Radial menu hold delay" min={300} max={1500} step={50} value={S.radialDelay.value} onChange={(v) => (S.radialDelay.value = v)} />
         <span class="val">{(S.radialDelay.value / 1000).toFixed(2)}s</span>
       </Row>}
@@ -217,7 +217,7 @@ function RecoveryPopover(): JSX.Element {
   }, [])
   return (
     <div class="popover panel ui recovery" data-popover-keep="">
-      <div class="pop-title">Recovery backups</div>
+      <div class="pop-title">Earlier saves</div>
       <div class="pop-hint">Five previous saves are kept, at most once per minute. Restoring is undoable.</div>
       {error && <div class="pop-hint">{error}</div>}
       {!backups && !error && <div class="pop-hint">Loading…</div>}
@@ -234,7 +234,7 @@ function RecoveryPopover(): JSX.Element {
 }
 
 const SHORTCUTS: [string, [string, string][]][] = [
-  ['Tools', [['V / Q / H', 'Select · Lasso · Hand'], ['P / M / E', 'Pen · Highlighter · Eraser'], ['T / N', 'Text / Sticky note'], ['E again', 'Eraser: Stroke ⇄ Pixel'], ['K', 'Laser pointer'], ['L A R O', 'Line · Arrow · Rect · Oval'], ['[  ]', 'Brush size']]],
+  ['Tools', [['V / Q / H', 'Select · Lasso · Hand'], ['P / M / E', 'Pen · Highlighter · Eraser'], ['T / N', 'Text / Sticky note'], ['E again', 'Eraser: whole stroke ⇄ rub out'], ['K', 'Laser pointer'], ['L A R O', 'Line · Arrow · Rect · Oval'], ['[  ]', 'Brush size']]],
   ['Pen, mouse & touch', [['Hold press', 'Radial menu'], ['Barrel button', 'Eraser while held'], ['2 fingers', 'Pan & pinch-zoom'], ['Shift', 'Straight / square shapes'], ['Alt + drag', 'Move window']]],
   ['Board', [['Ctrl+Z / Y', 'Undo / Redo'], ['Ctrl+A', 'Select all'], ['Ctrl+D', 'Duplicate'], ['Ctrl+C / V', 'Copy / Paste objects'], ['Ctrl+G', 'Group selection'], ['Ctrl+Shift+G', 'Ungroup selection'], ['Enter', 'Edit selected text'], ['Delete', 'Delete selection'], ['Ctrl+Shift+C', 'Copy image']]],
   ['Lesson', [['Ctrl+N', 'New lesson'], ['Ctrl+O', 'My lessons'], ['Ctrl+S', 'Save now (lessons also save themselves)'], ['Ctrl+Shift+S', 'Save a copy'], ['Ctrl+E', 'Export picture or PDF']]],

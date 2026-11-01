@@ -11,9 +11,9 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 
 **A. It looks natural**
 - 🔄 Real pictures for buttons: a paintbrush looks like a paintbrush, settings is a gear *(second agent)*
-- ⬜ One look for every panel and sheet: soft depth, natural surfaces, light and dark
-- ⬜ Big, clearly labelled buttons everywhere; one clear look for "this is selected"
-- ⬜ Clean up clipped labels and awkward wording
+- ✅ One look for every panel and sheet: quiet, warm surfaces, light and dark
+- ✅ Clear buttons at sensible sizes (touch targets grow on the board, the type does not); one look for "this is selected"
+- ✅ Clean up clipped labels and awkward wording; a test now checks every sheet
 
 **B. Writing feels right**
 - ✅ Pen styles: pencil, paintbrush, chalk, thick marker

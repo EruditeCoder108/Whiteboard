@@ -65,7 +65,7 @@ export class Assistant {
     const response = await fetch(this.config.endpoint + path, { method: body ? 'POST' : 'GET', redirect: 'error',
       signal: AbortSignal.any([signal, AbortSignal.timeout(120000)]), headers: { 'Content-Type': 'application/json', ...(key ? { Authorization: `Bearer ${key}` } : {}) },
       ...(body ? { body: JSON.stringify(body) } : {}) })
-    if (!response.ok) throw new Error(`Model endpoint returned HTTP ${response.status}. Check the URL, model and optional key.`)
+    if (!response.ok) throw new Error(`The AI service refused the request (error ${response.status}). Check its address, model and key.`)
     if (Number(response.headers.get('content-length')) > 2 * 1024 * 1024) throw new Error('Model response is too large')
     const reader = response.body?.getReader(); if (!reader) throw new Error('Empty model response')
     const chunks: Uint8Array[] = []; let size = 0

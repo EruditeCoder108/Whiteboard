@@ -86,15 +86,15 @@ export function AgentPanel({ agent }: { agent: BoardAgent }): JSX.Element | null
     finally { setConnecting(false) }
   }
   return <aside class="agent-panel ui nodrag" data-popover-keep="" data-testid="agent-panel" aria-label="Agent tools and assistant">
-    <div class="agent-heading"><strong>Agent tools</strong><button aria-label="Close agent panel" onClick={() => { window.api.agent.cancel(); S.popover.value = null }}>×</button></div>
-    <p class="agent-muted">Create editable content, or let an agent work with the board.</p>
+    <div class="agent-heading"><strong>Assistant</strong><button aria-label="Close agent panel" onClick={() => { window.api.agent.cancel(); S.popover.value = null }}>×</button></div>
+    <p class="agent-muted">Optional help to set up a page. Everything it makes stays editable.</p>
     <div class="agent-section"><h3>Start without a model</h3><div class="agent-buttons">
       <button disabled={busy} onClick={() => starter('plan')}>Planning board</button>
       <button disabled={busy} onClick={() => starter('compare')}>Compare ideas</button>
       <button disabled={busy} onClick={() => starter('arrange')}>Arrange selection</button>
     </div></div>
-    <div class="agent-section"><h3>Assistant</h3>
-      <p class="agent-muted">Connect a local model with tool support. No OpenAI key is needed for a local server.</p>
+    <div class="agent-section"><h3>Your own AI model</h3>
+      <p class="agent-muted">Connect a model of your own, on this computer or online. A model on this computer needs no key.</p>
       <button class="agent-link" onClick={() => setSettingsOpen(!settingsOpen)} aria-expanded={settingsOpen}>Connection settings {settingsOpen ? '▴' : '▾'}</button>
       {settingsOpen && <div class="agent-fields">
         <label>API base URL<input data-testid="assistant-endpoint" disabled={busy} value={config.endpoint} onInput={e => setConfig({ ...config, endpoint: e.currentTarget.value })} placeholder="http://127.0.0.1:11434/v1" /></label>

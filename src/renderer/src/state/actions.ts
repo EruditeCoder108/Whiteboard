@@ -36,7 +36,7 @@ export const actions = {
   toggleEraserMode(): void {
     S.eraserMode.value = S.eraserMode.value === 'stroke' ? 'pixel' : 'stroke'
     showToast(
-      S.eraserMode.value === 'pixel' ? 'Eraser: Pixel  ·  erases only what you touch' : 'Eraser: Stroke  ·  removes whole strokes'
+      S.eraserMode.value === 'pixel' ? 'Eraser: rub out  ·  erases only what you touch' : 'Eraser: whole stroke  ·  removes the line you touch'
     )
   },
 

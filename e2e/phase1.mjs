@@ -80,7 +80,7 @@ try {
   const snapshot = await page.evaluate(() => window.api.store.listBackups())
   check('recovery snapshots are available', snapshot.length > 0)
   await page.getByRole('button', { name: 'Menu', exact: true }).click()
-  await page.getByRole('button', { name: 'Recovery backups…' }).click()
+  await page.getByRole('button', { name: 'Earlier saves…' }).click()
   await page.waitForSelector('.backup-row')
   await shot('phase1-recovery')
   const currentCount = await itemCount(page)
