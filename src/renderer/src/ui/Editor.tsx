@@ -1,6 +1,6 @@
 import {
-  AlignCenter, AlignLeft, AlignRight, Archive, ArrowDownToLine, ArrowUpToLine, Bold, Check,
-  Columns3, Copy, Ellipsis, EyeOff, Group, Heading, Minus, Rows3, Italic, List, ListOrdered, LockKeyhole, Palette, Pencil,
+  AArrowDown, AArrowUp, AlignCenter, AlignLeft, AlignRight, Archive, ArrowDownToLine, ArrowUpToLine, Bold, Check,
+  Columns3, Copy, Ellipsis, ExternalLink, EyeOff, FlipHorizontal2, FlipVertical2, GitBranchPlus, Group, Heading, Link2, Minus, Rows3, Italic, List, ListOrdered, LockKeyhole, Palette, Pencil,
   RotateCw, Scan, Trash2, Ungroup, UnlockKeyhole, X
 } from 'lucide-preact'
 import type { JSX } from 'preact'
@@ -13,7 +13,8 @@ import { fontOf, textAlign, textColor, textPadding, wrapText } from '@/engine/te
 import { MAX_TEXT_LENGTH } from '@/engine/serialize'
 import type { EditableItem, Item } from '@/engine/types'
 import { isBox } from '@/engine/types'
-import { PALETTE, S } from '@/state/store'
+import { safeLink } from '@/engine/objects'
+import { PALETTE, S, boardMode, showToast } from '@/state/store'
 import { shelf } from '@/state/shelf'
 import { RevealOptions } from './Reveal'
 import { Btn, MenuItem, Row, Slider, Swatch } from './kit'
@@ -177,12 +178,52 @@ function ObjectStyles({ items }: { items: Item[] }): JSX.Element {
   </div>
 }
 
+type ActProps = Parameters<typeof Btn>[0] & { label: string }
+
+/** On the board a selected object's actions are big and named, right beside it; on a laptop they stay compact. */
+function Act({ label, icon: Icon, ...rest }: ActProps): JSX.Element {
+  if (!boardMode.value) return <Btn icon={Icon} {...rest} />
+  const { title, active, danger, disabled, onClick } = rest
+  return (
+    <button type="button" class={`sel-act nodrag ${active ? 'active' : ''} ${danger ? 'danger' : ''}`} title={title} aria-label={title} aria-pressed={active === undefined ? undefined : active} disabled={disabled} onClick={onClick as never}>
+      <Icon size={22} strokeWidth={1.9} /><span>{label}</span>
+    </button>
+  )
+}
+
+function LinkOptions({ link, onDone }: { link?: string; onDone: () => void }): JSX.Element {
+  const [text, setText] = useState(link ?? '')
+  const [wrong, setWrong] = useState(false)
+  const save = (): void => {
+    const url = safeLink(text)
+    if (!url) return setWrong(true)
+    board.setLink(url)
+    onDone()
+  }
+  return <div class="link-options">
+    <div class="pop-sub">Web address</div>
+    <input class="link-field nodrag" type="url" aria-label="Web address" placeholder="ncert.nic.in" value={text} maxLength={2000} ref={el => el?.focus()}
+      onInput={e => { setText(e.currentTarget.value); setWrong(false) }}
+      onKeyDown={e => { e.stopPropagation(); if (e.key === 'Enter') save() }} />
+    {wrong && <div class="pop-hint link-wrong">That is not a web address.</div>}
+    <div class="style-text-row">
+      <button type="button" class="style-choice active" onClick={save}>Save link</button>
+      {link && <button type="button" class="style-choice" onClick={() => { board.setLink(null); onDone() }}>Remove</button>}
+    </div>
+  </div>
+}
+
 /** Actions follow the selection, while the longer controls stay one click away. */
 export function SelectionToolbar(): JSX.Element | null {
   const items = S.selection.value
   S.viewRevision.value
-  const [panel, setPanel] = useState<'style' | 'more' | 'reveal' | null>(null)
+  const [panel, setPanel] = useState<'style' | 'more' | 'reveal' | 'link' | null>(null)
   const ref = useRef<HTMLDivElement>(null)
+  const [barHeight, setBarHeight] = useState(70)
+  useLayoutEffect(() => {
+    const h = ref.current?.querySelector('.selection-actions')?.getBoundingClientRect().height
+    if (h && Math.abs(h - barHeight) > 1) setBarHeight(h)
+  })
   const key = items.map(it => it.id).join(',')
   useEffect(() => setPanel(null), [key])
   useEffect(() => {
@@ -196,36 +237,51 @@ export function SelectionToolbar(): JSX.Element | null {
   const box = items.reduce((r, it) => unionRect(r, itemBounds(it)), null as ReturnType<typeof itemBounds> | null)!
   const z = board.view.zoom, { w: vw, h: vh } = board.size
   const dockEdge = vh <= 540 ? 88 : 56
-  const width = Math.min(360, vw - dockEdge - 12), cx = ((box[0] + box[2]) / 2 - board.view.x) * z
-  const above = (box[1] - board.view.y) * z - 86
-  const below = (box[3] - board.view.y) * z + 20
+  const big = boardMode.value
+  const width = Math.min(big ? 900 : 360, vw - (big ? 24 : dockEdge + 12)), cx = ((box[0] + box[2]) / 2 - board.view.x) * z
+  const above = (box[1] - board.view.y) * z - (big ? barHeight + 26 : 86)
+  const below = (box[3] - board.view.y) * z + 26
   const top = clamp(above >= 38 ? above : below + 46 < vh - 50 ? below : 38, 38, Math.max(38, vh - 98))
   const toolbarTop = panel ? Math.min(top, Math.max(38, vh - 330)) : top
-  const left = clamp(cx - width / 2, dockEdge, Math.max(dockEdge, vw - width - 12))
+  const left = clamp(cx - width / 2, big ? 12 : dockEdge, Math.max(big ? 12 : dockEdge, vw - width - 12))
   const locked = items.some(it => it.locked), allLocked = items.every(it => it.locked)
   const single = items.length === 1 && editable(items[0]) ? items[0] : null
   const grouped = items.some(it => it.group)
   const only = items.length === 1 ? items[0] : null
   const media = only && (only.t === 'n' || only.t === 'g' || (only.t === 'i' && only.latex !== undefined)) ? only : null
   const run = (fn: () => void): void => { setPanel(null); fn() }
-  return <div class="selection-tools ui nodrag" ref={ref} data-testid="selection-toolbar" data-popover-keep="" style={{ left, top: toolbarTop, width }}>
+  const shape = only?.t === 'h' && !isConnector(only) ? only : null
+  const textSize = single && !locked ? (single.fontSize ?? 24) : 0
+  const openLink = (url: string): void => { void window.api.openLink(url).then(ok => { if (!ok) showToast('That link could not be opened') }) }
+  return <div class={`selection-tools ui nodrag ${big ? 'big' : ''}`} ref={ref} data-testid="selection-toolbar" data-popover-keep="" style={{ left, top: toolbarTop, width }}>
     <div class="selection-actions panel" role="toolbar" aria-label="Selection actions">
       <span class="selection-caption" title={locked ? 'Selection includes locked objects' : `${items.length} selected`}>{allLocked ? <LockKeyhole size={13} /> : items.length === 1 ? items[0].t === 'l' ? 'Lab' : items[0].t === 's' ? 'Stroke' : items[0].t === 't' ? items[0].note ? 'Note' : 'Text' : items[0].t === 'i' ? items[0].latex !== undefined ? 'Equation' : 'Picture' : items[0].t === 'g' ? 'Graph' : items[0].t === 'b' ? 'Table' : items[0].t === 'n' ? items[0].y ? 'Axes' : 'Number line' : isConnector(items[0]) ? items[0].k === 'arrow' ? 'Arrow' : 'Line' : 'Shape' : `${items.length} selected`}</span>
       <div class="grow" />
-      <Btn icon={Palette} title="Object style" active={panel === 'style'} disabled={allLocked} onClick={() => setPanel(panel === 'style' ? null : 'style')} />
-      {single && <Btn icon={Pencil} title={single.text ? 'Edit text  (Enter)' : 'Add text  (Enter)'} disabled={locked} onClick={() => board.editText(single)} />}
+      {only?.link && <Act icon={ExternalLink} label="Open link" title={`Open ${only.link}`} onClick={() => openLink(only.link!)} />}
+      <Act icon={Palette} label="Style" title="Object style" active={panel === 'style'} disabled={allLocked} onClick={() => setPanel(panel === 'style' ? null : 'style')} />
+      {single && <Act icon={Pencil} label={single.text ? 'Edit' : 'Type'} title={single.text ? 'Edit text  (Enter)' : 'Add text  (Enter)'} disabled={locked} onClick={() => board.editText(single)} />}
+      {big && textSize > 0 && <>
+        <Act icon={AArrowUp} label="Bigger" title="Bigger text" onClick={() => board.patchSelection({ fontSize: Math.min(512, Math.round(textSize * 1.2)) }, 'text')} />
+        <Act icon={AArrowDown} label="Smaller" title="Smaller text" onClick={() => board.patchSelection({ fontSize: Math.max(6, Math.round(textSize / 1.2)) }, 'text')} />
+        <Act icon={Bold} label="Bold" title="Bold text" active={!!single?.bold} onClick={() => board.patchSelection({ bold: !single?.bold }, 'text')} />
+      </>}
+      {shape && <Act icon={GitBranchPlus} label="Branch" title="Add a branch" disabled={locked} onClick={() => board.addBranch(shape)} />}
       {only?.t === 'b' && <Btn icon={Pencil} title="Type in the table" disabled={locked} onClick={() => board.openCell(only, board.lastCell?.id === only.id ? board.lastCell.r : 0, board.lastCell?.id === only.id ? board.lastCell.c : 0)} />}
       {media && <Btn icon={Pencil} title={media.t === 'n' ? 'Change the scale' : media.t === 'g' ? 'Edit graph' : 'Edit equation'} disabled={locked} onClick={() => board.onEditMedia?.(media)} />}
       {items.length > 1 && <Btn icon={grouped ? Ungroup : Group} title={grouped ? 'Ungroup  (Ctrl+Shift+G)' : 'Group  (Ctrl+G)'} disabled={locked} onClick={() => grouped ? board.ungroupSelection() : board.groupSelection()} />}
-      <Btn icon={Copy} title="Duplicate selection  (Ctrl+D)" onClick={() => board.duplicateSelection()} />
-      <Btn icon={Archive} title="Save to My shelf" onClick={() => shelf.startSelection()} />
-      <Btn icon={EyeOff} title="Hide for class" active={panel === 'reveal'} disabled={allLocked} onClick={() => setPanel(panel === 'reveal' ? null : 'reveal')} />
-      <Btn icon={locked ? UnlockKeyhole : LockKeyhole} title={locked ? 'Unlock selection' : 'Lock selection'} onClick={() => board.toggleLockSelection()} />
-      <Btn icon={Trash2} title="Delete selection  (Delete)" disabled={allLocked} danger onClick={() => board.deleteSelection()} />
-      <Btn icon={Ellipsis} title="More selection actions" active={panel === 'more'} onClick={() => setPanel(panel === 'more' ? null : 'more')} />
+      <Act icon={Copy} label="Copy" title="Duplicate selection  (Ctrl+D)" onClick={() => board.duplicateSelection()} />
+      {big && <>
+        <Act icon={FlipVertical2} label="Mirror" title="Mirror left to right" disabled={locked} onClick={() => board.flipSelection('h')} />
+        <Act icon={FlipHorizontal2} label="Flip" title="Flip upside down" disabled={locked} onClick={() => board.flipSelection('v')} />
+      </>}
+      <Act icon={Archive} label="Shelf" title="Save to My shelf" onClick={() => shelf.startSelection()} />
+      <Act icon={EyeOff} label="Hide" title="Hide for class" active={panel === 'reveal'} disabled={allLocked} onClick={() => setPanel(panel === 'reveal' ? null : 'reveal')} />
+      <Act icon={locked ? UnlockKeyhole : LockKeyhole} label={locked ? 'Unlock' : 'Lock'} title={locked ? 'Unlock selection' : 'Lock selection'} onClick={() => board.toggleLockSelection()} />
+      <Act icon={Trash2} label="Delete" title="Delete selection  (Delete)" disabled={allLocked} danger onClick={() => board.deleteSelection()} />
+      <Act icon={Ellipsis} label="More" title="More selection actions" active={panel === 'more'} onClick={() => setPanel(panel === 'more' ? null : 'more')} />
     </div>
     {panel && <div class={`selection-detail panel ${panel}`} style={{ maxHeight: Math.max(80, vh - toolbarTop - 102) }}>
-      {panel === 'style' ? <ObjectStyles items={items} /> : panel === 'reveal' ? <RevealOptions items={items} /> : <>
+      {panel === 'style' ? <ObjectStyles items={items} /> : panel === 'reveal' ? <RevealOptions items={items} /> : panel === 'link' ? <LinkOptions link={only?.link} onDone={() => setPanel(null)} /> : <>
         {only?.t === 'b' && !locked && <>
           <MenuItem icon={Rows3} label="Add row" onClick={() => board.shapeTable('add-row')} />
           <MenuItem icon={Columns3} label="Add column" onClick={() => board.shapeTable('add-col')} />
@@ -235,6 +291,9 @@ export function SelectionToolbar(): JSX.Element | null {
         </>}
         <MenuItem icon={EyeOff} label="Hide for class" onClick={() => setPanel('reveal')} />
         <MenuItem icon={Archive} label="Save to My shelf" onClick={() => run(() => shelf.startSelection())} />
+        {only && !locked && <MenuItem icon={Link2} label={only.link ? 'Change link' : 'Add a link'} onClick={() => setPanel('link')} />}
+        {!locked && <MenuItem icon={FlipVertical2} label="Mirror left to right" onClick={() => run(() => board.flipSelection('h'))} />}
+        {!locked && <MenuItem icon={FlipHorizontal2} label="Flip upside down" onClick={() => run(() => board.flipSelection('v'))} />}
         <MenuItem icon={ArrowUpToLine} label="Bring to front" onClick={() => run(() => board.arrangeSelection('front'))} />
         <MenuItem icon={ArrowDownToLine} label="Send to back" onClick={() => run(() => board.arrangeSelection('back'))} />
         {!locked && <MenuItem icon={RotateCw} label="Rotate 90°" onClick={() => run(() => board.rotateSelection(Math.PI / 2))} />}

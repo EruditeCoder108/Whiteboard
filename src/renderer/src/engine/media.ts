@@ -43,7 +43,14 @@ export function paintImage(ctx: CanvasRenderingContext2D, it: ImageItem): void {
   if (img) {
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = 'high'
-    ctx.drawImage(img, x0, y0, x1 - x0, y1 - y0)
+    if (it.flipX || it.flipY) {
+      ctx.save()
+      ctx.translate((x0 + x1) / 2, (y0 + y1) / 2)
+      ctx.scale(it.flipX ? -1 : 1, it.flipY ? -1 : 1)
+      ctx.translate(-(x0 + x1) / 2, -(y0 + y1) / 2)
+      ctx.drawImage(img, x0, y0, x1 - x0, y1 - y0)
+      ctx.restore()
+    } else ctx.drawImage(img, x0, y0, x1 - x0, y1 - y0)
     // A hairline edge keeps white pages (PDF worksheets) visible on a white board.
     if (it.latex === undefined) { ctx.strokeStyle = 'rgba(100,110,130,.35)'; ctx.lineWidth = Math.max(.5, (x1 - x0) / 1200); ctx.strokeRect(x0, y0, x1 - x0, y1 - y0) }
     return

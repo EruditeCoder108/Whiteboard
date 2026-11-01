@@ -365,6 +365,18 @@ function registerIpc(): void {
   ipcMain.on('ctl:exit', () => setPassthrough(false))
   ipcMain.handle('win:get-bounds', () => w()?.getBounds() ?? { x: 0, y: 0, width: 800, height: 600 })
 
+  // A link on an object opens in the teacher's browser: web addresses only, and never behind a full-screen board.
+  ipcMain.handle('link:open', async (e, link: unknown) => {
+    if (e.sender !== w()?.webContents || typeof link !== 'string' || link.length > 2000) return false
+    let url: URL
+    try { url = new URL(link) } catch { return false }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return false
+    if (process.env.FW_E2E_OFFSCREEN) return true
+    if (w()?.isAlwaysOnTop() && w()?.isFullScreen()) w()?.minimize()
+    await shell.openExternal(url.href)
+    return true
+  })
+
   ipcMain.handle('store:load-settings', async () => {
     const raw = await readText(dataFile('settings.json'))
     if (!raw) return null

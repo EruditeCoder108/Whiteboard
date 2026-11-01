@@ -21,11 +21,11 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - ✅ Slide to clear the page, and an eraser that is quick to reach
 
 **C. Objects are easy to handle**
-- ⬜ Big action bar beside whatever is selected: lock, copy, delete, flip, front and back, save to shelf
-- ⬜ Mirror and flip
-- ⬜ Text styling within easy reach
-- ⬜ Links on objects
-- ⬜ Mind maps
+- ✅ Big action bar beside whatever is selected: lock, copy, delete, flip, front and back, save to shelf
+- ✅ Mirror and flip
+- ✅ Text styling within easy reach
+- ✅ Links on objects
+- ✅ Mind maps
 
 **D. Instruments and graphs**
 - ⬜ Clearer ruler, set square, protractor and compass: big handles, readable measurements

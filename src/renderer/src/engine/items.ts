@@ -257,6 +257,20 @@ export function paintItem(ctx: CanvasRenderingContext2D, it: Item, alpha = 1, la
     return
   }
   paintObject(ctx, it, alpha, labTime)
+  if (it.link) paintLinkBadge(ctx, it)
+}
+
+/** A small chain mark, so a class can see the object leads somewhere. */
+function paintLinkBadge(ctx: CanvasRenderingContext2D, it: Item): void {
+  const [, y0, x1] = itemBounds(it)
+  ctx.save()
+  ctx.fillStyle = '#2f6bff'
+  ctx.beginPath(); ctx.arc(x1, y0, 14, 0, Math.PI * 2); ctx.fill()
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 2.4
+  ctx.beginPath(); ctx.roundRect(x1 - 8.5, y0 - 3, 10, 6, 3); ctx.stroke()
+  ctx.beginPath(); ctx.roundRect(x1 - 1.5, y0 - 3, 10, 6, 3); ctx.stroke()
+  ctx.restore()
 }
 
 function paintObject(ctx: CanvasRenderingContext2D, it: Item, alpha: number, labTime?: number): void {

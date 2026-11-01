@@ -90,6 +90,7 @@ export interface CapturedImage { src: string; width: number; height: number }
 export type CaptureResult = ({ ok: true } & CapturedImage) | { ok: false; error: string }
 
 export interface Api {
+  openLink(link: string): Promise<boolean>
   capture: {
     sources(): Promise<CaptureSource[]>
     grab(sourceId: string): Promise<CaptureResult>

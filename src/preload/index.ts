@@ -8,6 +8,7 @@ function subscribe<T>(channel: string, cb: (v: T) => void): () => void {
 }
 
 const api: Api = {
+  openLink: (link) => ipcRenderer.invoke('link:open', link),
   capture: {
     sources: () => ipcRenderer.invoke('capture:sources'),
     grab: (sourceId) => ipcRenderer.invoke('capture:grab', sourceId)

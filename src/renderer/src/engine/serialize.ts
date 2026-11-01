@@ -1,3 +1,4 @@
+import { safeLink } from './objects'
 import { validStep } from './reveals'
 import { MAX_POINTS, validAxis } from './scale'
 import { validTable } from './table'
@@ -42,9 +43,9 @@ export interface BoardFile {
 }
 
 export function itemToJson(it: Item): unknown {
-  const meta: ObjectMeta = { group: it.group, locked: it.locked, opacity: it.opacity, step: it.step }
+  const meta: ObjectMeta = { group: it.group, locked: it.locked, opacity: it.opacity, step: it.step, ...(it.link ? { link: it.link } : {}) }
   if (it.t === 'l') return { ...it, p: [...it.p], params: { ...it.params }, reveal: { ...it.reveal }, ...(it.gesture ? { gesture: it.gesture.map(p => ({ ...p })) } : {}) }
-  if (it.t === 'i') return { t: 'i', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, src: it.src, aspect: it.aspect, latex: it.latex, ...meta }
+  if (it.t === 'i') return { t: 'i', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, src: it.src, aspect: it.aspect, latex: it.latex, ...(it.flipX ? { flipX: true } : {}), ...(it.flipY ? { flipY: true } : {}), ...meta }
   if (it.t === 'b') return { t: 'b', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, cols: [...it.cols], rows: [...it.rows], cells: it.cells.map(row => [...row]), fontSize: it.fontSize, textColor: it.textColor, head: it.head, ...meta }
   if (it.t === 'n') return { t: 'n', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, x: { ...it.x }, y: it.y && { ...it.y }, grid: it.grid, equal: it.equal, points: it.points?.map(q => [...q]), coords: it.coords, ...meta }
   if (it.t === 'g') return { t: 'g', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, fns: [...it.fns], xr: [...it.xr], yr: [...it.yr], ...meta }
@@ -87,6 +88,9 @@ function objectMeta(o: Record<string, unknown>): ObjectMeta | null {
   // A bad step only loses the step, never the object: better a visible answer than a lost one.
   const step = validStep(o.step)
   if (step) meta.step = step
+  // A link that is not an ordinary web address is dropped, never opened.
+  const link = safeLink(o.link)
+  if (link) meta.link = link
   return meta
 }
 
@@ -185,6 +189,8 @@ export function itemFromJson(raw: unknown): Item | null {
       if (o.latex !== undefined && (!isText(o.latex) || !o.src.startsWith('data:image/svg+xml'))) return null
       const image: ImageItem = { t: 'i', ...box, src: o.src, aspect: o.aspect }
       if (o.latex !== undefined) image.latex = o.latex as string
+      if (o.flipX === true) image.flipX = true
+      if (o.flipY === true) image.flipY = true
       return image
     }
     const range = (v: unknown): v is [number, number] => Array.isArray(v) && v.length === 2 && v.every(n => isNum(n) && Math.abs(n) <= 1e9) && v[0] < v[1]

@@ -26,6 +26,8 @@ export interface ObjectMeta {
   locked?: boolean
   opacity?: number
   step?: RevealStep
+  /** a web address the object opens (see objects.ts) */
+  link?: string
 }
 
 export interface TextStyle {
@@ -133,6 +135,9 @@ export interface ImageItem extends ObjectMeta {
   /** natural width / height, kept when resizing */
   aspect: number
   latex?: string
+  /** mirrored left to right, or upside down */
+  flipX?: boolean
+  flipY?: boolean
 }
 
 /** A function plot drawn as vectors at every zoom. */

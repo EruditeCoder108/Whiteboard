@@ -4,6 +4,7 @@ import { effect } from '@preact/signals'
 import { Doc, History, opBounds, restyleItems } from './doc'
 import type { EditOp, HistoryState } from './doc'
 import { clamp, inflate, lerp, rectsHit, unionRect } from './geometry'
+import { BRANCH_FILLS, NODE_H, NODE_W, branchSpot, flipItem, mindNode } from './objects'
 import { cloneItem, concealed, isHidden, itemBounds, paintItem, hitObject, setHiddenMode, translateItem } from './items'
 import { fitTextHeight, textAlign, textColor } from './text'
 import { transformItem } from './transforms'
@@ -30,7 +31,7 @@ import { ART_DEFAULTS, DEFAULT_FRAME, MAX_EXTENT, MAX_TITLE, PAGE_H, PAGE_W, STY
 import type { Artwork, BoardKind, Frame, LookFrame, PageLook } from './pages'
 import { canvasToNotebook, nextFrameSlot, notebookToCanvas } from './convert'
 import { pageAt, readableOn } from './shelf'
-import { followConnectors, isConnector, remapAnchors, withNewIds } from './connectors'
+import { followConnectors, isConnector, remapAnchors, routeConnector, withNewIds } from './connectors'
 import { assignStep, clearStep, hideAgain, showStep, stepsOf } from './reveals'
 import type { StepInfo } from './reveals'
 import { LabRuntime, supportedLab } from './science/runtime'
@@ -789,6 +790,48 @@ export class Board implements ToolHost {
   }
 
   nudgeSelection(dx: number, dy: number): void { this.editSelection(it => translateItem(it, dx, dy)) }
+
+  /** Mirror the selection left to right, or turn it upside down. */
+  flipSelection(axis: 'h' | 'v'): void {
+    const b = this.doc.bounds(this.selection)
+    if (b) this.editSelection(it => flipItem(it, (b[0] + b[2]) / 2, (b[1] + b[3]) / 2, axis))
+  }
+
+  /** The web address of the one selected object; empty removes it. */
+  setLink(link: string | null): void {
+    this.editSelection(it => {
+      const { link: _old, ...rest } = it
+      return (link ? { ...rest, link } : rest) as Item
+    })
+  }
+
+  /** The middle of a new mind map, ready to type in. */
+  startMindMap(): void {
+    const r = this.visibleRect(), cx = (r[0] + r[2]) / 2, cy = (r[1] + r[3]) / 2
+    const node = mindNode([cx - NODE_W * .6, cy - NODE_H * .6, cx + NODE_W * .6, cy + NODE_H * .6], BRANCH_FILLS[0], S.penColor.value, true)
+    this.addMindNode(node)
+    showToast('Type the main idea. Tap Branch to grow the map.', 4000)
+  }
+
+  /** A new idea beside this one, tied to it by a line that follows either of them. */
+  addBranch(parent: ShapeItem): void {
+    const taken = this.doc.items.filter(it => !isConnector(it) && !concealed(it)).map(itemBounds)
+    const spot = branchSpot(itemBounds(parent), taken, this.visibleRect())
+    const children = this.doc.items.filter(it => isConnector(it) && it.from?.id === parent.id).length
+    const root = !this.doc.items.some(it => isConnector(it) && it.to?.id === parent.id)
+    const fill = root ? BRANCH_FILLS[(children + 1) % BRANCH_FILLS.length] : parent.fill ?? BRANCH_FILLS[0]
+    const node = mindNode(spot, fill, parent.c)
+    const line: ShapeItem = { t: 'h', id: newId(), c: parent.c, w: 3, k: 'line', p: [spot[0], spot[1], spot[2], spot[3]], from: { id: parent.id }, to: { id: node.id } }
+    this.addMindNode(node, routeConnector(line, id => id === parent.id ? parent : id === node.id ? node : undefined))
+  }
+
+  private addMindNode(node: ShapeItem, line?: ShapeItem): void {
+    const before = this.doc.snapshot()
+    this.doc.replaceAll(line ? [...before, line, node] : [...before, node])
+    this.commit(this.doc.diff(before), 'Add to mind map')
+    this.refresh(null)
+    this.editText(node)
+  }
 
   rotateSelection(angle: number): void {
     const b = this.doc.bounds(this.selection)
