@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.6.0-beta.7 — My shelf — 2026-11-01
+
+- **My shelf** (More menu, laptop Insert menu): draw something once and use it in any lesson.
+  - Save a selection with the new button on the selection toolbar (also in its "…" menu), or a whole page or frame from the shelf.
+  - Give it a name and a subject; the shelf files items by subject with a picture, and search finds them by name, subject or the lesson they came from.
+  - Tap an item to put a fresh, editable copy in the lesson. Groups stay together, pictures come along, and one Undo takes it away.
+  - A selection lands in the middle of the board, selected and ready to move, made smaller only if it would not fit.
+  - A saved page brings its paper, colour, background picture, name and length: a new page in a notebook (taking the place of a blank one) or the next frame on a canvas.
+  - Ink and equations follow the board: white chalk saved from a blackboard comes in as dark ink on a white page, and colours keep their hue.
+  - Rename, change subject, or delete (to the Recycle Bin). Lessons that used an item keep their copy.
+  - **Save shelf to a file** and **Add from a file** carry the whole shelf to another classroom PC; adding the same file twice does not double anything.
+- Messages now show above full-screen sheets, so what a sheet just did can be read.
+
 ## 1.6.0-beta.6 — Capture to lesson — 2026-11-01
 
 - **Capture** (More menu, laptop Insert menu, or Ctrl+Shift+C):
