@@ -1,5 +1,28 @@
 # Changelog
 
+## Not released yet — Checklist 2, Step 1 (branch `feature/checklist2-step1`)
+
+- **Pen styles:** pencil, brush, chalk and a chisel marker. Tap the pen in hand to choose; the preview shows the real ink on your board colour. They survive erasing part of a stroke, saving and export.
+- **A tool per input:** the thin tip, thick end and finger can each have their own tool and colour (Settings › Pen and finger). On IR panels they are told apart by contact size, measured once.
+- **Slide to clear** the page, with an Undo button.
+- **Big action bar** beside a selected object on the board, with named actions: Style, Edit, Bigger, Smaller, Bold, Copy, Mirror, Flip, Shelf, Hide, Lock, Delete.
+- **Mirror and flip.** Pictures really mirror; writing, graphs and tables only change place, so they stay readable.
+- **Links on objects:** web addresses only, including when reading a file.
+- **Mind maps:** type the idea, tap Branch; each branch finds a clear spot and its line follows it.
+- **Instruments:** finger-sized turn and close buttons, larger numbers, and readings in large print. Draw along the ruler and it says how long the line is; drag the protractor's red arm to read an angle.
+- **Graph editor:** keys, common curves, a live preview and zoom, so a board with no keyboard can plot any function.
+- **Templates:** Venn diagrams, KWL chart, two columns, timeline, steps, cycle and worksheet, made of ordinary objects.
+- **Papers:** semi-log, log-log, polar, and football, cricket, basketball and kabaddi fields in true proportions.
+- **Crop** a picture by hand, on the page or behind the writing.
+- **Classroom tools:** magnifier, clock, one-tap timer presets, name picker with roll numbers, dice, scoreboard.
+- **Students at the board:** up to six write at once, each on their own side with their own colour, eraser and undo.
+- **Ask the class:** a poll on phones over the school's own network, with no account and one answer per phone. The result can go on the board.
+- **PowerPoint** opens exactly when Office is on the PC, and with no Office as editable text, pictures, tables and shapes. **OpenBoard** lessons open as pictures to write on.
+- **Video and audio clips** on a page, kept in the lesson, up to 28 MB each.
+- **Handwriting to text or equation** (optional): select the writing, and a model the teacher has connected reads it. The teacher checks it before it replaces anything.
+- **Capturing one window** no longer makes the system redraw every open window.
+- The More menu is wider, so everything shows at once on a board, and Settings and Background are in its first row.
+
 ## 1.6.0-beta.10 — Tables, reveals, light and dark mode, export preview, classroom tools — 2026-11-01
 
 - **Tables** (More menu, laptop Insert menu): choose rows and columns, then tap a cell and type.

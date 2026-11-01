@@ -36,6 +36,7 @@ const api: Api = {
     saveConfig: (config) => ipcRenderer.invoke('assistant:save-config', config),
     models: () => ipcRenderer.invoke('assistant:models'),
     generate: (prompt, selection) => ipcRenderer.invoke('assistant:generate', prompt, selection),
+    recognize: (image, kind) => ipcRenderer.invoke('assistant:recognize', image, kind),
     cancel: () => ipcRenderer.send('assistant:cancel')
   },
   platform: process.platform,

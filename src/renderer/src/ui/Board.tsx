@@ -169,6 +169,8 @@ function BoardMenu(): JSX.Element {
         <Tile icon={Library} label="My lessons" onClick={() => (S.popover.value = 'lessons')} />
         <Tile icon={SaveAll} label="Save a copy…" onClick={close(lesson.saveAs)} />
         <Tile icon={Share2} label="Export" onClick={() => (S.popover.value = 'export')} />
+        <Tile icon={Layers} label="Background" onClick={() => (S.popover.value = 'paper')} />
+        <Tile icon={SlidersHorizontal} label="Settings" onClick={() => (S.popover.value = 'settings')} />
       </div>
       <Section title="Add to the page">
         <Tile icon={ImageIcon} label="Picture" onClick={close(() => pickFiles('image/*').then(files => insertFiles(files)))} />
@@ -207,11 +209,9 @@ function BoardMenu(): JSX.Element {
         <Tile icon={Sparkles} label="Assistant" onClick={() => (S.popover.value = 'agent')} />
       </Section>
       <Section title="Board">
-        <Tile icon={Layers} label="Background" onClick={() => (S.popover.value = 'paper')} />
         {S.kind.value === 'notebook'
           ? <Tile icon={InfinityIcon} label="Turn into canvas" onClick={() => actions.convertBoard('canvas')} />
           : <Tile icon={BookOpen} label="Turn into notebook" onClick={() => actions.convertBoard('notebook')} />}
-        <Tile icon={SlidersHorizontal} label="Settings" onClick={() => (S.popover.value = 'settings')} />
         <Tile icon={Eye} label="Hide toolbar" onClick={actions.toggleUi} />
         <Tile icon={Laptop} label="Laptop layout" onClick={() => actions.chooseLayout('laptop')} />
         <Tile icon={Minus} label="Minimise" onClick={close(() => window.api.win.minimize())} />

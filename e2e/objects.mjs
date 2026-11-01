@@ -26,6 +26,23 @@ try {
   const itemBox = await fw(page, w => { const [x0, y0] = w.board.doc.items[0].p; const z = w.board.view.zoom; return { y: (y0 - w.board.view.y) * z } })
   check('it sits beside the object', box.y + box.height <= itemBox.y + 4, `${box.y + box.height} vs ${itemBox.y}`)
 
+  // A large object: the bar must still be reachable, clear of the toolbar along the bottom.
+  const clear = await fw(page, w => {
+    const keep = w.board.doc.items[0]
+    w.board.setSelection([])
+    const big = { ...keep, id: 'big1', p: [40, 40, 1560, 860], text: '' }
+    w.board.doc.replaceAll([big]); w.board.setSelection(w.board.doc.items); w.board.refresh(null)
+    return true
+  })
+  await page.waitForTimeout(150)
+  const barBox = await bar().boundingBox(), toolBox = await page.getByRole('toolbar', { name: 'Board tools' }).boundingBox()
+  check('with a large object the bar stays clear of the toolbar', clear && barBox.y + barBox.height <= toolBox.y, JSON.stringify({ barBox, toolBox }))
+  await fw(page, w => {
+    const it = { t: 'h', id: 'box1', c: '#111827', w: 3, k: 'rect', p: [500, 300, 800, 480], text: 'Idea', fontSize: 28 }
+    w.board.doc.replaceAll([it]); w.board.setSelection(w.board.doc.items); w.board.refresh(null)
+  })
+  await page.waitForTimeout(100)
+
   const fontBefore = await fw(page, w => w.board.selection[0].fontSize)
   await act('Bigger text').click()
   check('Bigger makes the text bigger', (await fw(page, w => w.board.selection[0].fontSize)) > fontBefore)

@@ -8,6 +8,7 @@ import { S, applySettings, boardMode, darkUi, showToast, startPersisting } from 
 import { BoardBar, BoardSaveChip, EdgeTabs, LayoutChooser } from '@/ui/Board'
 import { PalmCalibration } from '@/ui/Calibrate'
 import { InputsSheet } from '@/ui/Inputs'
+import { RecognizeSheet } from '@/ui/Recognize'
 import { ClipPlayer, playing } from '@/ui/Clips'
 board.onPlayClip = it => { playing.value = it }
 import { ClockWidget, DiceWidget, Magnifier, NamePicker, Scoreboard } from '@/ui/ClassTools'
@@ -273,6 +274,7 @@ export function App(): JSX.Element {
       {S.popover.value === 'inputs' && <InputsSheet />}
       {S.popover.value === 'templates' && <TemplatesSheet />}
       {S.popover.value === 'crop' && <CropSheet />}
+      {S.popover.value === 'recognize' && <RecognizeSheet />}
       {S.popover.value === 'zones' && <ZonesSheet />}
       {S.popover.value === 'poll' && <PollSheet />}
       {S.popover.value === 'shelf' && <ShelfSheet />}

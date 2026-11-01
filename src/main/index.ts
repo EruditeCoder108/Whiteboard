@@ -338,6 +338,7 @@ function registerIpc(): void {
   ipcMain.handle('assistant:save-config', (_e, config) => assistant.save(config))
   ipcMain.handle('assistant:models', () => assistant.models())
   ipcMain.handle('assistant:generate', (_e, prompt, selection) => assistant.generate(prompt, selection))
+  ipcMain.handle('assistant:recognize', (e, image, kind) => e.sender === w()?.webContents ? assistant.recognize(image, kind) : { ok: false, error: 'Not allowed' })
   ipcMain.on('assistant:cancel', () => assistant.cancel())
 
   ipcMain.on('win:minimize', () => w()?.minimize())

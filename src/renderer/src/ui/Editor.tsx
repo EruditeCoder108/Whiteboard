@@ -1,6 +1,6 @@
 import {
   AArrowDown, AArrowUp, AlignCenter, AlignLeft, AlignRight, Archive, ArrowDownToLine, ArrowUpToLine, Bold, Check,
-  Columns3, Copy, Crop, Ellipsis, ExternalLink, EyeOff, FlipHorizontal2, FlipVertical2, GitBranchPlus, Group, Heading, Link2, Minus, Play, Rows3, Italic, List, ListOrdered, LockKeyhole, Palette, Pencil,
+  Columns3, Copy, Crop, Ellipsis, ExternalLink, EyeOff, FlipHorizontal2, FlipVertical2, GitBranchPlus, Group, Heading, Link2, Minus, Play, ScanText, Sigma, Rows3, Italic, List, ListOrdered, LockKeyhole, Palette, Pencil,
   RotateCw, Scan, Trash2, Ungroup, UnlockKeyhole, X
 } from 'lucide-preact'
 import type { JSX } from 'preact'
@@ -16,6 +16,7 @@ import { isBox } from '@/engine/types'
 import { safeLink } from '@/engine/objects'
 import { openCrop } from './Crop'
 import { playing } from './Clips'
+import { readHandwriting } from './Recognize'
 import { PALETTE, S, boardMode, showToast } from '@/state/store'
 import { shelf } from '@/state/shelf'
 import { RevealOptions } from './Reveal'
@@ -243,8 +244,10 @@ export function SelectionToolbar(): JSX.Element | null {
   const width = Math.min(big ? 900 : 360, vw - (big ? 24 : dockEdge + 12)), cx = ((box[0] + box[2]) / 2 - board.view.x) * z
   const above = (box[1] - board.view.y) * z - (big ? barHeight + 26 : 86)
   const below = (box[3] - board.view.y) * z + 26
-  const top = clamp(above >= 38 ? above : below + 46 < vh - 50 ? below : 38, 38, Math.max(38, vh - 98))
-  const toolbarTop = panel ? Math.min(top, Math.max(38, vh - 330)) : top
+  // On the board the bar must stay clear of the toolbar along the bottom, or its buttons cannot be reached.
+  const reserve = big ? barHeight + 112 : 50
+  const top = clamp(above >= 38 ? above : below + (big ? 0 : 46) < vh - reserve ? below : 38, 38, Math.max(38, vh - (big ? reserve : 98)))
+  const toolbarTop = panel ? Math.min(top, Math.max(38, vh - (big ? 420 : 330))) : top
   const left = clamp(cx - width / 2, big ? 12 : dockEdge, Math.max(big ? 12 : dockEdge, vw - width - 12))
   const locked = items.some(it => it.locked), allLocked = items.every(it => it.locked)
   const single = items.length === 1 && editable(items[0]) ? items[0] : null
@@ -267,11 +270,15 @@ export function SelectionToolbar(): JSX.Element | null {
         <Act icon={AArrowDown} label="Smaller" title="Smaller text" onClick={() => board.patchSelection({ fontSize: Math.max(6, Math.round(textSize / 1.2)) }, 'text')} />
         <Act icon={Bold} label="Bold" title="Bold text" active={!!single?.bold} onClick={() => board.patchSelection({ bold: !single?.bold }, 'text')} />
       </>}
+      {items.every(it => it.t === 's' && !it.m) && !locked && <>
+        <Act icon={ScanText} label="To text" title="Handwriting to text" onClick={() => readHandwriting('text')} />
+        <Act icon={Sigma} label="To maths" title="Handwriting to equation" onClick={() => readHandwriting('maths')} />
+      </>}
       {only?.t === 'm' && <Act icon={Play} label="Play" title="Play the clip" onClick={() => { playing.value = only }} />}
       {only?.t === 'i' && only.latex === undefined && <Act icon={Crop} label="Crop" title="Crop the picture" disabled={locked} onClick={() => openCrop(only)} />}
       {shape && <Act icon={GitBranchPlus} label="Branch" title="Add a branch" disabled={locked} onClick={() => board.addBranch(shape)} />}
-      {only?.t === 'b' && <Btn icon={Pencil} title="Type in the table" disabled={locked} onClick={() => board.openCell(only, board.lastCell?.id === only.id ? board.lastCell.r : 0, board.lastCell?.id === only.id ? board.lastCell.c : 0)} />}
-      {media && <Btn icon={Pencil} title={media.t === 'n' ? 'Change the scale' : media.t === 'g' ? 'Edit graph' : 'Edit equation'} disabled={locked} onClick={() => board.onEditMedia?.(media)} />}
+      {only?.t === 'b' && <Act icon={Pencil} label="Type" title="Type in the table" disabled={locked} onClick={() => board.openCell(only, board.lastCell?.id === only.id ? board.lastCell.r : 0, board.lastCell?.id === only.id ? board.lastCell.c : 0)} />}
+      {media && <Act icon={Pencil} label="Edit" title={media.t === 'n' ? 'Change the scale' : media.t === 'g' ? 'Edit graph' : 'Edit equation'} disabled={locked} onClick={() => board.onEditMedia?.(media)} />}
       {items.length > 1 && <Btn icon={grouped ? Ungroup : Group} title={grouped ? 'Ungroup  (Ctrl+Shift+G)' : 'Group  (Ctrl+G)'} disabled={locked} onClick={() => grouped ? board.ungroupSelection() : board.groupSelection()} />}
       <Act icon={Copy} label="Copy" title="Duplicate selection  (Ctrl+D)" onClick={() => board.duplicateSelection()} />
       {big && <>

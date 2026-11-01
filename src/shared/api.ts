@@ -120,6 +120,7 @@ export interface Api {
     saveConfig(config: import('./agent').AssistantSettings): Promise<import('./agent').AssistantConfig>
     models(): Promise<string[]>
     generate(prompt: string, selection: string[]): Promise<import('./agent').AssistantResult>
+    recognize(image: string, kind: 'text' | 'maths'): Promise<{ ok: true; text: string } | { ok: false; error: string }>
     cancel(): void
   }
   platform: string

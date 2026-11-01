@@ -887,6 +887,53 @@ export class Board implements ToolHost {
     ctx.setTransform(1, 0, 0, 1, 0, 0)
   }
 
+  // ── handwriting to text ──────────────────────────────────────────────────
+  /** The selected writing as a picture on the board's own colour, for the teacher's chosen model to read. */
+  selectionPicture(): string | null {
+    const b = this.doc.bounds(this.selection)
+    if (!b) return null
+    const pad = 24, w = b[2] - b[0] + pad * 2, h = b[3] - b[1] + pad * 2
+    const k = Math.min(2, 1400 / Math.max(w, h, 1))
+    const cv = document.createElement('canvas')
+    cv.width = Math.max(1, Math.round(w * k)); cv.height = Math.max(1, Math.round(h * k))
+    const ctx = cv.getContext('2d')
+    if (!ctx) return null
+    ctx.fillStyle = S.bgColor.value
+    ctx.fillRect(0, 0, cv.width, cv.height)
+    ctx.setTransform(k, 0, 0, k, (pad - b[0]) * k, (pad - b[1]) * k)
+    for (const it of this.selection) paintItem(ctx, it)
+    return cv.toDataURL('image/png')
+  }
+
+  /** One object in place of the selected writing, as one undoable step. */
+  private replaceSelected(next: Item): void {
+    const before = this.doc.snapshot(), gone = new Set(this.selection)
+    const at = before.findIndex(it => gone.has(it))
+    const kept = before.filter(it => !gone.has(it))
+    kept.splice(Math.min(at < 0 ? kept.length : at, kept.length), 0, next)
+    this.doc.replaceAll(kept)
+    this.commit(this.doc.diff(before), 'Handwriting to text')
+    this.setSelection([next])
+    this.refresh(null)
+  }
+
+  replaceInkWithText(text: string): void {
+    const b = this.doc.bounds(this.selection)
+    if (!b || !text) return
+    const lines = text.split('\n').length, w = Math.max(240, b[2] - b[0]), h = b[3] - b[1]
+    const fontSize = Math.max(18, Math.min(72, h / lines * .75))
+    const c = this.selection[0]?.c ?? S.penColor.value
+    this.replaceSelected(this.fitItem({ t: 't', id: newId(), c, w: 1, p: [b[0], b[1], b[0] + w, b[1] + Math.max(h, fontSize * 1.6 * lines)], text, fontSize, note: false, fill: 'none' }))
+  }
+
+  replaceInkWithEquation(src: string, latex: string, width: number, height: number): void {
+    const b = this.doc.bounds(this.selection)
+    if (!b) return
+    const aspect = width / Math.max(1, height), boxW = Math.max(120, b[2] - b[0]), boxH = Math.max(50, b[3] - b[1])
+    const w = Math.min(boxW, boxH * aspect), h = w / aspect, x = (b[0] + b[2] - w) / 2, y = (b[1] + b[3] - h) / 2
+    this.replaceSelected({ t: 'i', id: newId(), c: this.selection[0]?.c ?? S.penColor.value, w: 1, p: [x, y, x + w, y + h], src, aspect, latex })
+  }
+
   /** The clip whose play button is here, if any. */
   clipAt(wx: number, wy: number): ClipItem | null {
     for (let i = this.doc.items.length - 1; i >= 0; i--) {

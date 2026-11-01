@@ -1438,7 +1438,7 @@
     "width": 1100,
     "height": 672
   },
-  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) FloatingWhiteboard/1.6.0-beta.5 Chrome/152.0.7977.130 Electron/44.5.1 Safari/537.36",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) FloatingWhiteboard/1.6.0-beta.10 Chrome/152.0.7977.130 Electron/44.5.1 Safari/537.36",
   "resolutionChange": {
     "dpr": 2.0000000596046448,
     "size": {
@@ -1452,6 +1452,6 @@
     ],
     "expectedWidth": 2197
   },
-  "recordedAt": "2026-11-01T06:31:07.404Z",
+  "recordedAt": "2026-11-01T13:31:57.523Z",
   "dprMethod": "production resize with synthetic devicePixelRatio; actual Windows display changes remain manual"
 }

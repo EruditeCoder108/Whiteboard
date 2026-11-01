@@ -52,8 +52,8 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - ✅ Faster window capture
 
 **H. Handwriting recognition (optional, with correction)**
-- ⬜ Handwriting to typed text, English and Hindi
-- ⬜ Handwritten maths to an editable equation
+- ✅ Handwriting to typed text, English and Hindi *(built on a stand-in model; how well it reads needs a real one, and a key from the teacher)*
+- ✅ Handwritten maths to an editable equation *(same note)*
 
 **I. Tested on a real smart board** *(needs a panel; moved from Checklist 1)*
 - ⬜ Pen, finger and palm on the actual panel
