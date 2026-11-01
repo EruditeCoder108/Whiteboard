@@ -1,4 +1,4 @@
-import { Copy, FileDown, FilePlus2, FolderOpen, Image as ImageIcon, Save, SaveAll } from 'lucide-preact'
+import { Copy, FileDown, FilePlus2, FolderOpen, Image as ImageIcon, QrCode, Save, SaveAll } from 'lucide-preact'
 import type { JSX } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import { board } from '@/engine/instance'
@@ -7,6 +7,7 @@ import { actions } from '@/state/actions'
 import { exportPdf } from '@/state/insert'
 import { lesson, lessonDirty, lessonName, lessonPath, recentLessons } from '@/state/lesson'
 import { S } from '@/state/store'
+import { sharing } from '@/state/share'
 import { Row, Section, Segmented, Switch, Tile } from './kit'
 
 const when = (iso: string): string => {
@@ -70,6 +71,7 @@ export function ExportSheet(): JSX.Element {
       <p class="pop-hint">A page you lengthened with “more space below” is split by screen, so each sheet stays readable.</p>
       <div class="tiles two">
         <Tile icon={FileDown} label="Save PDF" onClick={close(() => exportPdf({ split: !whole }))} />
+        <Tile icon={QrCode} label="Share to phones" onClick={close(sharing.open)} />
       </div>
     </div>
   )

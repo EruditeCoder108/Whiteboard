@@ -864,3 +864,45 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
   --hover: rgba(255, 255, 255, .08); --accent: #6c8cff; --accent-soft: rgba(108, 140, 255, .2);
   background: var(--panel); color: var(--text);
 }
+
+/* ── share to phones ── */
+.share-shade { position: absolute; inset: 0; z-index: 130; display: grid; place-items: center; padding: 16px; background: rgba(12, 18, 30, .48); }
+.share-panel { --muted: #586278; display: flex; flex-direction: column; width: min(1000px, 100%); max-height: 100%; color: var(--text); overflow: hidden; }
+.share-head { display: flex; align-items: flex-start; gap: 12px; padding: 18px 22px 12px; border-bottom: 1px solid var(--line); flex: none; }
+.share-head > div { flex: 1; min-width: 0; }
+.share-head h1 { font-size: 26px; line-height: 1.2; margin: 0 0 8px; }
+.share-head p { font-size: 17px; margin: 0; line-height: 1.4; }
+.share-close { display: grid; place-items: center; width: 52px; height: 52px; flex: none; border-radius: 12px; background: var(--hover); touch-action: manipulation; }
+.share-body { overflow: auto; padding: 18px 22px; touch-action: pan-y; font-size: 16px; line-height: 1.45; min-height: 0; }
+.share-body p { margin: 8px 0 14px; }
+.share-body h2 { font-size: 20px; margin: 0 0 10px; overflow-wrap: anywhere; }
+.share-live { display: grid; grid-template-columns: minmax(340px, 1fr) minmax(260px, 1fr); gap: 28px; }
+.share-code { text-align: center; min-width: 0; }
+.share-qr { display: block; width: 320px; height: 320px; margin: 0 auto; border-radius: 8px; background: #fff; image-rendering: pixelated; }
+.share-qr-wait { display: grid; place-items: center; color: #172033; }
+.share-url { font: 700 23px/1.35 'Cascadia Code', Consolas, monospace; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+.share-count { font-size: 23px; font-weight: 700; }
+.share-timer { font-size: 20px; font-variant-numeric: tabular-nums; }
+.share-details > p:not(.share-count, .share-timer) { color: var(--muted); }
+.share-setup { padding: 8px 0 20px; }
+.share-networks { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
+.share-panel .chip { min-height: 52px; padding: 10px 16px; font-size: 17px; border-radius: 12px; overflow-wrap: anywhere; text-align: left; }
+.share-error { color: var(--danger); }
+.share-footer { flex: none; padding: 8px 22px 18px; border-top: 1px solid var(--line); }
+.share-footer .tiles { gap: 12px; }
+.share-footer .tile { min-height: 74px; flex-direction: row; gap: 12px; }
+.share-footer .tile span { font-size: 18px; }
+.share-footer .tile.danger { background: #d52e3a; color: #fff; }
+.share-footer .tile:disabled { opacity: .45; }
+.window.board .share-qr { width: 360px; height: 360px; }
+.window.dark .share-panel {
+  --panel: rgba(30, 35, 46, .99); --text: #e8ebf2; --muted: #b3bdcf; --line: rgba(255, 255, 255, .12);
+  --hover: rgba(255, 255, 255, .08); --accent: #6c8cff; --accent-soft: rgba(108, 140, 255, .2);
+}
+@media (max-width: 760px) {
+  .share-shade { padding: 8px; }
+  .share-head, .share-body, .share-footer { padding-left: 14px; padding-right: 14px; }
+  .share-live { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .share-qr, .window.board .share-qr { width: 280px; height: 280px; }
+  .share-footer .tile span { font-size: 16px; }
+}

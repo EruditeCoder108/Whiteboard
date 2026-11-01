@@ -8,6 +8,12 @@ function subscribe<T>(channel: string, cb: (v: T) => void): () => void {
 }
 
 const api: Api = {
+  share: {
+    addresses: () => ipcRenderer.invoke('share:addresses'),
+    start: (pages, name, address) => ipcRenderer.invoke('share:start', pages, name, address),
+    stop: () => ipcRenderer.invoke('share:stop'),
+    status: () => ipcRenderer.invoke('share:status')
+  },
   agent: {
     status: () => ipcRenderer.invoke('agent:status'),
     enable: () => ipcRenderer.invoke('agent:enable'),
