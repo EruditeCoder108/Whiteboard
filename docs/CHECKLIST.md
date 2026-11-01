@@ -28,8 +28,8 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - ✅ Mind maps
 
 **D. Instruments and graphs**
-- ⬜ Clearer ruler, set square, protractor and compass: big handles, readable measurements
-- ⬜ Easier graph entry, without leaving the board
+- ✅ Clearer ruler, set square, protractor and compass: big handles, readable measurements
+- ✅ Easier graph entry, without leaving the board
 
 **E. Pages and templates**
 - ⬜ Templates: Venn diagram, KWL chart, worksheet

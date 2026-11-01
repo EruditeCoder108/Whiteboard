@@ -2,7 +2,7 @@ import { Archive, Atom, Axis3d, MoveHorizontal, Table2, ArrowDownToLine, Chevron
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { board } from '@/engine/instance'
-import { compile, GRAPH_COLORS } from '@/engine/graph'
+import { compile, GRAPH_COLORS, paintGraph } from '@/engine/graph'
 import { S, currentColor } from '@/state/store'
 import { editEquation, editGraph, editScale, equationTarget, graphTarget, importing, insertFiles, loadTypesetter, pickFiles, svgDataUrl } from '@/state/insert'
 import { Btn, MenuItem, Sep } from './kit'
@@ -116,6 +116,31 @@ export function EquationEditor(): JSX.Element {
   )
 }
 
+const CURVES: [string, string][] = [['Line', '2x + 1'], ['Parabola', 'x^2 - 2'], ['Cubic', 'x^3 - 3x'], ['Sine', 'sin(x)'], ['Cosine', 'cos(x)'], ['1/x', '1/x'], ['Root', 'sqrt(x)'], ['Mod', 'abs(x)']]
+/** What each key shows, and what it types. */
+const GRAPH_KEYS: [string, string][] = [
+  ['7', '7'], ['8', '8'], ['9', '9'], ['(', '('], [')', ')'], ['x', 'x'], ['sin', 'sin('],
+  ['4', '4'], ['5', '5'], ['6', '6'], ['+', '+'], ['−', '-'], ['x²', '^2'], ['cos', 'cos('],
+  ['1', '1'], ['2', '2'], ['3', '3'], ['×', '*'], ['÷', '/'], ['xⁿ', '^'], ['tan', 'tan('],
+  ['0', '0'], ['.', '.'], ['π', 'pi'], ['√', 'sqrt('], ['|x|', 'abs('], ['log', 'log('], ['ln', 'ln(']
+]
+
+/** The curve as it will be on the board, before it is there. */
+function GraphPreview({ fns, xr, yr }: { fns: string[]; xr: [number, number]; yr: [number, number] }): JSX.Element {
+  const ref = useRef<HTMLCanvasElement>(null)
+  const key = `${fns.join('|')}/${xr.join()}/${yr.join()}`
+  useEffect(() => {
+    const cv = ref.current
+    const ctx = cv?.getContext('2d')
+    if (!cv || !ctx) return
+    const dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 320, h = cv.clientHeight || 220
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr)
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    if (xr[0] < xr[1] && yr[0] < yr[1]) paintGraph(ctx, { t: 'g', id: 'preview', c: '#000000', w: 1, p: [0, 0, w, h], fns, xr, yr })
+  }, [key])
+  return <canvas ref={ref} class="graph-preview" aria-label="Preview of the graph" role="img" />
+}
+
 export function GraphEditor(): JSX.Element {
   const target = graphTarget.value
   const [fns, setFns] = useState<string[]>(target ? [...target.fns] : ['sin(x)', ''])
@@ -131,22 +156,65 @@ export function GraphEditor(): JSX.Element {
     else board.insertGraph(used, xr, yr)
     S.popover.value = null
   }
+  const fields = useRef<(HTMLInputElement | null)[]>([])
+  const [active, setActive] = useState(0)
+  const edit = (i: number, text: string): void => {
+    const next = [...fns]
+    next[i] = text
+    if (i === next.length - 1 && text.trim() && next.length < 5) next.push('')
+    setFns(next)
+  }
+  /** Types where the caret is, so a board with no keyboard can write any function. */
+  const press = (text: string | null): void => {
+    const field = fields.current[active], now = fns[active] ?? ''
+    const at = field?.selectionStart ?? now.length, end = field?.selectionEnd ?? at
+    const from = text === null && at === end ? Math.max(0, at - 1) : at
+    edit(active, now.slice(0, from) + (text ?? '') + now.slice(end))
+    const caret = from + (text ?? '').length
+    requestAnimationFrame(() => { const f = fields.current[active]; f?.focus(); f?.setSelectionRange(caret, caret) })
+  }
+  const zoom = (k: number): void => {
+    const span = (a: string, b: string): [number, number] => {
+      const lo = Number(a), hi = Number(b), mid = (lo + hi) / 2, half = (hi - lo) / 2 * k
+      return [Number((mid - half).toFixed(4)), Number((mid + half).toFixed(4))]
+    }
+    const [x0, x1] = span(range.x0, range.x1), [y0, y1] = span(range.y0, range.y1)
+    setRange({ x0: String(x0), x1: String(x1), y0: String(y0), y1: String(y1) })
+  }
   const num = (key: keyof typeof range, label: string): JSX.Element =>
     <label class="range-field">{label}<input value={range[key]} inputMode="decimal" onInput={e => setRange({ ...range, [key]: (e.target as HTMLInputElement).value })} onKeyDown={e => e.stopPropagation()} /></label>
   return (
     <div class="popover panel ui graph-editor" data-popover-keep="">
       <div class="pop-title">{target ? 'Edit graph' : 'Graph of a function'}</div>
+      <div class="graph-curves" role="group" aria-label="Common curves">
+        {CURVES.map(([name, fn]) => <button type="button" class="chip nodrag" key={name} onClick={() => { edit(active, fn); setActive(active) }}>{name}</button>)}
+      </div>
+      <div class="graph-body">
+      <div class="graph-entry">
       {fns.map((f, i) => (
-        <label class={`fn-row ${valid[i] ? '' : 'invalid'}`} key={i}>
+        <label class={`fn-row ${valid[i] ? '' : 'invalid'} ${active === i ? 'on' : ''}`} key={i}>
           <span class="fn-dot" style={{ background: GRAPH_COLORS[i] }} />y =
-          <input value={f} spellcheck={false} placeholder={i === 0 ? 'x^2 - 2x + 1' : 'another function (optional)'}
+          <input ref={el => { fields.current[i] = el }} onFocus={() => setActive(i)} value={f} spellcheck={false} placeholder={i === 0 ? 'x^2 - 2x + 1' : 'another function (optional)'}
             onInput={e => { const next = [...fns]; next[i] = (e.target as HTMLInputElement).value; if (i === next.length - 1 && next[i].trim() && next.length < 5) next.push(''); setFns(next) }}
             onKeyDown={e => { e.stopPropagation(); if (e.key === 'Enter') apply(); if (e.key === 'Escape') S.popover.value = null }} />
         </label>
       ))}
-      <div class="ranges">{num('x0', 'x from')}{num('x1', 'to')}{num('y0', 'y from')}{num('y1', 'to')}</div>
-      <div class="pop-hint">Use x, + − × /, ^, sin cos tan sqrt log ln abs, pi and e. 2x and sinx work too.</div>
-      <div class="row-end"><button type="button" class="primary-btn" disabled={!ok} onClick={apply}>{target ? 'Update' : 'Insert'}</button></div>
+      <div class="graph-keys" role="group" aria-label="Function keys" onPointerDown={e => e.preventDefault()}>
+        {GRAPH_KEYS.map(([show, types]) => <button type="button" class="graph-key nodrag" key={show} aria-label={`Type ${show}`} onClick={() => press(types)}>{show}</button>)}
+        <button type="button" class="graph-key wide nodrag" aria-label="Delete a character" onClick={() => press(null)}>Delete</button>
+      </div>
+      </div>
+      <div class="graph-side">
+        <GraphPreview fns={used.filter(f => compile(f) !== null)} xr={xr} yr={yr} />
+        <div class="graph-zoom">
+          <button type="button" class="chip nodrag" onClick={() => zoom(.5)}>Zoom in</button>
+          <button type="button" class="chip nodrag" onClick={() => zoom(2)}>Zoom out</button>
+          <button type="button" class="chip nodrag" onClick={() => setRange({ x0: '-10', x1: '10', y0: '-6', y1: '6' })}>Reset</button>
+        </div>
+        <div class="ranges">{num('x0', 'x from')}{num('x1', 'to')}{num('y0', 'y from')}{num('y1', 'to')}</div>
+      </div>
+      </div>
+      <div class="row-end"><span class="pop-hint">2x and sinx work too.</span><button type="button" class="primary-btn" disabled={!ok} onClick={apply}>{target ? 'Update' : 'Put on the board'}</button></div>
     </div>
   )
 }

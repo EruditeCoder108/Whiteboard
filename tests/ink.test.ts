@@ -11,6 +11,8 @@ const line = (style?: StrokeItem['style'], n = 40): StrokeItem => {
   return { t: 's', id: 'a', c: '#111827', w: 10, m: false, v: style === 'brush', ...(style ? { style } : {}), p }
 }
 
+import { protractorReading } from "@/engine/instruments"
+
 describe('pen styles', () => {
   it('every style draws a real outline, and a brush tapers only a real stroke', () => {
     for (const style of ['pencil', 'brush', 'chalk', 'felt'] as const) expect(strokeOutline(line(style)).length).toBeGreaterThan(8)
@@ -87,5 +89,15 @@ describe('a tool per input', () => {
     for (const t of ['select', 'lasso', 'text', 'rect', 'laser']) expect(rolesApply(t)).toBe(false)
     expect(isInputRole('eraser')).toBe(true)
     expect(isInputRole('nope')).toBe(false)
+  })
+})
+
+describe('protractor', () => {
+  it('reads whole degrees from its own frame, and stays on the scale', () => {
+    expect(protractorReading(10, -10)).toBe(45)
+    expect(protractorReading(-10, -10)).toBe(135)
+    expect(protractorReading(0, -10)).toBe(90)
+    expect(protractorReading(10, 5)).toBe(0)
+    expect(protractorReading(-10, 5)).toBe(180)
   })
 })

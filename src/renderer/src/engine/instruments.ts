@@ -11,13 +11,56 @@ export type InstrumentKind = 'ruler' | 'setsquare' | 'protractor' | 'compass'
 /** One centimetre in world units (≈ a real centimetre at 100 % on a 96 dpi screen). */
 export const CM = 37.8
 
-interface Placed { kind: InstrumentKind; x: number; y: number; angle: number; /** compass radius */ r: number }
+interface Placed { kind: InstrumentKind; x: number; y: number; angle: number; /** compass radius */ r: number; /** protractor: the measuring arm, in degrees */ arm: number }
 interface Edge { ax: number; ay: number; bx: number; by: number }
 
 export const instrumentsShown = signal<InstrumentKind[]>([])
 
 const rot = (x: number, y: number, a: number): [number, number] => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)]
 const deg = (a: number): number => ((Math.round(a * 180 / Math.PI) % 360) + 360) % 360
+
+/** What a protractor reads at a point in its own frame: 0–180, snapping to whole degrees. Below the base it stays at the nearer end. */
+export const protractorReading = (lx: number, ly: number): number => {
+  if (ly >= 0) return lx >= 0 ? 0 : 180
+  return Math.round(Math.atan2(-ly, lx) * 180 / Math.PI)
+}
+
+/** Round buttons on the instruments, big enough for a finger on a classroom panel (CSS px). */
+const HANDLE = 20
+const HANDLE_REACH = 28
+
+function paintHandle(ctx: CanvasRenderingContext2D, at: [number, number], z: number, kind: 'turn' | 'close' | 'arm'): void {
+  const [x, y] = at, r = HANDLE / z
+  ctx.save()
+  ctx.beginPath(); ctx.arc(x, y, kind === 'arm' ? r * .7 : r, 0, Math.PI * 2)
+  ctx.fillStyle = kind === 'arm' ? '#e5484d' : '#ffffff'; ctx.fill()
+  ctx.strokeStyle = kind === 'close' ? '#6b7280' : kind === 'arm' ? '#ffffff' : '#4262ff'; ctx.lineWidth = 2.5 / z; ctx.stroke()
+  ctx.lineWidth = 3 / z; ctx.lineCap = 'round'; ctx.lineJoin = 'round'
+  if (kind === 'turn') {
+    const q = r * .52
+    ctx.beginPath(); ctx.arc(x, y, q, -2.6, 1.3); ctx.stroke()
+    const hx = x + q * Math.cos(1.3), hy = y + q * Math.sin(1.3), h = r * .36
+    ctx.beginPath(); ctx.moveTo(hx + h, hy - h * .2); ctx.lineTo(hx, hy); ctx.lineTo(hx + h * .3, hy - h); ctx.stroke()
+  } else if (kind === 'close') {
+    const q = r * .38
+    ctx.strokeStyle = '#4b5563'
+    ctx.beginPath(); ctx.moveTo(x - q, y - q); ctx.lineTo(x + q, y + q); ctx.moveTo(x + q, y - q); ctx.lineTo(x - q, y + q); ctx.stroke()
+  }
+  ctx.restore()
+}
+
+/** A measurement in large print, readable from the back of the room. */
+function paintReading(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, z: number): void {
+  ctx.save()
+  const size = 22 / z
+  ctx.font = `700 ${size}px "Segoe UI", sans-serif`
+  const w = ctx.measureText(text).width + size * 1.1, h = size * 1.6
+  ctx.fillStyle = 'rgba(23, 32, 51, .92)'
+  ctx.beginPath(); ctx.roundRect(x - w / 2, y - h / 2, w, h, h / 2); ctx.fill()
+  ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+  ctx.fillText(text, x, y + size * .04)
+  ctx.restore()
+}
 
 export class Instruments {
   private list: Placed[] = []
@@ -29,13 +72,15 @@ export class Instruments {
     if (i >= 0) this.list.splice(i, 1)
     else {
       const [x, y] = this.centre()
-      this.list.push({ kind, x, y, angle: 0, r: 4 * CM })
+      this.list.push({ kind, x, y, angle: 0, r: 4 * CM, arm: 60 })
     }
     instrumentsShown.value = this.list.map(it => it.kind)
     this.host.requestOverlay()
   }
 
   get active(): boolean { return this.list.length > 0 }
+  /** What the protractor's arm reads now. */
+  reading(kind: InstrumentKind): number | null { return this.list.find(it => it.kind === kind)?.arm ?? null }
 
   /** Local (unrotated) outline of each straight instrument, centred on its origin. */
   private shape(it: Placed): [number, number][] {
@@ -63,6 +108,20 @@ export class Instruments {
     return this.world(it, 8 * CM - .6 * CM, -.6 * CM)
   }
 
+  /** Where the instrument's own close button sits. */
+  private closeHandle(it: Placed): [number, number] {
+    if (it.kind === 'ruler') return this.world(it, -8 * CM + .7 * CM, 0)
+    if (it.kind === 'setsquare') return this.world(it, .8 * CM, -2.3 * CM)
+    if (it.kind === 'protractor') return this.world(it, -8 * CM + .6 * CM, -.6 * CM)
+    const z = this.host.view.zoom
+    return [it.x - 34 / z, it.y + 34 / z]
+  }
+
+  private armTip(it: Placed): [number, number] {
+    const a = it.arm * Math.PI / 180, r = 8 * CM - 2.2 * CM
+    return this.world(it, r * Math.cos(a), -r * Math.sin(a))
+  }
+
   private compassPoints(it: Placed): { pin: [number, number]; pencil: [number, number]; hinge: [number, number] } {
     const pin: [number, number] = [it.x, it.y]
     const pencil = this.world(it, it.r, 0)
@@ -80,19 +139,25 @@ export class Instruments {
 
   /** A gesture that starts on an instrument moves, rotates or (compass) draws with it. */
   intercept(p: Ptr): Tool | null {
-    const tol = 16 / this.host.view.zoom
+    const tol = 16 / this.host.view.zoom, reach = HANDLE_REACH / this.host.view.zoom
     for (let i = this.list.length - 1; i >= 0; i--) {
       const it = this.list[i]
+      const [cx, cy] = this.closeHandle(it)
+      if (Math.hypot(cx - p.wx, cy - p.wy) <= reach) return new Gesture(this, p, () => {}, undefined, () => this.toggle(it.kind))
+      if (it.kind === 'protractor') {
+        const [ax, ay] = this.armTip(it)
+        if (Math.hypot(ax - p.wx, ay - p.wy) <= reach) return new Gesture(this, p, q => { const [lx, ly] = this.local(it, q.wx, q.wy); it.arm = protractorReading(lx, ly) })
+      }
       if (it.kind === 'compass') {
         const { pin, pencil, hinge } = this.compassPoints(it)
-        const near = (q: [number, number]): boolean => Math.hypot(q[0] - p.wx, q[1] - p.wy) <= tol * 1.4
+        const near = (q: [number, number]): boolean => Math.hypot(q[0] - p.wx, q[1] - p.wy) <= reach
         if (near(pencil)) return (this.arc = new CompassArc(this, it, p))
-        if (near(hinge)) return new Gesture(this, p, (q) => { const [lx] = this.local(it, q.wx, q.wy); it.r = Math.max(.5 * CM, Math.min(30 * CM, lx)) }, 'Drag to set the radius')
+        if (near(hinge)) return new Gesture(this, p, (q) => { const [lx] = this.local(it, q.wx, q.wy); it.r = Math.max(.5 * CM, Math.min(30 * CM, lx)) })
         if (near(pin) || this.nearSegment(p, pin, hinge, tol) || this.nearSegment(p, hinge, pencil, tol)) return this.mover(it, p)
         continue
       }
       const [hx, hy] = this.rotateHandle(it)
-      if (Math.hypot(hx - p.wx, hy - p.wy) <= tol * 1.4) return this.rotator(it, p)
+      if (Math.hypot(hx - p.wx, hy - p.wy) <= reach) return this.rotator(it, p)
       // The band along an edge belongs to the pen, so drawing along the ruler works.
       if (this.inside(it, p.wx, p.wy) && !this.edgeAt(p.wx, p.wy, tol)) return this.mover(it, p)
     }
@@ -138,13 +203,17 @@ export class Instruments {
   snapTool(tool: Tool, p: Ptr): Tool {
     if (!this.active || (tool.name !== 'pen' && tool.name !== 'marker')) return tool
     const e = this.edgeAt(p.wx, p.wy)
-    return e ? new EdgeSnap(tool, e, this.host) : tool
+    return e ? new EdgeSnap(tool, e, this.host, this) : tool
   }
 
   hint = ''
+  /** where the live reading sits, near the hand */
+  hintAt: [number, number] = [0, 0]
   /** the arc being drawn, painted with the instruments */
   arc: { paintOverlay(ctx: CanvasRenderingContext2D): void } | null = null
   changed(): void { this.host.requestOverlay() }
+  /** The instrument strokes follow the pen: the same style and width as writing. */
+  get arcWidth(): number { return inkWidth(S.penSize.value, S.penStyle.value) }
 
   commitArc(points: number[]): void {
     if (points.length < 9) return
@@ -163,15 +232,16 @@ export class Instruments {
       ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath()
       ctx.fillStyle = 'rgba(232, 240, 255, .62)'; ctx.fill()
       ctx.strokeStyle = 'rgba(47, 84, 160, .85)'; ctx.lineWidth = 1.2 / z; ctx.stroke()
-      ctx.strokeStyle = '#26324a'; ctx.fillStyle = '#26324a'; ctx.lineWidth = 1 / z
-      ctx.font = `${Math.max(7, .32 * CM)}px "Segoe UI", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'top'
+      ctx.strokeStyle = '#1b2436'; ctx.fillStyle = '#1b2436'; ctx.lineWidth = 1.4 / z
+      // Numbers large enough to read from the room; the small ticks are only there to measure against.
+      ctx.font = `600 ${Math.max(8, .46 * CM)}px "Segoe UI", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'top'
       if (it.kind === 'ruler') {
         const L = 16 * CM, W = 2.4 * CM
         ctx.beginPath()
         for (let mm = 0; mm <= 150; mm++) {
           const x = -7.5 * CM + mm * CM / 10, h = mm % 10 === 0 ? .55 * CM : mm % 5 === 0 ? .38 * CM : .22 * CM
           ctx.moveTo(x, -W / 2); ctx.lineTo(x, -W / 2 + h)
-          if (mm % 10 === 0) ctx.fillText(String(mm / 10), x, -W / 2 + .62 * CM)
+          if (mm % 10 === 0) ctx.fillText(String(mm / 10), x, -W / 2 + .64 * CM)
         }
         ctx.stroke()
         ctx.textAlign = 'left'; ctx.fillText('cm', -L / 2 + .25 * CM, W / 2 - .55 * CM)
@@ -195,25 +265,31 @@ export class Instruments {
         ctx.textBaseline = 'middle'
         for (let d = 0; d <= 180; d += 10) {
           const a = Math.PI * d / 180
-          ctx.fillText(String(d), (R - .95 * CM) * Math.cos(a), -(R - .95 * CM) * Math.sin(a))
-          ctx.fillStyle = '#8a4fff'; ctx.fillText(String(180 - d), (R - 1.6 * CM) * Math.cos(a), -(R - 1.6 * CM) * Math.sin(a)); ctx.fillStyle = '#26324a'
+          ctx.fillText(String(d), (R - 1 * CM) * Math.cos(a), -(R - 1 * CM) * Math.sin(a))
+          // The inner scale reads the other way, in its own colour, the way a real protractor does.
+          ctx.save(); ctx.font = `600 ${Math.max(7, .36 * CM)}px "Segoe UI", sans-serif`; ctx.fillStyle = '#7c3aed'
+          ctx.fillText(String(180 - d), (R - 1.7 * CM) * Math.cos(a), -(R - 1.7 * CM) * Math.sin(a)); ctx.restore()
         }
         ctx.beginPath(); ctx.moveTo(-.4 * CM, 0); ctx.lineTo(.4 * CM, 0); ctx.moveTo(0, 0); ctx.lineTo(0, -.4 * CM); ctx.stroke() // centre mark
+        // The measuring arm: drag its red button and read the angle.
+        const arm = it.arm * Math.PI / 180
+        ctx.strokeStyle = '#e5484d'; ctx.lineWidth = 2.5 / z
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(R * Math.cos(arm), -R * Math.sin(arm)); ctx.stroke()
+        ctx.lineWidth = 2 / z
+        ctx.beginPath(); ctx.arc(0, 0, 1.1 * CM, 0, -arm, true); ctx.stroke()
       }
       ctx.restore()
-      const [hx, hy] = this.rotateHandle(it)
-      ctx.beginPath(); ctx.arc(hx, hy, 9 / z, 0, Math.PI * 2)
-      ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.strokeStyle = '#4262ff'; ctx.lineWidth = 1.5 / z; ctx.stroke()
-      ctx.beginPath(); ctx.arc(hx, hy, 4.5 / z, -2.4, 1.4); ctx.stroke()
+      paintHandle(ctx, this.rotateHandle(it), z, 'turn')
+      paintHandle(ctx, this.closeHandle(it), z, 'close')
+      if (it.kind === 'protractor') {
+        const tip = this.armTip(it)
+        paintHandle(ctx, tip, z, 'arm')
+        const [lx, ly] = this.world(it, 0, -1.8 * CM)
+        paintReading(ctx, `${it.arm}°`, lx, ly, z)
+      }
     }
     this.arc?.paintOverlay(ctx)
-    if (this.hint) {
-      const dpr = window.devicePixelRatio || 1
-      ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      ctx.font = '600 15px "Segoe UI", sans-serif'; ctx.fillStyle = 'rgba(27,32,48,.85)'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'
-      ctx.fillText(this.hint, 64, ctx.canvas.height / dpr - 64)
-      ctx.restore()
-    }
+    if (this.hint) paintReading(ctx, this.hint, this.hintAt[0], this.hintAt[1] - 46 / this.host.view.zoom, this.host.view.zoom)
   }
 
   private paintCompass(ctx: CanvasRenderingContext2D, it: Placed, z: number): void {
@@ -227,9 +303,9 @@ export class Instruments {
     ctx.setLineDash([4 / z, 4 / z]); ctx.strokeStyle = 'rgba(66, 98, 255, .6)'; ctx.lineWidth = 1 / z
     ctx.beginPath(); ctx.moveTo(...pin); ctx.lineTo(...pencil); ctx.stroke(); ctx.setLineDash([])
     const dot = (q: [number, number], r: number, fill: string): void => { ctx.beginPath(); ctx.arc(q[0], q[1], r / z, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill() }
-    dot(pin, 5, '#26324a'); dot(hinge, 7, '#4262ff'); dot(pencil, 7, S.penColor.value); dot(pencil, 3, '#ffffff')
-    ctx.font = `600 ${13 / z}px "Segoe UI", sans-serif`; ctx.fillStyle = '#26324a'; ctx.textAlign = 'center'
-    ctx.fillText(`r = ${(it.r / CM).toFixed(1)} cm`, (pin[0] + pencil[0]) / 2, (pin[1] + pencil[1]) / 2 + 18 / z)
+    dot(pin, 6, '#26324a'); dot(hinge, 14, '#4262ff'); dot(pencil, 14, S.penColor.value); dot(pencil, 5, '#ffffff')
+    paintHandle(ctx, this.closeHandle(it), z, 'close')
+    paintReading(ctx, `${(it.r / CM).toFixed(1)} cm`, (pin[0] + pencil[0]) / 2, (pin[1] + pencil[1]) / 2 + 30 / z, z)
   }
 }
 
@@ -238,12 +314,12 @@ class Gesture implements Tool {
   readonly name = 'instrument'
   readonly allowsRadial = false
   readonly animating = false
-  constructor(private owner: Instruments, start: Ptr, private apply: (p: Ptr) => void, private label?: string | (() => string)) { void start }
+  constructor(private owner: Instruments, start: Ptr, private apply: (p: Ptr) => void, private label?: string | (() => string), private tapped?: () => void) { void start }
   cursor(): string { return 'grabbing' }
   underway(): boolean { return true }
   down(): void {}
-  move(p: Ptr): void { this.apply(p); this.owner.hint = typeof this.label === 'function' ? this.label() : this.label ?? ''; this.owner.changed() }
-  up(p: Ptr): void { this.apply(p); this.owner.hint = ''; this.owner.changed() }
+  move(p: Ptr): void { this.apply(p); this.owner.hint = typeof this.label === 'function' ? this.label() : this.label ?? ''; this.owner.hintAt = [p.wx, p.wy]; this.owner.changed() }
+  up(p: Ptr): void { this.apply(p); this.owner.hint = ''; this.tapped?.(); this.owner.changed() }
   cancel(): void { this.owner.hint = ''; this.owner.changed() }
 }
 
@@ -278,13 +354,14 @@ class CompassArc implements Tool {
     }
     this.last = a
     this.owner.hint = `${Math.min(360, Math.round(Math.abs(this.turned) * 180 / Math.PI))}°`
+    this.owner.hintAt = [p.wx, p.wy]
     this.owner.changed()
   }
   up(p: Ptr): void { this.move(p); this.owner.hint = ''; this.owner.arc = null; this.owner.commitArc(this.points); this.owner.changed() }
   cancel(): void { this.owner.hint = ''; this.owner.arc = null; this.owner.changed() }
   paintOverlay(ctx: CanvasRenderingContext2D): void {
     if (this.points.length < 6) return
-    ctx.save(); ctx.strokeStyle = S.penColor.value; ctx.lineWidth = S.penSize.value; ctx.lineCap = 'round'; ctx.lineJoin = 'round'
+    ctx.save(); ctx.strokeStyle = S.penColor.value; ctx.lineWidth = this.owner.arcWidth; ctx.lineCap = 'round'; ctx.lineJoin = 'round'
     ctx.beginPath()
     for (let i = 0; i < this.points.length; i += 3) i ? ctx.lineTo(this.points[i], this.points[i + 1]) : ctx.moveTo(this.points[i], this.points[i + 1])
     ctx.stroke(); ctx.restore()
@@ -295,7 +372,8 @@ class CompassArc implements Tool {
 class EdgeSnap implements Tool {
   readonly allowsRadial = false
   readonly animating = false
-  constructor(private inner: Tool, private e: Edge, private host: Pick<ToolHost, 'view'>) {}
+  private from: [number, number] = [0, 0]
+  constructor(private inner: Tool, private e: Edge, private host: Pick<ToolHost, 'view'>, private owner: Instruments) {}
   get name(): string { return this.inner.name }
   private snap(p: Ptr): Ptr {
     const { ax, ay, bx, by } = this.e
@@ -307,9 +385,15 @@ class EdgeSnap implements Tool {
   }
   cursor(): string { return this.inner.cursor() }
   underway(): boolean { return this.inner.underway() }
-  down(p: Ptr): void { this.inner.down(this.snap(p)) }
-  move(p: Ptr): void { this.inner.move(this.snap(p)) }
-  up(p: Ptr): void { this.inner.up(this.snap(p)) }
-  cancel(): void { this.inner.cancel() }
+  down(p: Ptr): void { const q = this.snap(p); this.from = [q.wx, q.wy]; this.inner.down(q) }
+  /** A line along the ruler says how long it is, as it is drawn. */
+  move(p: Ptr): void {
+    const q = this.snap(p)
+    this.inner.move(q)
+    this.owner.hint = `${(Math.hypot(q.wx - this.from[0], q.wy - this.from[1]) / CM).toFixed(1)} cm`
+    this.owner.hintAt = [q.wx, q.wy]
+  }
+  up(p: Ptr): void { this.owner.hint = ''; this.inner.up(this.snap(p)) }
+  cancel(): void { this.owner.hint = ''; this.inner.cancel() }
   paintOverlay(ctx: CanvasRenderingContext2D): void { this.inner.paintOverlay?.(ctx) }
 }

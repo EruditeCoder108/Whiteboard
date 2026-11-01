@@ -102,7 +102,7 @@ export function paintGraph(ctx: CanvasRenderingContext2D, it: GraphItem): void {
   const [a, b] = it.xr, [c, d] = it.yr
   const sx = (x: number): number => x0 + (x - a) / (b - a) * W
   const sy = (y: number): number => y1 - (y - c) / (d - c) * H
-  const font = Math.max(10, Math.min(W, H) / 32)
+  const font = Math.max(10, Math.min(W, H) / 26)
   ctx.save()
   ctx.fillStyle = '#ffffff'; ctx.fillRect(x0, y0, W, H)
   ctx.beginPath(); ctx.rect(x0, y0, W, H); ctx.clip()
@@ -121,7 +121,7 @@ export function paintGraph(ctx: CanvasRenderingContext2D, it: GraphItem): void {
   for (let x = Math.ceil(a / dx) * dx; x <= b; x += dx) if (Math.abs(x) > dx / 2) ctx.fillText(label(x, dx), sx(x), Math.min(ay + font * .3, y1 - font * 1.2))
   ctx.textAlign = 'right'; ctx.textBaseline = 'middle'
   for (let y = Math.ceil(c / dy) * dy; y <= d; y += dy) if (Math.abs(y) > dy / 2) ctx.fillText(label(y, dy), Math.max(ax - font * .3, x0 + font * 2.2), sy(y))
-  ctx.lineWidth = Math.max(1.5, font / 6); ctx.lineJoin = 'round'; ctx.lineCap = 'round'
+  ctx.lineWidth = Math.max(1.5, font / 5); ctx.lineJoin = 'round'; ctx.lineCap = 'round'
   it.fns.forEach((src, n) => {
     const f = compiled(src)
     if (!f) return
