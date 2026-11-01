@@ -15,16 +15,24 @@ const stub = (save, open) => app.evaluate(({ dialog }, { save, open }) => {
 }, { save, open })
 const dialogShown = () => page.getByRole('alertdialog').count().then(n => n > 0)
 const ink = (y = 400) => gesture(page, wave(300, y, 40, 20, 8), { type: 'pen', pressure: 0.6 })
+/** Transfer textured PNGs as base64: one Playwright value, rather than millions of byte objects. */
 /** The PNG's pixels, decoded in the page: size, colour at the corner and how many different colours a strip holds. */
-const pixels = (png) => page.evaluate(async (bytes) => {
+const pixels = (png) => page.evaluate(async (encoded) => {
+  const bytes = Uint8Array.from(atob(encoded), c => c.charCodeAt(0))
   const bmp = await createImageBitmap(new Blob([new Uint8Array(bytes)], { type: 'image/png' }))
   const cv = new OffscreenCanvas(bmp.width, bmp.height); const ctx = cv.getContext('2d'); ctx.drawImage(bmp, 0, 0)
   const corner = [...ctx.getImageData(2, 2, 1, 1).data]
   const strip = ctx.getImageData(0, 8, Math.min(bmp.width, 1200), 40).data
   const seen = new Set(); for (let i = 0; i < strip.length; i += 4) seen.add(strip[i] + ',' + strip[i + 1] + ',' + strip[i + 2] + ',' + strip[i + 3])
   return { w: bmp.width, h: bmp.height, corner, colours: seen.size }
-}, Array.from(new Uint8Array(png)))
-const png = (opts) => fw(page, async (w, o) => Array.from(new Uint8Array(await w.board.exportPng(o))), opts)
+}, png)
+const pngBytes = (fn, arg) => page.evaluate(`(async () => {
+  const bytes = new Uint8Array(await (${fn.toString()})(window.__fw, ${JSON.stringify(arg ?? null)}))
+  let binary = ""
+  for (let i = 0; i < bytes.length; i += 32768) binary += String.fromCharCode(...bytes.subarray(i, i + 32768))
+  return btoa(binary)
+})()`)
+const png = (opts) => pngBytes(async (w, o) => w.board.exportPng(o), opts)
 
 try {
   check('a smart board starts a notebook', await fw(page, w => w.board.kind) === 'notebook')
@@ -152,7 +160,7 @@ try {
   await fw(page, w => { const b = w.board; b.commitAdd({ t: 's', id: 'low', c: '#111827', w: 6, m: false, v: false, p: [200, 2300, .5, 700, 2380, .5] }) })
   const sheets = await fw(page, async w => { const split = await w.board.exportPages(); const whole = await w.board.exportPages({ split: false }); return { split: split.length, whole: whole.length } })
   check('a page lengthened to three screens prints as one readable sheet per screen (F5)', sheets.split === 3 && sheets.whole === 1, JSON.stringify(sheets))
-  const sheet = await pixels(await fw(page, async w => Array.from(new Uint8Array((await w.board.exportPages())[0]))))
+  const sheet = await pixels(await pngBytes(async w => (await w.board.exportPages())[0]))
   check('each sheet is one 16:9 screen with the ruled paper', sheet.w === 2400 && sheet.h === 1350 && sheet.colours > 1, JSON.stringify(sheet))
   check('a blank notebook that only has paper still prints (blank practice sheets)', await fw(page, async w => { w.board.newLesson('notebook'); w.board.setPaper('fourline'); return (await w.board.exportPages()).length }) === 1)
 
