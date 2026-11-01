@@ -1,6 +1,6 @@
 # Next chat handoff
 
-**Updated 1 November 2026 (Step 2 under way, My shelf done; 1.6.0-beta.7).** Read this first in every new chat, then update it before the chat ends
+**Updated 1 November 2026 (Step 2 under way, My shelf and attached arrows done; 1.6.0-beta.8).** Read this first in every new chat, then update it before the chat ends
 (see the last section). Paths are relative to the repository root
 `D:\Projects 2\whiteboard\app` unless they start with a drive letter.
 
@@ -32,9 +32,9 @@ The gesture ring is a separate college project and is **not** part of the produc
 | 3D/asset licence research | `docs/EDUCATIONAL-3D-ASSETS-RESEARCH.md` |
 | Release history | `CHANGELOG.md` |
 | **The owner's progress checklist (plain language)** | `docs/CHECKLIST.md`. **Work through it in order; tick it after every milestone.** |
-| GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#11 merged, `main` = 1.6.0-beta.7 |
+| GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#12 merged, `main` = 1.6.0-beta.8 |
 | Installed app (owner's laptop) | `%LOCALAPPDATA%\Programs\Floating Whiteboard` (per-user NSIS install, Start menu + desktop shortcut) |
-| Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.7.exe` (ignored by git) |
+| Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.7.exe` (ignored by git). **Not rebuilt per milestone: see §6.** |
 | Older unrelated projects in the parent folder | `..\android-library`, `..\*.pyw` (the original Python board). Leave them alone. |
 
 ## 3. State right now
@@ -42,7 +42,7 @@ The gesture ring is a separate college project and is **not** part of the produc
 - **`docs/CHECKLIST.md` is the owner's plain-language progress list and the plan.** Step 1 is done (apart from
   three items moved to the end of Step 2). Tick items (✅ / 🔄 / ⬜) whenever a milestone starts or finishes; keep it
   short and jargon-free. `FEATURES.md` stays the detailed feature list.
-- `main` = **1.6.0-beta.7**, installed on the owner's laptop. **My shelf** is done (PR #11). Built before it (see `CHANGELOG.md`):
+- `main` = **1.6.0-beta.8**; the owner's laptop has 1.6.0-beta.7. **My shelf** (PR #11) and **attached arrows** (PR #12) are done. Built before them (see `CHANGELOG.md`):
   - lesson integrity (F1–F6, F9; PR #4);
   - Background & paper (§6; PR #5);
   - Share to phones (second agent; PR #6);
@@ -85,8 +85,8 @@ The gesture ring is a separate college project and is **not** part of the produc
     - a check at 125/150/200% Windows scaling on hardware;
     - capture polish: grabbing one window requests full-size thumbnails of every window, which is slow with many open.
 - **Checks green on `main`:**
-  - typecheck clean, vitest 325;
-  - e2e: shelf 31, lesson 44, papers 34, capture 26, board 25, share 21, track-a 15, run 46, phase1 23, phase2 35, grid 30,
+  - typecheck clean, vitest 338;
+  - e2e: connectors 33, shelf 31, lesson 44, papers 34, capture 26, board 25, share 21, track-a 15, run 46, phase1 23, phase2 35, grid 30,
     canvas 13, replay 30, agent 40, laser 15;
   - phase2 can flake once when run straight after many suites; a rerun passes.
 - **Never tested on a real touch panel.** Swipe feel, palm threshold, soft-pen width, IR pens and tile sizes are
@@ -115,10 +115,9 @@ each.** Step 2 is the deep dive's §8 ("Teaching tools and reusable content"); r
 required outcome:
 1. **My shelf**: done.
 2. **Tables**: with the second agent (`docs/agent-tasks/tables.md`).
-3. **Attached arrows (connectors)**: arrows that stay attached to boxes when they move (mind maps, flowcharts). **The lead's next
-   milestone.** They keep other objects' ids: `freshCopies` in `engine/shelf.ts`, `cloneItem`, and Duplicate must remap those ids.
+3. **Attached arrows**: done.
 4. **Number line and coordinate axes** as real objects with an explicit scale and labels (§6.6: measured, not
-   decorative).
+   decorative). **Next**, unless the second agent is free for it.
 5. **Prepared reveals**: hide an answer behind a cover that is tapped away during class.
 6. **End of Step 2**:
    - light/dark mode for the whole app (with print-friendly PDFs of dark boards);
@@ -189,6 +188,10 @@ Electron 44 + electron-vite, Preact + `@preact/signals`, Canvas2D, TypeScript.
   `freshCopies` (new ids and groups, unlocked), `placeInView`, `readableOn` (ink that would vanish on this board changes), `pageAt`. `state/shelf.ts` and
   `ui/Shelf.tsx` are the rest (popover names `shelf`, `shelf-save`); board hooks are in the "my shelf" part of `board.ts`. Teacher items stay apart from
   the future reviewed Lesson Kit. Not built from §8.2: folders/tags (subject and search cover it for now) and credits.
+- **Attached arrows:** a line or arrow `ShapeItem` may hold `from`/`to` (`Anchor`: an object id, plus `at`, a spot in fractions, on pictures, graphs and
+  labs) and `elbow` ('h'/'v'). `p` always holds the real position, so painting, export and replay need nothing special. `engine/connectors.ts` is pure.
+  `Board.commit` runs `withConnectors`, which moves attached arrows inside the same undo step: edit through `commit`, never `history.push` directly. Anything that
+  copies objects with new ids must call `remapAnchors` or `withNewIds`. A new object type is attachable automatically; give it a `p` box.
 - **Page sections:** `look.section` on the page (or frame) where a section starts; `board.setSection`/`sectionAt`;
   headings in the page sorter (`SectionHead` in `ui/Board.tsx`).
 - **Background picture** (`look.art`): stored in the assets table like pictures (`art.a` key), placed per screen of
@@ -214,7 +217,7 @@ Electron 44 + electron-vite, Preact + `@preact/signals`, Canvas2D, TypeScript.
 - **Smart board first:** big targets, everything reachable at the bottom and sides, no hover-only UI,
   internals hidden.
 - Free and open-source assets only (CC0/PD/CC BY/CC BY-SA; never NC/ND). No AI-slop visuals.
-- **Rebuild and reinstall** the owner's app at milestones (commands below), so the installed copy stays current.
+- **Do not build the installer or reinstall at milestones** (owner, 1 Nov 2026): spend tokens and usage on building the app. Do it only when the owner asks or the app is finished.
 - **When a chat gets long and the next task is new, not a continuation:** update this file and give
   the owner a short starter prompt for the new chat.
 
@@ -260,6 +263,7 @@ npm run e2e:board          # board layout, notebook/canvas, palm, paper, subject
 npm run e2e:papers         # paper settings, zoom-adaptive papers, background picture lifecycle
 npm run e2e:lesson         # lesson files, appearance in the file, export
 npm run e2e:shelf          # My shelf: save, reuse, ink on other boards, whole pages, carry to another PC
+npm run e2e:connectors     # attached arrows, end handles, elbows, copies; frames not stacking
 npm run e2e:share          # share to phones: local server, QR, stop/expiry
 npm run e2e:track-a        # pictures, PDF, equations, graphs, instruments, pages
 node e2e/run.mjs; node e2e/phase1.mjs; node e2e/phase2.mjs; node e2e/laser-audit.mjs; node e2e/agent.mjs; node e2e/replay.mjs

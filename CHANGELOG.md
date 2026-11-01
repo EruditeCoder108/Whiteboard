@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.6.0-beta.8 — Attached arrows — 2026-11-01
+
+- **Arrows and lines stay attached** (mind maps, flowcharts, labelled diagrams).
+  - Draw an arrow or line from one object to another: each object lights up before you let go, and the arrow holds on to it.
+  - Move, resize or rotate the object and the arrow follows, live while you drag. One Undo puts both back.
+  - On a box, shape, text or equation the end sits on the edge facing the other end. On a picture, graph or lab it stays on the exact spot you chose, so a label keeps pointing at the same part of a diagram.
+  - Select an arrow to get two round end handles, filled where attached and hollow where free. Drag an end to another object or into empty space. Dragging the arrow itself lets it go.
+  - **Elbow** in the style panel gives square corners for flowcharts.
+  - Deleting an object leaves the arrow in place, free at that end. Copies, copied pages, My shelf, saved files and notebook ⇄ canvas all keep the attachments.
+  - Hand-drawn ink is not attached to, because one stroke of a word is not the thing being pointed at.
+- **Frames no longer stack by accident** (reported by the owner).
+  - On the laptop layout, clicking "frame what's on screen" again added identical frames at the same spot, and there was no way to remove them.
+  - On a frame, that button now becomes **Remove this frame**, which clears everything stacked at that spot in one tap (Undo brings it back). The smart board's "Frame what's on screen" tile says it is already framed.
+
 ## 1.6.0-beta.7 — My shelf — 2026-11-01
 
 - **My shelf** (More menu, laptop Insert menu): draw something once and use it in any lesson.

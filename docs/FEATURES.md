@@ -79,6 +79,7 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Templates: Venn diagram, timeline, KWL chart, worksheet | ⏳ |
 | **My lessons:** every lesson filed by subject with a first-page picture and date; search, open, rename, copy, show in folder, delete to the Recycle Bin | ✅ |
 | New lesson with a name, subject or class, and notebook or canvas | ✅ |
+| **Attached arrows and lines:** follow the objects they hold, live; edge of a box or a spot on a picture; end handles to re-attach; straight or elbow; kept through copies, My shelf, files and conversion | ✅ |
 | **My shelf:** save a selection or whole page once, reuse a fresh editable copy in any lesson; by subject, with search, rename, delete; ink adapts to the board colour; carry it to another PC as one file | ✅ |
 | Every lesson saves itself to its own file (Documents › Floating Whiteboard › Lessons); Ctrl+S saves at once | ✅ |
 | Page sections: headings in the page sorter ("Warm-up", "Practice"), saved with the lesson | ✅ |

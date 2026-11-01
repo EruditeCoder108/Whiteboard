@@ -25,7 +25,7 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 
 - ✅ My shelf: save a drawing, diagram or whole page once, reuse it in any lesson, carry it to another PC
 - ⬜ Tables *(brief ready for the second agent)*
-- ⬜ Arrows that stay attached when boxes move (mind maps, flowcharts)
+- ✅ Arrows that stay attached when boxes move (mind maps, flowcharts, labels on diagrams)
 - ⬜ Number line and coordinate axes as real tools
 - ⬜ Prepared reveals (hide an answer, tap to show)
 
@@ -47,4 +47,4 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - ⬜ AI lecture notes from the teacher's voice and board (faithful by default)
 
 ---
-*Updated 2026-11-01 · version 1.6.0-beta.7.*
+*Updated 2026-11-01 · version 1.6.0-beta.8.*
