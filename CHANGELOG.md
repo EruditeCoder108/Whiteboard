@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.6.0-beta.3 — Background & paper (Note 3 deep dive §6) — 2026-11-01
+
+- **Writing papers no longer stretch or crowd when you zoom a canvas.** Ruled, four-line, Hindi and
+  music paper on the open canvas now follow the zoom, the way Squares does. Zoom in and finer bands
+  fade in; zoom out and every other band fades away. The lines stay a comfortable distance apart and
+  never become a solid block. Notebook pages and frames keep their paper fixed to the page, so they
+  match the printout, and crowded lines fade out instead of piling up.
+- **Every paper can be adjusted.**
+  - **Spacing:** Small, Medium or Large, with − / + steps from 50% to 300%.
+  - **Strength:** Faint, Normal or Strong.
+  - **Line colour:** pick one, or keep the usual. Margins and baselines stay red.
+  - **Restore the paper as designed** brings back the original settings without touching the writing.
+  - The settings apply to this page, or to all pages with **All pages**.
+  - New lessons start with your last choice.
+  - Paper changes can be undone, and a run of adjustments counts as one change.
+- **New papers:** isometric dots and an isometric grid for drawing solids. **Lesson layouts:** two
+  columns (compare / contrast), three columns (predict / observe / explain), worked example and exit
+  ticket.
+- **Graph paper redrawn.**
+  - Fine lines fade out smoothly as you zoom out, instead of disappearing at once.
+  - Lines move smoothly instead of snapping to whole pixels.
+  - Crossings are no darker than the lines themselves.
+  - It keeps a fixed scale, because it's for measuring.
+- **A picture behind the writing.**
+  - Choose a picture file, or turn a selected picture into the background with **Use selected picture**. For example, import a PDF worksheet, select its page, and tap it.
+  - Show the whole picture or fill the page (never stretched), pick its position and strength, and on a long page choose the first screen, every screen or the whole page.
+  - The picture is copied into the lesson, so the USB stick can go.
+  - It survives saving, reopening, copying a page, notebook ⇄ canvas, thumbnails, PNG and PDF.
+  - Erasing and *Clear ink* leave it alone, and the message says so. Removing it can be undone.
+- The paper picker shows the page in view with its writing and a live sample on every paper tile,
+  painted by the same code as the board.
+
 ## 1.6.0-beta.2 — lesson integrity (Note 3 deep dive F1–F6, F9) — 2026-11-01
 
 - **A lesson now carries how it looks.** The board colour is saved in the lesson (with an optional

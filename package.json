@@ -1,7 +1,7 @@
 {
   "name": "floating-whiteboard",
   "productName": "Floating Whiteboard",
-  "version": "1.6.0-beta.2",
+  "version": "1.6.0-beta.3",
   "description": "A fast, translucent, pen-first whiteboard for teaching and screen sharing",
   "main": "./out/main/index.js",
   "author": "SAMBHAV",
@@ -27,6 +27,7 @@
     "e2e:track-a": "electron-vite build && node e2e/track-a.mjs",
     "e2e:board": "electron-vite build && node e2e/board.mjs",
     "e2e:lesson": "electron-vite build && node e2e/lesson.mjs",
+    "e2e:papers": "electron-vite build && node e2e/papers.mjs",
     "e2e:replay": "electron-vite build && node e2e/replay.mjs",
     "e2e:canvas": "electron-vite build && node e2e/canvas-audit.mjs",
     "e2e:grid": "electron-vite build && node e2e/square-grid.mjs",

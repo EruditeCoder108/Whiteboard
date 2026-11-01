@@ -5,8 +5,9 @@ import type { SaveStatus } from './autosave'
 
 export type ToolName = 'select' | 'lasso' | 'text' | 'sticky' | 'hand' | 'pen' | 'marker' | 'eraser' | 'laser' | ShapeKind
 export type EraserMode = 'stroke' | 'pixel'
-import { PAPERS } from '@/engine/grid'
-import type { Paper } from '@/engine/grid'
+import { PAPERS, PRESET, SPACING_RANGE, STRENGTH_RANGE } from '@/engine/grid'
+import type { Paper, PaperStyle } from '@/engine/grid'
+import type { Artwork } from '@/engine/pages'
 import { isBoardColor, isDarkColor, luminance } from '@/engine/colour'
 export { luminance } from '@/engine/colour'
 /** the visible page's background paper */
@@ -27,6 +28,12 @@ export const PALETTE = [
 export const RADIAL_COLORS = [
   '#111827', '#e5484d', '#f28c28', '#f5c518', '#2fa66a', '#2f6bff', '#8a4fff', '#ffffff'
 ]
+/** What the paper picker shows and edits: the page or frame in view, as it is painted. */
+export interface Here { paper: GridMode; color: string; unit: 'page' | 'frame' | null; style: PaperStyle; art: Artwork | null }
+
+/** How the paper of a new lesson is drawn. */
+export const defaultStyle = (): PaperStyle => ({ spacing: S.defaultSpacing.value, strength: S.defaultStrength.value, ...(S.defaultLines.value ? { lines: S.defaultLines.value } : {}) })
+
 export const BACKGROUNDS: { color: string; name: string }[] = [
   { color: '#ffffff', name: 'White' },
   { color: '#fbf6e9', name: 'Paper' },
@@ -54,6 +61,10 @@ export const S = {
   /** Where the colour and paper of a new lesson come from: the teacher's last choice. */
   defaultPaper: signal<GridMode>('none'),
   defaultColor: signal('#ffffff'),
+  /** …and how its paper is drawn (1 = the preset; '' = the usual line colour) */
+  defaultSpacing: signal(1),
+  defaultStrength: signal(1),
+  defaultLines: signal(''),
   /** board opacity, percent */
   bgAlpha: signal(96),
   smoothing: signal(4),
@@ -74,8 +85,8 @@ export const S = {
   /** The visible page's paper and board colour. They belong to the lesson (see Board), not to settings. */
   grid: signal<GridMode>('none'),
   bgColor: signal('#ffffff'),
-  /** The paper and colour of the page or canvas frame in view, and which of the two it is (null: the canvas itself). */
-  here: signal<{ paper: GridMode; color: string; unit: 'page' | 'frame' | null }>({ paper: 'none', color: '#ffffff', unit: null }),
+  /** The look of the page or canvas frame in view, and which of the two it is (null: the canvas itself). */
+  here: signal<Here>({ paper: 'none', color: '#ffffff', unit: null, style: { ...PRESET }, art: null }),
   /** Counts every change to the lesson; compared with the count at the last save to tell if it is saved. */
   contentRevision: signal(0),
   /** What the undo for the last page or board change would restore ('' when there is none). */
@@ -158,7 +169,7 @@ export function showToast(text: string, ms = 2200, action?: ToastAction): void {
 // ── persistence ───────────────────────────────────────────────────────────────
 const PERSISTED = [
   'tool', 'lastShape', 'penColor', 'penSize', 'markerColor', 'markerSize', 'eraserSize',
-  'eraserMode', 'defaultPaper', 'defaultColor', 'bgAlpha', 'smoothing', 'pressure', 'fingerDraw', 'onTop',
+  'eraserMode', 'defaultPaper', 'defaultColor', 'defaultSpacing', 'defaultStrength', 'defaultLines', 'bgAlpha', 'smoothing', 'pressure', 'fingerDraw', 'onTop',
   'radialEnabled', 'radialDelay', 'layout', 'layoutChosen', 'barSide', 'palmErase', 'palmSize'
 ] as const
 
@@ -186,8 +197,13 @@ export function applySettings(raw: unknown): void {
     }
     if (enums[k] && !enums[k]!.includes(value as string)) continue
     if (['penColor', 'markerColor', 'defaultColor'].includes(k) && !isBoardColor(value)) continue
+    if (k === 'defaultLines' && value !== '' && !isBoardColor(value)) continue
     if (typeof value === 'number') {
       if (!Number.isFinite(value)) continue
+      // paper settings are fractions, kept within what the paper can draw
+      const fractional: Partial<Record<typeof PERSISTED[number], readonly [number, number]>> = { defaultSpacing: SPACING_RANGE, defaultStrength: STRENGTH_RANGE }
+      const f = fractional[k]
+      if (f) { sig.value = Math.max(f[0], Math.min(f[1], value)); continue }
       const ranges: Partial<Record<typeof PERSISTED[number], readonly [number, number]>> = {
         penSize: SIZE_RANGE.pen, markerSize: SIZE_RANGE.marker, eraserSize: SIZE_RANGE.eraser,
         bgAlpha: [0, 100], smoothing: [0, 10], radialDelay: [300, 1500], palmSize: [12, 400]

@@ -1,6 +1,6 @@
 import { isBoardColor } from './colour'
 import { clamp } from './geometry'
-import { isPaper } from './grid'
+import { SPACING_RANGE, STRENGTH_RANGE, isPaper } from './grid'
 import type { Paper } from './grid'
 import type { Rect, View } from './types'
 
@@ -72,12 +72,32 @@ export function validFrame(v: unknown): Frame | undefined {
 }
 
 /**
+ * A picture behind the ink of a page: a worksheet, a diagram, a school template. It is part of the
+ * background, so erasing and "Clear ink" leave it alone.
+ *  - fit: show the whole picture (fit) or cover the screen, cropping the overflow (fill); never stretched
+ *  - align: which part stays in view when filling (0 = left/top, 1 = right/bottom)
+ *  - span: on a page lengthened with "more space below": the first screen only, every screen, or
+ *    the whole long page
+ */
+export type ArtFit = 'fit' | 'fill'
+export type ArtSpan = 'first' | 'each' | 'whole'
+export interface Artwork { src: string; fit: ArtFit; opacity: number; align: [number, number]; span: ArtSpan }
+export const ART_DEFAULTS: Omit<Artwork, 'src'> = { fit: 'fit', opacity: 1, align: [.5, .5], span: 'first' }
+
+/**
  * How a page (or canvas frame) looks and what it is called. Anything left out is inherited:
  * the colour from the lesson, the paper from "plain".
  *  - color: an override of the lesson's board colour for this page only
  *  - origin: where the paper pattern starts, in the same coordinates as the page's ink
+ *  - spacing, strength, lines: how the paper is drawn (see `PaperStyle`); left out = the preset
+ *  - art: a background picture
  */
-export interface PageLook { paper?: Paper; color?: string; title?: string; origin?: [number, number] }
+export interface PageLook {
+  paper?: Paper; color?: string; title?: string; origin?: [number, number]
+  spacing?: number; strength?: number; lines?: string; art?: Artwork
+}
+/** The settings that describe how the paper is drawn; they travel with the paper. */
+export const STYLE_KEYS = ['spacing', 'strength', 'lines'] as const
 
 /** A canvas frame: a sheet-sized region with a look of its own. */
 export type LookFrame = Frame & PageLook
@@ -85,8 +105,10 @@ export type LookFrame = Frame & PageLook
 export const MAX_TITLE = 120
 
 const coord = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 1e7
+const inRange = (v: unknown, [lo, hi]: readonly [number, number]): v is number => typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi
+const r2 = (v: number): number => Math.round(v * 100) / 100
 
-/** Only the valid parts of a look survive; the rest is ignored rather than failing the file. */
+/** Only the valid parts of a look survive; the rest is ignored rather than failing the file. The picture is read separately (`validArt`). */
 export function validLook(v: unknown): PageLook {
   const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>
   const look: PageLook = {}
@@ -94,7 +116,22 @@ export function validLook(v: unknown): PageLook {
   if (isBoardColor(o.color)) look.color = o.color
   if (typeof o.title === 'string' && o.title.trim()) look.title = o.title.trim().slice(0, MAX_TITLE)
   if (Array.isArray(o.origin) && o.origin.length === 2 && coord(o.origin[0]) && coord(o.origin[1]) && (o.origin[0] !== 0 || o.origin[1] !== 0)) look.origin = [o.origin[0], o.origin[1]]
+  if (inRange(o.spacing, SPACING_RANGE) && o.spacing !== 1) look.spacing = o.spacing
+  if (inRange(o.strength, STRENGTH_RANGE) && o.strength !== 1) look.strength = o.strength
+  if (isBoardColor(o.lines)) look.lines = o.lines
   return look
+}
+
+const IMAGE_SRC = /^data:image\/(?:png|jpeg|webp|gif)[;,]/
+/** A background picture, or undefined when any part of it is unusable. `src` is the picture's data. */
+export function validArt(v: unknown, src: unknown): Artwork | undefined {
+  if (!v || typeof v !== 'object' || typeof src !== 'string' || !IMAGE_SRC.test(src)) return undefined
+  const o = v as Record<string, unknown>
+  const fit = o.fit === 'fill' ? 'fill' : 'fit'
+  const span = o.span === 'each' || o.span === 'whole' ? o.span : 'first'
+  const opacity = inRange(o.opacity, [.05, 1]) ? o.opacity : 1
+  const align: [number, number] = Array.isArray(o.align) && o.align.length === 2 && inRange(o.align[0], [0, 1]) && inRange(o.align[1], [0, 1]) ? [o.align[0], o.align[1]] : [.5, .5]
+  return { src, fit, opacity, align, span }
 }
 
 export function validLookFrame(v: unknown): LookFrame | undefined {
@@ -102,14 +139,22 @@ export function validLookFrame(v: unknown): LookFrame | undefined {
   return frame && { ...frame, ...validLook(v) }
 }
 
-/** The look as plain JSON: only what is set, origin rounded to hundredths. */
-export function lookJson(look: PageLook): PageLook {
-  const out: PageLook = {}
+/** The look as plain JSON: only what is set, numbers rounded to hundredths. The picture is written separately (`artJson`). */
+export function lookJson(look: PageLook): Omit<PageLook, 'art'> {
+  const out: Omit<PageLook, 'art'> = {}
   if (look.paper) out.paper = look.paper
   if (look.color) out.color = look.color
   if (look.title) out.title = look.title
-  if (look.origin && (look.origin[0] || look.origin[1])) out.origin = [Math.round(look.origin[0] * 100) / 100, Math.round(look.origin[1] * 100) / 100]
+  if (look.origin && (look.origin[0] || look.origin[1])) out.origin = [r2(look.origin[0]), r2(look.origin[1])]
+  if (look.spacing !== undefined && look.spacing !== 1) out.spacing = r2(look.spacing)
+  if (look.strength !== undefined && look.strength !== 1) out.strength = r2(look.strength)
+  if (look.lines) out.lines = look.lines
   return out
 }
 
-export const hasLook = (look: PageLook): boolean => Object.keys(lookJson(look)).some(k => k !== 'paper') || (!!look.paper && look.paper !== 'none')
+/** A background picture as JSON, its data replaced by the key under which it is stored. */
+export function artJson(art: Artwork, key: string): Record<string, unknown> {
+  return { a: key, fit: art.fit, opacity: r2(art.opacity), align: [r2(art.align[0]), r2(art.align[1])], span: art.span }
+}
+
+export const hasLook = (look: PageLook): boolean => !!look.art || Object.keys(lookJson(look)).some(k => k !== 'paper') || (!!look.paper && look.paper !== 'none')

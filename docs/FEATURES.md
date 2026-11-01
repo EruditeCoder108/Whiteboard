@@ -70,7 +70,11 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | **Page sorter:** thumbnails, reorder, duplicate, delete | ✅ |
 | **Page map** for a long page (drag to scroll) | ✅ |
 | **Background library, per page:** white, black and green chalkboard, ruled, four-line English, Hindi writing lines, graph paper, squares, dots, music staff | ✅ |
-| More papers: isometric, outline maps of India and the world, your own image | ⏳ |
+| Isometric dots and grid; lesson layouts (two columns, three columns, worked example, exit ticket) | ✅ |
+| Paper spacing, strength and line colour, for this page or all pages; restore as designed | ✅ |
+| Writing papers follow the zoom on a canvas (no stretched or crowded lines); graph paper keeps its scale | ✅ |
+| Your own background picture: fit or fill, position, strength, long-page placement; kept in the lesson, survives erase/clear, save, convert and export | ✅ |
+| More papers: outline maps of India and the world, logarithmic, polar | ⏳ |
 | Templates: Venn diagram, timeline, KWL chart, worksheet | ⏳ |
 | Recent lessons, a new lesson and open from a pen drive (in the board's More menu; no separate home screen yet) | ✅ |
 | Autosave that never loses work | ✅ |

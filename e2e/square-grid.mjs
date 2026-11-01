@@ -15,7 +15,7 @@ try {
   const evidence = await page.evaluate(() => {
     const { board, S } = window.__fw
     if (board.anim) { cancelAnimationFrame(board.anim.raf); board.anim = null }
-    board.doc.replaceAll([]); S.grid.value = 'lines'; S.bgAlpha.value = 100
+    board.doc.replaceAll([]); board.setPaper('lines'); S.bgAlpha.value = 100
     const originalDpr = Object.getOwnPropertyDescriptor(window, 'devicePixelRatio')
     const read = () => {
       const cv = document.createElement('canvas'); cv.width = board.gridCv.width; cv.height = board.gridCv.height
@@ -47,7 +47,7 @@ try {
         Object.defineProperty(window, 'devicePixelRatio', { configurable: true, get: () => dpr })
         board.resize()
         for (const dark of [false, true]) {
-          S.bgColor.value = dark ? '#1f232b' : '#ffffff'
+          board.setColor(dark ? '#1f232b' : '#ffffff')
           const widths = [], boundaries = []
           for (const zoom of levels) {
             board.setView({ x: -100 / zoom, y: -103 / zoom, zoom }); board.renderCommitted()
@@ -91,7 +91,7 @@ try {
         }
       }
       Object.defineProperty(window, 'devicePixelRatio', { configurable: true, get: () => 1.5 }); board.resize()
-      S.bgColor.value = '#ffffff'; board.setView({ x: -80, y: -80, zoom: 1 }); board.refresh(null); board.renderCommitted()
+      board.setColor('#ffffff'); board.setView({ x: -80, y: -80, zoom: 1 }); board.refresh(null); board.renderCommitted()
       board.rebuildMs = 99
       const cacheZoom = board.cv0.zoom
       board.zoomAt(2.32, 300, 220); board.renderCommitted()
@@ -116,7 +116,7 @@ try {
       const overviewCtx = overview.getContext('2d'); overviewCtx.fillStyle = '#f4f5f7'; overviewCtx.fillRect(0, 0, 1280, 540)
       let panel = 0
       for (const dark of [false, true]) for (const zoom of [.05, .2, .39, .5, .75, 1, 2.32, 16]) {
-        S.bgColor.value = dark ? '#1f232b' : '#ffffff'; board.setView({ x: -80, y: -80, zoom }); board.renderCommitted()
+        board.setColor(dark ? '#1f232b' : '#ffffff'); board.setView({ x: -80, y: -80, zoom }); board.renderCommitted()
         const cv = document.createElement('canvas'); cv.width = board.gridCv.width; cv.height = board.gridCv.height
         const ctx = cv.getContext('2d'); ctx.fillStyle = S.bgColor.value; ctx.fillRect(0, 0, cv.width, cv.height); ctx.drawImage(board.gridCv, 0, 0)
         captures.push({ name: `square-${dark ? 'dark' : 'light'}-${Math.round(zoom * 100)}`, png: cv.toDataURL().split(',')[1] })
@@ -130,7 +130,7 @@ try {
         }
       }
       captures.push({ name: 'square-overview', png: overview.toDataURL().split(',')[1] })
-      S.grid.value = 'none'; board.renderCommitted(); const cleared = read().data.every(v => v === 0)
+      board.setPaper('none'); board.renderCommitted(); const cleared = read().data.every(v => v === 0)
       return { profiles, usedPreview, previewDifference, panMismatch, distantPainted: distant.data.some(v => v !== 0), cleared,
         captures, viewport: { ...board.size }, innerSize: { width: innerWidth, height: innerHeight }, userAgent: navigator.userAgent }
     } finally {

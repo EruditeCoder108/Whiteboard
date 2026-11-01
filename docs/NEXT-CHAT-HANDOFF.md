@@ -33,20 +33,25 @@ The gesture ring is a separate college project and is **not** part of the produc
 | Release history | `CHANGELOG.md` |
 | GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#3 merged, lesson integrity on branch `feature/lesson-integrity` |
 | Installed app (owner's laptop) | `%LOCALAPPDATA%\Programs\Floating Whiteboard` (per-user NSIS install, Start menu + desktop shortcut) |
-| Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.2.exe` (ignored by git) |
+| Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.3.exe` (ignored by git) |
 | Older unrelated projects in the parent folder | `..\android-library`, `..\*.pyw` (the original Python board). Leave them alone. |
 
 ## 3. State right now
 
-- `main` at `ff7bf8d` (1.6.0-beta.1). Branch **`feature/lesson-integrity`** (version **1.6.0-beta.2**) holds the
-  finished **Lesson integrity** milestone; see `CHANGELOG.md`. Merge it via a PR before starting the next one.
-- **Deep dive progress:** §7 **F1, F2, F3, F4, F5, F6 and F9 are done** (appearance in the file, per-page and
-  per-frame look, conversion keeps paper, PNG/PDF match the board, one save convention with big lesson tiles and
-  recents, undo for page changes, page names). **Not done:** F7 (simultaneous writers, needs a panel),
-  F8 (multipage recording, belongs to C0), page *sections* (F9 asked "titles and small sections"; only titles built),
-  print-friendly export for dark boards, export preview, §6 spacing/strength/custom wallpaper, §5/§8/§9 beyond the above.
-- **Checks green on the branch:** vitest 244 pass. e2e: board 25, lesson 38 (new), track-a 15, run 46, phase1 23,
-  phase2 35, laser 15, agent 40, replay 30, grid 30, canvas 13.
+- Lesson integrity (1.6.0-beta.2) is merged (PR #4). Branch **`feature/papers-backgrounds`** (version
+  **1.6.0-beta.3**) holds the **Background & paper** milestone (§6); see `CHANGELOG.md`. Merge it via a PR.
+- **A second agent (ChatGPT) works in parallel** on its own worktree `D:\Projects 2\whiteboard\app-qr-share`, branch
+  `feature/qr-share`: "Share to phones" (local Wi-Fi + QR, §9). Its brief is `docs/agent-tasks/qr-share.md`. It
+  pushes but never merges; **review its branch** (security of the local server, the file list it was given, tests),
+  then merge it, add its changelog entry and tick FEATURES.
+- **Deep dive progress:** §7 **F1–F6 and F9 done**. **§6 done:** spacing/strength/line colour with scope and restore,
+  isometric papers, lesson layouts, graph renderer fixed (§6.5), writing papers adapt to zoom on the canvas, custom
+  background picture with full lifecycle (§6.4), one backdrop description everywhere (§6.8). **Not done:** F7, F8,
+  page *sections*, print-friendly export for dark boards, export preview, logarithmic/polar/map papers, a separate
+  "default for new pages only" scope (new lessons take the last choice; new pages copy the page before),
+  manual crop of a filled picture (position presets only), a check at 125/150/200% Windows scaling on hardware.
+- **Checks green on the branch:** vitest 269 pass (new `tests/papers.test.ts`). e2e: papers 30 (new), plus the
+  existing suites (see §8).
 - **Never tested on a real touch panel.** Swipe feel, palm threshold, soft-pen width, IR pens, and the size of
   the new lesson tiles are unverified on hardware.
 
@@ -68,16 +73,15 @@ Read the whole document first, not just §7. Work through it iteratively, one mi
 5. Where the deep dive and `MASTER-PLAN.md` disagree on order, the deep dive's "make a whole lesson
    dependable first" wins. The library (Track B) and AI notes (Track C) come after.
 
-**A. Next deep-dive milestone: A2.3/A2.4 "Papers, backgrounds and capture".** Lesson integrity (F1–F6, F9) is done.
+**A. Next deep-dive milestones.** Lesson integrity (F1–F6, F9) and §6 Background & paper are done.
 Pick from the deep dive in this order, one branch each, and tell the owner in plain words after each:
-1. §6 backgrounds: paper spacing / strength / line colour, remembered presets, **custom background image** (fit/fill,
-   opacity, kept as a retained asset, survives save/convert/export), isometric paper. The paper model is now
-   `PageLook {paper, color, title, origin}` (`engine/pages.ts`), painted by `engine/scene.ts` everywhere. Extend that,
-   do not add a parallel one.
+1. §9 output and capture: **Capture to lesson** (screen/window → locked reference), print-friendly export of dark
+   boards, export preview. (QR share is being built by the second agent.)
 2. §8 reusable content: personal resource shelf, tables, connectors/mind maps, number line/axes, prepared reveals.
-3. §9 workflow: Capture to lesson (screen/window → locked reference), print-friendly export of dark boards, export
-   preview, local-Wi-Fi QR share, page sections.
-4. Finish F9 (sections), F8 and F7 when the foundations/panel exist.
+3. Page sections (rest of F9); F8 and F7 when the foundations/panel exist.
+The look of a page is `PageLook` (`engine/pages.ts`): paper, color, title, origin, spacing, strength, lines, art.
+`engine/scene.ts` turns it into a `Backdrop` painted everywhere; `engine/grid.ts` plans each paper as `PaperPass`es
+(testable without a canvas). Extend these; never add a parallel paper path.
 Keep working iteratively unless the owner redirects.
 
 **B. Then the owner picks the next big track:**
@@ -116,7 +120,15 @@ Electron 44 + electron-vite, Preact + `@preact/signals`, Canvas2D, TypeScript.
 - **The board kind, frames and appearance live in the board file** (format 4: `kind`, `frames`, root `color`, per-page and
   per-frame `paper`/`color`/`title`/`origin`), not in settings. `S.bgColor`/`S.grid` are only mirrors of the visible
   page: change them through `board.setColor` / `board.setPaper` (or `actions.setBackground` / `actions.setPaper`), never
-  by writing the signal. `S.defaultColor`/`S.defaultPaper` (persisted) are what *new* lessons start with.
+  by writing the signal. `S.defaultColor`/`S.defaultPaper`/`defaultSpacing`/`defaultStrength`/`defaultLines`
+  (persisted) are what *new* lessons start with. `S.here` is the look the picker edits (paper, colour, style, art).
+- **Papers:** `planPaper()` returns passes in CSS px; one path per pass, so crossings never darken. Spacing scales the
+  view; strength scales alpha (capped at .7, always lighter than ink). Writing papers on the open canvas use
+  `writingLevels(zoom)` (power-of-two sizes with a crossfade); pages/frames/exports never adapt, so print matches.
+  Graph/isometric keep a fixed scale and only fade. Layouts need the page's screens (`cells`).
+- **Background picture** (`look.art`): stored in the assets table like pictures (`art.a` key), placed per screen of
+  the sheet by `artTargets`/`placeArt`. Not inherited by new pages or frames. `board.setArt`, `pictureToBackground`,
+  `state/background.ts`.
 - **Structural undo:** `board.changed({label, snap})` makes a page/board-level change undoable (`undoStructure`, Undo
   toast, Ctrl+Z) until the next change or page turn. Ops take `this.structure()` *before* `leavePage()`.
 - Items are immutable. Every edit is an EditOp in History, per page. Autosave serializes everything.
@@ -175,6 +187,8 @@ Electron 44 + electron-vite, Preact + `@preact/signals`, Canvas2D, TypeScript.
 npm run typecheck
 npx vitest run
 npm run e2e:board          # board layout, notebook/canvas, palm, paper, subjects
+npm run e2e:papers         # paper settings, zoom-adaptive papers, background picture lifecycle
+npm run e2e:lesson         # lesson files, appearance in the file, export
 npm run e2e:track-a        # pictures, PDF, equations, graphs, instruments, pages
 node e2e/run.mjs; node e2e/phase1.mjs; node e2e/phase2.mjs; node e2e/laser-audit.mjs; node e2e/agent.mjs; node e2e/replay.mjs
 npx electron-vite build && npx electron-builder --win nsis --x64 --publish never   # installer in dist/

@@ -71,12 +71,14 @@ export function Segmented<T extends string>({
   value: T
   onChange: (v: T) => void
 }): JSX.Element {
-  const i = Math.max(0, options.findIndex((o) => o.value === value))
+  // A value between the options (a fine-tuned 160%, say) highlights none of them.
+  const found = options.findIndex((o) => o.value === value)
+  const i = Math.max(0, found)
   return (
     <div class="seg nodrag">
       <div
         class="seg-thumb"
-        style={{ width: `calc((100% - 4px) / ${options.length})`, transform: `translateX(${i * 100}%)` }}
+        style={{ width: `calc((100% - 4px) / ${options.length})`, transform: `translateX(${i * 100}%)`, opacity: found < 0 ? 0 : 1 }}
       />
       {options.map((o) => (
         <button type="button" key={o.value} class={o.value === value ? 'on' : ''} onClick={() => onChange(o.value)}>

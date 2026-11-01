@@ -31,7 +31,7 @@ async function screenshot(name) {
 }
 try {
   await isolate()
-  await fw(page, w => { w.S.bgAlpha.value = 100; w.S.bgColor.value = '#ffffff'; w.board.setTool('pen') })
+  await fw(page, w => { w.S.bgAlpha.value = 100; w.board.setColor('#ffffff'); w.board.setTool('pen') })
   await gesture(page, [[120, 150], [135, 160], [155, 148]], { type: 'pen' })
   const original = await fw(page, w => w.board.doc.items[0])
   await page.getByRole('button', { name: 'Science labs', exact: true }).click()

@@ -15,3 +15,10 @@ export const luminance = (hex: string): number => {
 export const isDarkColor = (hex: string): boolean => luminance(hex) < 0.45
 
 export const sameColor = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase()
+
+/** '#2f6bff' → '47,107,255', for rgba() with an alpha of its own. */
+export const hexRgb = (hex: string): string => {
+  const h = hex.replace('#', '')
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h
+  return [0, 2, 4].map(i => parseInt(full.slice(i, i + 2), 16)).join(',')
+}

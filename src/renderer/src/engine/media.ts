@@ -54,9 +54,16 @@ export function paintImage(ctx: CanvasRenderingContext2D, it: ImageItem): void {
   ctx.fillRect(x0, y0, x1 - x0, y1 - y0)
 }
 
-/** Decode every picture first, for exports that paint pages the user has not opened. */
-export async function preloadImages(items: Item[]): Promise<void> {
-  await Promise.all(items.filter((it): it is ImageItem => it.t === 'i').map(it => load(sourceFor(it)).catch(() => {})))
+/** Decode every picture first, for exports that paint pages the user has not opened. `extra`: background pictures. */
+export async function preloadImages(items: Item[], extra: string[] = []): Promise<void> {
+  await Promise.all([...items.filter((it): it is ImageItem => it.t === 'i').map(sourceFor), ...extra].map(src => load(src).catch(() => {})))
+}
+
+/** A decoded picture (a page background), or null while it is still loading; the board repaints when it is ready. */
+export function decodedImage(src: string): HTMLImageElement | null {
+  const img = decoded.get(src)
+  if (!img && !loading.has(src)) void load(src).catch(() => {})
+  return img ?? null
 }
 
 /** Downscale and re-encode an imported picture. WebP keeps transparency at a fraction of PNG size. */

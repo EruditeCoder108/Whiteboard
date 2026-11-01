@@ -131,8 +131,8 @@ describe('notebook ⇄ canvas keeps every page’s look (F3)', () => {
 describe('the backdrop is one description for screen, thumbnails and export', () => {
   it('a page’s own colour and paper win; otherwise the lesson’s apply', () => {
     const base = { color: '#1d3b33', paper: 'none' as const }
-    expect(backdropOf(base)).toEqual({ color: '#1d3b33', paper: 'none', origin: [0, 0] })
-    expect(backdropOf(base, { paper: 'graph', color: '#ffffff', origin: [5, 6] })).toEqual({ color: '#ffffff', paper: 'graph', origin: [5, 6] })
-    expect(backdropOf({ color: '#fff', paper: 'lines' }, { color: '#000' })).toEqual({ color: '#000', paper: 'lines', origin: [0, 0] })
+    expect(backdropOf(base)).toMatchObject({ color: '#1d3b33', paper: 'none', origin: [0, 0] })
+    expect(backdropOf(base, { paper: 'graph', color: '#ffffff', origin: [5, 6] })).toMatchObject({ color: '#ffffff', paper: 'graph', origin: [5, 6] })
+    expect(backdropOf({ color: '#fff', paper: 'lines' }, { color: '#000' })).toMatchObject({ color: '#000', paper: 'lines', origin: [0, 0] })
   })
 })
