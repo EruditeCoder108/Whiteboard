@@ -93,7 +93,7 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Board colour, paper and page names saved with the lesson; kept through notebook ⇄ canvas | ✅ |
 | Undo for page and board changes (delete, move, copy, convert, colour, paper) | ✅ |
 | Record the board, replay it step by step, export the replay as a video | ✅ |
-| **QR code share over the school's Wi-Fi** (students scan, PDF downloads; no cloud) | ⏳ |
+| **QR code share over the school's Wi-Fi** (students scan, PDF downloads; no cloud; 30-minute link, Stop sharing, download count) | ✅ |
 | PDFs small enough to forward on WhatsApp | 🎙 |
 
 ## 4. Teaching tools
