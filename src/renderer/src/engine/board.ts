@@ -4,6 +4,7 @@ import { effect } from '@preact/signals'
 import { Doc, History, opBounds, restyleItems } from './doc'
 import type { EditOp, HistoryState } from './doc'
 import { clamp, inflate, lerp, rectsHit, unionRect } from './geometry'
+import { keepInZone, zoneAt, zoneInks } from './classroom'
 import { BRANCH_FILLS, NODE_H, NODE_W, branchSpot, croppedBox, flipItem, mindNode } from './objects'
 import { cloneItem, concealed, isHidden, itemBounds, paintItem, hitObject, setHiddenMode, translateItem } from './items'
 import { fitTextHeight, textAlign, textColor } from './text'
@@ -11,7 +12,7 @@ import { transformItem } from './transforms'
 import { parseBoard, serializePages, MAX_TEXT_LENGTH, itemFromJson } from './serialize'
 import type { BoardMeta, PageData, ParsedBoard } from './serialize'
 import { EraserTool, HandTool, LaserTool, PenTool, SelectTool, ShapeTool, TextTool } from './tools'
-import type { Tool, ToolHost } from './tool-types'
+import type { Ptr, Tool, ToolHost } from './tool-types'
 import { newId } from './types'
 import type { Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, LabItem, ImageItem, GraphItem, ScaleItem, TableItem } from './types'
 import { MAX_COLS, MAX_ROWS, addCol, addRow, cellAt, fitTable, newTable, removeCol, removeRow, setCell, tableFont } from './table'
@@ -600,6 +601,7 @@ export class Board implements ToolHost {
     const editing = S.editing.value
     if (editing) this.withWorld(ctx, () => paintItem(ctx, { ...editing.item, text: '' }))
     this.currentTool().paintOverlay?.(ctx)
+    for (const w of this.writers.values()) w.tool.paintOverlay?.(ctx)
     const laser = this.tools.laser
     if (laser !== this.currentTool() && laser.animating) laser.paintOverlay?.(ctx)
     if (this.instruments.active) this.withWorld(ctx, () => this.instruments.paint(ctx))
@@ -790,6 +792,99 @@ export class Board implements ToolHost {
   }
 
   nudgeSelection(dx: number, dy: number): void { this.editSelection(it => translateItem(it, dx, dy)) }
+
+  // ── students at the board ────────────────────────────────────────────────
+  /** Each hand writing now, with its own tool: several can be under way at once. */
+  private writers = new Map<number, { tool: Tool; zone: number }>()
+  /** What each side wrote, newest last: a student's undo only ever touches their own work. */
+  private zoneWork: string[][] = []
+
+  startZones(count: number): void {
+    this.commitText()
+    this.setTool('pen')
+    this.setSelection([])
+    const inks = zoneInks(isDarkBg.value)
+    S.zoneChoices.value = inks
+    S.zoneInks.value = count === 1 ? [S.penColor.value] : inks.slice(0, count)
+    S.zoneTools.value = Array.from({ length: count }, () => 'pen')
+    this.zoneWork = Array.from({ length: count }, () => [])
+    S.zones.value = count
+    this.requestOverlay()
+  }
+
+  endZones(): void {
+    for (const w of this.writers.values()) w.tool.cancel()
+    this.writers.clear()
+    S.zones.value = 0
+    this.requestOverlay()
+  }
+
+  setZoneTool(i: number, tool: 'pen' | 'eraser'): void { S.zoneTools.value = S.zoneTools.value.map((t, k) => k === i ? tool : t) }
+  setZoneInk(i: number, ink: string): void { S.zoneInks.value = S.zoneInks.value.map((c, k) => k === i ? ink : c); this.setZoneTool(i, 'pen') }
+
+  undoZone(i: number): void {
+    const work = this.zoneWork[i]
+    while (work?.length) {
+      const id = work.pop()!
+      const it = this.doc.items.find(o => o.id === id)
+      if (!it) continue
+      const before = this.doc.snapshot()
+      this.doc.replaceAll(before.filter(o => o !== it))
+      this.commit(this.doc.diff(before), 'Undo a stroke')
+      this.refresh(itemBounds(it))
+      return
+    }
+  }
+
+  /** A hand landing on the board: it writes on its own side, in its side's colour, alongside any others. */
+  zoneDown(id: number, p: Ptr, width: number): void {
+    const count = S.zones.value
+    const zone = zoneAt(p.x, width, count)
+    const tool: Tool = S.zoneTools.value[zone] === 'eraser' ? new EraserTool(this) : new PenTool(this, false, 'pen')
+    this.writers.set(id, { tool, zone })
+    S.inkOverride.value = S.zoneInks.value[zone] ?? null
+    tool.down(this.keptInZone(p, zone, width, count))
+    S.inkOverride.value = null
+  }
+
+  zoneMove(id: number, p: Ptr, width: number): boolean {
+    const w = this.writers.get(id)
+    if (!w) return false
+    w.tool.move(this.keptInZone(p, w.zone, width, S.zones.value))
+    return true
+  }
+
+  zoneUp(id: number, p: Ptr | null, width: number): boolean {
+    const w = this.writers.get(id)
+    if (!w) return false
+    this.writers.delete(id)
+    if (!p) { w.tool.cancel(); return true }
+    const before = this.doc.items.length
+    w.tool.up(this.keptInZone(p, w.zone, width, S.zones.value))
+    if (w.tool.name === 'pen' && this.doc.items.length > before) this.zoneWork[w.zone]?.push(this.doc.items[this.doc.items.length - 1].id)
+    return true
+  }
+
+  private keptInZone(p: Ptr, zone: number, width: number, count: number): Ptr {
+    if (count < 2) return p
+    const x = keepInZone(p.x, zone, width, count)
+    return x === p.x ? p : { ...p, x, wx: this.toWorld(x, p.y)[0] }
+  }
+
+  /** The board under a magnifier: drawn again at a larger scale, so writing stays sharp. */
+  paintLens(cv: HTMLCanvasElement, sx: number, sy: number, scale: number): void {
+    const ctx = cv.getContext('2d')
+    if (!ctx) return
+    const [wx, wy] = this.toWorld(sx, sy)
+    const zoom = this.view.zoom * scale * (cv.width / cv.clientWidth || 1)
+    const view = { x: wx - cv.width / 2 / zoom, y: wy - cv.height / 2 / zoom, zoom }
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.clearRect(0, 0, cv.width, cv.height)
+    paintBackdrop(ctx, view, cv.width, cv.height, 1, this.paged ? this.pageBackdrop(this.look, this.sheet) : { ...this.surfaceBackdrop(), adapt: true }, true)
+    ctx.setTransform(zoom, 0, 0, zoom, -view.x * zoom, -view.y * zoom)
+    for (const it of this.doc.items) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+  }
 
   /** Replace a picture by its cropped part, shown where that part was. Undo brings the whole picture back. */
   cropPicture(it: ImageItem, src: string, crop: [number, number, number, number], aspect: number): void {

@@ -317,6 +317,19 @@ export class InputRouter {
     }
   }
 
+  // ── students at the board ────────────────────────────────────────────────
+  /** Every hand is its own writer here: no gestures, no pen-beats-touch, because several people are writing. */
+  private zoneDown(e: PointerEvent): void {
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    if (e.pointerType === 'touch') {
+      const palm = this.isPalm(e)
+      this.noteTouch(e)
+      if (palm) return // a resting hand
+    }
+    try { this.el.setPointerCapture(e.pointerId) } catch { /* pointer already gone */ }
+    this.board.zoneDown(e.pointerId, this.toPtr(e), this.el.clientWidth)
+  }
+
   // ── pointer events ──────────────────────────────────────────────────────────
   private onDown(e: PointerEvent): void {
     if (S.replaying.value) return
@@ -330,6 +343,8 @@ export class InputRouter {
       const p = this.toPtr(e)
       if (this.board.revealAt(p.wx, p.wy)) { this.tapped = e.pointerId; return }
     }
+
+    if (S.zones.value) return this.zoneDown(e)
 
     if (e.pointerType === 'touch') {
       if (this.penRecent()) return // palm
@@ -389,6 +404,10 @@ export class InputRouter {
     if (this.tapped === e.pointerId) return
     const events = e.getCoalescedEvents?.() ?? []
     const list = events.length ? events : [e]
+    if (S.zones.value) {
+      for (const sample of list) this.board.zoneMove(e.pointerId, this.toPtr(sample as PointerEvent), this.el.clientWidth)
+      return
+    }
 
     if (e.pointerType === 'pen') {
       this.penUntil = performance.now() + PEN_PALM_MS
@@ -464,6 +483,7 @@ export class InputRouter {
 
   private onUp(e: PointerEvent): void {
     if (this.tapped === e.pointerId) { this.tapped = null; return }
+    if (this.board.zoneUp(e.pointerId, this.toPtr(e), this.el.clientWidth)) return
     if (e.pointerType === 'touch') {
       this.touches.delete(e.pointerId)
       if (this.mode === 'pinch') {
@@ -486,6 +506,7 @@ export class InputRouter {
   }
 
   private onCancel(e: PointerEvent): void {
+    if (this.board.zoneUp(e.pointerId, null, this.el.clientWidth)) return
     if (e.pointerType === 'touch') this.touches.delete(e.pointerId)
     if (this.mode === 'pinch') {
       if (this.touches.size === 0) {

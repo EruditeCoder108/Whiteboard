@@ -9,6 +9,11 @@ function subscribe<T>(channel: string, cb: (v: T) => void): () => void {
 
 const api: Api = {
   openLink: (link) => ipcRenderer.invoke('link:open', link),
+  poll: {
+    start: (question, options, address) => ipcRenderer.invoke('poll:start', question, options, address),
+    stop: () => ipcRenderer.invoke('poll:stop'),
+    status: () => ipcRenderer.invoke('poll:status')
+  },
   capture: {
     sources: () => ipcRenderer.invoke('capture:sources'),
     grab: (sourceId) => ipcRenderer.invoke('capture:grab', sourceId)

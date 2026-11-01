@@ -89,8 +89,15 @@ export interface CaptureSource { id: string; kind: 'screen' | 'window'; name: st
 export interface CapturedImage { src: string; width: number; height: number }
 export type CaptureResult = ({ ok: true } & CapturedImage) | { ok: false; error: string }
 
+export interface PollStatus { active: boolean; url: string; question: string; options: string[]; counts: number[]; total: number; expiresAt: number }
+
 export interface Api {
   openLink(link: string): Promise<boolean>
+  poll: {
+    start(question: string, options: string[], address: string): Promise<{ ok: true; url: string; expiresAt: number } | { ok: false; error: string }>
+    stop(): Promise<void>
+    status(): Promise<PollStatus>
+  }
   capture: {
     sources(): Promise<CaptureSource[]>
     grab(sourceId: string): Promise<CaptureResult>

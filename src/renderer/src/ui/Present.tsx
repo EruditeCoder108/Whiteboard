@@ -1,5 +1,6 @@
-import { Blinds, Calculator, EyeOff, DraftingCompass, Gauge, LineChart, Pause, Play, RotateCcw, Ruler, Sigma, Spotlight, Timer, TriangleRight, X } from 'lucide-preact'
+import { Clock, Columns2, Dices, Search, Trophy, UserRoundCheck, Vote, Blinds, Calculator, EyeOff, DraftingCompass, Gauge, LineChart, Pause, Play, RotateCcw, Ruler, Sigma, Spotlight, Timer, TriangleRight, X } from 'lucide-preact'
 import { calculatorOn } from './Tools'
+import { clockOn, diceOn, magnifierOn, pickerOn, scoreOn } from './ClassTools'
 import { signal } from '@preact/signals'
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
@@ -49,6 +50,13 @@ export function PresentPopover(): JSX.Element {
       <ToggleRow icon={EyeOff} label="Prepare reveals" hint="hide answers" on={S.preparing.value} onClick={() => { board.setPreparing(!S.preparing.value); S.popover.value = null }} />
       <ToggleRow icon={Blinds} label="Curtain" hint="drag to reveal" on={curtainOn.value} onClick={() => { curtainOn.value = !curtainOn.value; S.popover.value = null }} />
       <ToggleRow icon={Timer} label="Timer" on={timerOn.value} onClick={() => { timerOn.value = !timerOn.value; S.popover.value = null }} />
+      <ToggleRow icon={Clock} label="Clock" on={clockOn.value} onClick={() => { clockOn.value = !clockOn.value; S.popover.value = null }} />
+      <ToggleRow icon={Search} label="Magnifier" on={magnifierOn.value} onClick={() => { magnifierOn.value = !magnifierOn.value; S.popover.value = null }} />
+      <ToggleRow icon={UserRoundCheck} label="Name picker" on={pickerOn.value} onClick={() => { pickerOn.value = !pickerOn.value; S.popover.value = null }} />
+      <ToggleRow icon={Dices} label="Dice" on={diceOn.value} onClick={() => { diceOn.value = !diceOn.value; S.popover.value = null }} />
+      <ToggleRow icon={Trophy} label="Scoreboard" on={scoreOn.value} onClick={() => { scoreOn.value = !scoreOn.value; S.popover.value = null }} />
+      <ToggleRow icon={Columns2} label="Students at the board" on={S.zones.value > 0} onClick={() => { S.popover.value = 'zones' }} />
+      <ToggleRow icon={Vote} label="Ask the class" hint="phones over Wi-Fi" on={false} onClick={() => { S.popover.value = 'poll' }} />
       <div class="pop-hint">Esc closes the spotlight and curtain. PgUp/PgDn (or a presentation clicker) turns pages.</div>
     </div>
   )
@@ -97,7 +105,8 @@ export function CurtainLayer(): JSX.Element | null {
   )
 }
 
-const PRESETS = [1, 2, 5, 10, 15]
+/** Minutes: one tap, then Start. */
+const PRESETS = [.5, 1, 2, 3, 5, 10, 15]
 let audio: AudioContext | null = null
 function chime(): void {
   try {
@@ -141,8 +150,8 @@ export function TimerWidget(): JSX.Element | null {
         <Btn icon={X} title="Close timer" onClick={() => { setRunning(false); timerOn.value = false }} />
       </div>
       <div class="timer-row presets">
-        <button type="button" class={length === 0 ? 'on' : ''} onClick={() => { setRunning(false); setLength(0); setElapsed(0) }}>⏱</button>
-        {PRESETS.map(m => <button type="button" key={m} class={length === m * 60 ? 'on' : ''} onClick={() => { setRunning(false); setLength(m * 60); setElapsed(0) }}>{m}m</button>)}
+        <button type="button" class={length === 0 ? 'on' : ''} onClick={() => { setRunning(false); setLength(0); setElapsed(0) }}>Stopwatch</button>
+        {PRESETS.map(m => <button type="button" key={m} class={length === m * 60 ? 'on' : ''} onClick={() => { setRunning(true); setLength(m * 60); setElapsed(0) }}>{m < 1 ? `${m * 60} s` : `${m} min`}</button>)}
       </div>
     </div>
   )

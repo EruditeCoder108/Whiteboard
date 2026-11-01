@@ -18,6 +18,7 @@ import { Lessons } from './lessons'
 import { Shelf } from './shelf'
 import { pagesToPdf } from './pdf'
 import { ShareServer, listAddresses } from './share'
+import { PollServer, validPoll } from './poll'
 import { Capture, CaptureError } from './capture'
 import { randomUUID } from 'node:crypto'
 import { AgentBridge } from './agent-bridge'
@@ -44,7 +45,8 @@ let agentBridge: AgentBridge
 let assistant: Assistant
 const share = new ShareServer()
 let shareRequest = 0
-const stopShare = (): void => { shareRequest++; share.stop() }
+const poll = new PollServer()
+const stopShare = (): void => { shareRequest++; share.stop(); poll.stop() }
 let capturing = false
 const capture = new Capture({
   sources: options => desktopCapturer.getSources(options),
@@ -465,6 +467,13 @@ function registerIpc(): void {
     try { return { ok: true, ...await capture.grab(id) } }
     catch (error) { return { ok: false, error: error instanceof CaptureError ? error.message : 'Could not capture that screen or window. Refresh and try again.' } }
     finally { capturing = false }
+  })
+  ipcMain.handle('poll:status', () => poll.status())
+  ipcMain.handle('poll:stop', () => poll.stop())
+  ipcMain.handle('poll:start', async (e, question: unknown, options: unknown, address: unknown) => {
+    if (e.sender !== w()?.webContents || !validPoll(question, options) || typeof address !== 'string' || !listAddresses().some(n => n.address === address)) return { ok: false, error: 'Choose an available network and try again.' }
+    try { return { ok: true, ...await poll.start({ question: question as string, options, address }) } }
+    catch { return { ok: false, error: 'Could not start the poll on this network. Try another network.' } }
   })
   ipcMain.handle('share:status', () => share.status())
   ipcMain.handle('share:stop', () => stopShare())

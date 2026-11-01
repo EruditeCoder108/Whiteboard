@@ -1,5 +1,5 @@
 import {
-  LayoutTemplate, Network, Archive, Atom, Axis3d, Blinds, Calculator, EyeOff, Table2, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileText, FlaskConical, GripVertical, FilePlus2, Library, Pencil, SaveAll, Share2,
+  Clock, Columns2, Dices, Search, Trophy, UserRoundCheck, Vote, LayoutTemplate, Network, Archive, Atom, Axis3d, Blinds, Calculator, EyeOff, Table2, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileText, FlaskConical, GripVertical, FilePlus2, Library, Pencil, SaveAll, Share2,
   Highlighter, MoveHorizontal, Image as ImageIcon, Laptop, LayoutGrid, LineChart, LogOut, Minus, MousePointer2, MousePointerClick, Pen, Plus,
   Presentation, GraduationCap, Redo2, ArrowDownToLine, ArrowUpToLine, Infinity as InfinityIcon, BookOpen, Frame, Focus, Ruler, Shapes, SlidersHorizontal, Sigma, Sparkles, Spotlight, Timer, Trash2, Type, Undo2, MonitorUp, Layers
 } from 'lucide-preact'
@@ -23,6 +23,7 @@ import { MathsPopover, curtainOn, spotlightOn, timerOn } from './Present'
 import { PaperPopover } from './Paper'
 import { SubjectsPopover } from './Subjects'
 import { PEN_ICON, penLabel } from './PenStyles'
+import { clockOn, diceOn, magnifierOn, pickerOn, scoreOn } from './ClassTools'
 
 type Icon = typeof Pen
 
@@ -191,6 +192,13 @@ function BoardMenu(): JSX.Element {
         <Tile icon={Blinds} label="Screen cover" on={curtainOn.value} onClick={close(() => (curtainOn.value = !curtainOn.value))} />
         <Tile icon={Calculator} label="Calculator" on={calculatorOn.value} onClick={close(() => (calculatorOn.value = !calculatorOn.value))} />
         <Tile icon={Timer} label="Timer" on={timerOn.value} onClick={close(() => (timerOn.value = !timerOn.value))} />
+        <Tile icon={Clock} label="Clock" on={clockOn.value} onClick={close(() => (clockOn.value = !clockOn.value))} />
+        <Tile icon={Search} label="Magnifier" on={magnifierOn.value} onClick={close(() => (magnifierOn.value = !magnifierOn.value))} />
+        <Tile icon={UserRoundCheck} label="Name picker" on={pickerOn.value} onClick={close(() => (pickerOn.value = !pickerOn.value))} />
+        <Tile icon={Dices} label="Dice" on={diceOn.value} onClick={close(() => (diceOn.value = !diceOn.value))} />
+        <Tile icon={Trophy} label="Scoreboard" on={scoreOn.value} onClick={close(() => (scoreOn.value = !scoreOn.value))} />
+        <Tile icon={Columns2} label="Students at board" onClick={() => (S.popover.value = 'zones')} />
+        <Tile icon={Vote} label="Ask the class" onClick={() => (S.popover.value = 'poll')} />
         <Tile icon={Clapperboard} label="Record & replay" onClick={() => (S.popover.value = 'replay')} />
         <Tile icon={MonitorUp} label={overlay ? 'Back to board' : 'Write over screen'} on={overlay} onClick={actions.toggleOverlay} />
         {overlay && <Tile icon={MousePointerClick} label="Use apps below" onClick={() => actions.setPassthrough(true)} />}

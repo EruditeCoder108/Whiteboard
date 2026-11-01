@@ -39,11 +39,11 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - ✅ Crop a picture by hand, on the page or behind the writing
 
 **F. Everyday classroom tools**
-- ⬜ Magnifier
-- ⬜ Fast timer presets, stopwatch and a clock
-- ⬜ Random name picker, dice, team scoreboard
-- ⬜ Two to six students writing in their own zones
-- ⬜ Quick poll from students' phones over school Wi-Fi (no cloud, no sign-in)
+- ✅ Magnifier
+- ✅ Fast timer presets, stopwatch and a clock
+- ✅ Random name picker, dice, team scoreboard
+- ✅ Two to six students writing in their own zones *(tested with simulated touches; needs a real panel)*
+- ✅ Quick poll from students' phones over school Wi-Fi (no cloud, no sign-in)
 
 **G. Bring lessons in**
 - ⬜ PowerPoint slides as pages

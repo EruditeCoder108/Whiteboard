@@ -8,6 +8,9 @@ import { S, applySettings, boardMode, darkUi, showToast, startPersisting } from 
 import { BoardBar, BoardSaveChip, EdgeTabs, LayoutChooser } from '@/ui/Board'
 import { PalmCalibration } from '@/ui/Calibrate'
 import { InputsSheet } from '@/ui/Inputs'
+import { ClockWidget, DiceWidget, Magnifier, NamePicker, Scoreboard } from '@/ui/ClassTools'
+import { ZonesLayer, ZonesSheet } from '@/ui/Zones'
+import { PollSheet } from '@/ui/Poll'
 import { TemplatesSheet } from '@/ui/Templates'
 import { CropSheet } from '@/ui/Crop'
 import { Autosave } from '@/state/autosave'
@@ -233,7 +236,7 @@ export function App(): JSX.Element {
 
       {!hidden && (
         <>
-          {onBoard ? <><BoardBar /><EdgeTabs /><BoardSaveChip /></> : <><TopBar /><Dock /><HistoryBar />{S.kind.value === 'canvas' && <ZoomBar />}<PageBar /></>}
+          {S.zones.value ? null : onBoard ? <><BoardBar /><EdgeTabs /><BoardSaveChip /></> : <><TopBar /><Dock /><HistoryBar />{S.kind.value === 'canvas' && <ZoomBar />}<PageBar /></>}
           <Popovers />
           <AgentPanel agent={agentForPanel} />
           <ReplayPanel />
@@ -249,6 +252,12 @@ export function App(): JSX.Element {
       <Radial />
       <TimerWidget />
       <CalculatorWidget />
+      <Magnifier />
+      <ClockWidget />
+      <NamePicker />
+      <DiceWidget />
+      <Scoreboard />
+      <ZonesLayer />
       <ImportStatus />
       <Toast />
       <PalmCalibration />
@@ -261,6 +270,8 @@ export function App(): JSX.Element {
       {S.popover.value === 'inputs' && <InputsSheet />}
       {S.popover.value === 'templates' && <TemplatesSheet />}
       {S.popover.value === 'crop' && <CropSheet />}
+      {S.popover.value === 'zones' && <ZonesSheet />}
+      {S.popover.value === 'poll' && <PollSheet />}
       {S.popover.value === 'shelf' && <ShelfSheet />}
       {S.popover.value === 'shelf-save' && <ShelfSaveSheet />}
       <Dialog />
