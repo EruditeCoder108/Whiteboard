@@ -1,5 +1,5 @@
 import {
-  Film, Clock, Columns2, Dices, Search, Trophy, UserRoundCheck, Vote, LayoutTemplate, Network, Archive, Atom, Axis3d, Blinds, Calculator, EyeOff, Table2, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileText, FlaskConical, GripVertical, FilePlus2, Library, Pencil, SaveAll, Share2,
+  TestTubes, Film, Clock, Columns2, Dices, Search, Trophy, UserRoundCheck, Vote, LayoutTemplate, Network, Archive, Atom, Axis3d, Blinds, Calculator, EyeOff, Table2, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileText, FlaskConical, GripVertical, FilePlus2, Library, Pencil, SaveAll, Share2,
   Highlighter, MoveHorizontal, Image as ImageIcon, Laptop, LayoutGrid, LineChart, LogOut, Minus, MousePointer2, MousePointerClick, Pen, Plus,
   Presentation, GraduationCap, Redo2, ArrowDownToLine, ArrowUpToLine, Infinity as InfinityIcon, BookOpen, Frame, Focus, Ruler, Shapes, SlidersHorizontal, Sigma, Sparkles, Spotlight, Timer, Trash2, Type, Undo2, MonitorUp, Layers
 } from 'lucide-preact'
@@ -24,6 +24,7 @@ import { PaperPopover } from './Paper'
 import { SubjectsPopover } from './Subjects'
 import { PEN_ICON, penLabel } from './PenStyles'
 import { clockOn, diceOn, magnifierOn, pickerOn, scoreOn } from './ClassTools'
+import { openTray, trayOn } from './Apparatus'
 
 type Icon = typeof Pen
 
@@ -188,6 +189,7 @@ function BoardMenu(): JSX.Element {
         <Tile icon={Axis3d} label="Axes" onClick={() => editScale(null, 'axes')} />
         <Tile icon={Atom} label="Periodic table" onClick={() => (S.popover.value = 'periodic')} />
         <Tile icon={Ruler} label="Ruler & compass" on={instrumentsShown.value.length > 0} onClick={() => (S.popover.value = 'maths')} />
+        <Tile icon={TestTubes} label="Apparatus" on={trayOn.value} onClick={() => openTray()} />
         <Tile icon={FlaskConical} label="Science labs" onClick={() => (S.popover.value = 'science')} />
       </Section>
       <Section title="Teach">

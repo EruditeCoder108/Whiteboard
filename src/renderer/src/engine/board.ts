@@ -5,6 +5,8 @@ import { Doc, History, opBounds, restyleItems } from './doc'
 import type { EditOp, HistoryState } from './doc'
 import { clamp, inflate, lerp, rectsHit, unionRect } from './geometry'
 import { playSpot } from './clip'
+import { appHooks, world } from './apparatus/world'
+import type { Setting } from './apparatus/parts'
 import { keepInZone, zoneAt, zoneInks } from './classroom'
 import { BRANCH_FILLS, NODE_H, NODE_W, branchSpot, croppedBox, flipItem, mindNode } from './objects'
 import { cloneItem, concealed, isHidden, itemBounds, paintItem, hitObject, setHiddenMode, translateItem } from './items'
@@ -15,7 +17,7 @@ import type { BoardMeta, PageData, ParsedBoard } from './serialize'
 import { EraserTool, HandTool, LaserTool, PenTool, SelectTool, ShapeTool, TextTool } from './tools'
 import type { Ptr, Tool, ToolHost } from './tool-types'
 import { newId } from './types'
-import type { ClipItem, Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, LabItem, ImageItem, GraphItem, ScaleItem, TableItem } from './types'
+import type { ApparatusItem, ClipItem, Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, LabItem, ImageItem, GraphItem, ScaleItem, TableItem } from './types'
 import { MAX_COLS, MAX_ROWS, addCol, addRow, cellAt, fitTable, newTable, removeCol, removeRow, setCell, tableFont } from './table'
 import { onImageReady, preloadImages } from './media'
 import { Instruments } from './instruments'
@@ -140,6 +142,8 @@ export class Board implements ToolHost {
   readonly tools: Record<string, Tool>
 
   constructor() {
+    appHooks.dark = () => isDarkBg.value
+    appHooks.toast = text => showToast(text)
     const t: Record<string, Tool> = {
       pen: new PenTool(this, false, 'pen'),
       marker: new PenTool(this, true, 'marker'),
@@ -449,12 +453,18 @@ export class Board implements ToolHost {
     for (const it of labs) if (this.labs.playing(it) && (S.replaying.value || S.passthrough.value || !rectsHit(itemBounds(it), visible))) this.labs.pause(it)
     const changed = this.labs.tick(labs)
     for (const it of changed) this.refresh(itemBounds(it))
+    if (world.update(this.doc, performance.now())) {
+      for (const it of world.repaint) this.refresh(itemBounds(it))
+      this.dirtyLive = true
+    }
+    // A burette that has run keeps its new level: the lesson saves when it stops.
+    if (world.needsSaving && !world.moving) { world.saved(); this.changed() }
     if (this.dirtyBlit || this.dirtyAll || this.dirtyRegion) this.renderCommitted()
     const tool = this.currentTool()
     const animating = tool.animating || this.tools.laser.animating
     if (this.dirtyLive || animating) this.renderLive()
     this.dirtyLive = false
-    if (animating || labs.some(it => this.labs.playing(it))) this.schedule()
+    if (animating || world.moving || labs.some(it => this.labs.playing(it))) this.schedule()
   }
 
   /** Bring the cache up to date, then blit it to the visible canvas. */
@@ -603,6 +613,8 @@ export class Board implements ToolHost {
     if (editing) this.withWorld(ctx, () => paintItem(ctx, { ...editing.item, text: '' }))
     this.currentTool().paintOverlay?.(ctx)
     for (const w of this.writers.values()) w.tool.paintOverlay?.(ctx)
+    if (world.hasBeams) this.withWorld(ctx, () => world.paintOverlay(ctx))
+    this.partGesture?.paintOverlay?.(ctx)
     const laser = this.tools.laser
     if (laser !== this.currentTool() && laser.animating) laser.paintOverlay?.(ctx)
     if (this.instruments.active) this.withWorld(ctx, () => this.instruments.paint(ctx))
@@ -932,6 +944,29 @@ export class Board implements ToolHost {
     const aspect = width / Math.max(1, height), boxW = Math.max(120, b[2] - b[0]), boxH = Math.max(50, b[3] - b[1])
     const w = Math.min(boxW, boxH * aspect), h = w / aspect, x = (b[0] + b[2] - w) / 2, y = (b[1] + b[3] - h) / 2
     this.replaceSelected({ t: 'i', id: newId(), c: this.selection[0]?.c ?? S.penColor.value, w: 1, p: [x, y, x + w, y + h], src, aspect, latex })
+  }
+
+  // ── apparatus ───────────────────────────────────────────────────────────
+  /** The wire or control a press lands on; the tool in hand keeps everything else. */
+  private partGesture: Tool | null = null
+  partTool(p: Ptr): Tool | null {
+    this.partGesture = world.intercept(p, this)
+    return this.partGesture
+  }
+
+  /** A change made in a part's settings: one undo step. */
+  setPartValue(it: ApparatusItem, setting: Setting, value: number): void {
+    const current = this.doc.items.find(o => o.id === it.id)
+    if (!current || current.t !== 'a') return
+    const params = { ...current.params }
+    if (setting.apply) setting.apply(value, params)
+    else params[setting.key] = value
+    const next: ApparatusItem = { ...current, params }
+    const before = this.doc.snapshot()
+    this.doc.replaceAll(before.map(o => o === current ? next : o))
+    this.commit(this.doc.diff(before), 'Change apparatus')
+    if (this.selection.includes(current)) this.setSelection(this.selection.map(o => o === current ? next : o))
+    this.refresh(itemBounds(next))
   }
 
   /** The clip whose play button is here, if any. */

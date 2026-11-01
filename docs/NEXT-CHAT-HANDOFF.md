@@ -1,6 +1,6 @@
 # Next chat handoff
 
-**Updated 1 November 2026 (Checklist 2 Step 1: sections B to H built on a branch, not merged; `main` is 1.6.0-beta.10).** Read this first in every new chat, then update it before the chat ends
+**Updated 1 November 2026 (Checklist 2: Step 1 sections A to H and Step 2 built on a branch, not merged; `main` is 1.6.0-beta.10).** Read this first in every new chat, then update it before the chat ends
 (see the last section). Paths are relative to the repository root
 `D:\Projects 2\whiteboard\app` unless they start with a drive letter.
 
@@ -14,12 +14,12 @@
 
 - **The Note 3 study is finished:** `D:\Projects 2\whiteboard\note3-study\Note-3-Final-Report.pdf` (4 pages). **Do not open or list the images in that folder.** `study-export.pdf` there is only a one-page test export. The owner says the report is **not fully right and the lead decides**: treat it as input, not orders. Its ratings of our app come from the docs, not the code. The lead's main changes are in the checklist: it adds a tool per input, student zones, PowerPoint import and a phone poll, and it puts writing feel ahead of new features.
 - **Icons belong to the second agent,** on `feature/organic-icons`, from `docs/agent-tasks/organic-icons.md`. It generates transparent pictures for the buttons and adds `ui/icons.tsx`, which exports the same names as `lucide-preact`. **Do not do icon work here.** New UI code imports icons from `./icons` once that branch is merged.
-- **Built on `feature/checklist2-step1` (pushed, not merged, not installed):** sections B to H of Step 1. See `CHANGELOG.md` under "Not released yet". Details of how they work are in §5.
+- **Built on `feature/checklist2-step1` (pushed, not merged, not installed):** sections A to H of Step 1 and the working apparatus. See `CHANGELOG.md` under "Not released yet". Details of how they work are in §5.
+- **Also built on that branch:** section A (one look, selected state, wording, with a test of every sheet) and **Step 2 of the checklist: working apparatus**. The owner moved scientific tools up to now, ahead of the animation library. See §5.
 - **What is left in Step 1, in order:**
   1. **Merge the icon branch when the owner brings the agent's result.** It changes `lucide-preact` import lines to `./icons`, including on files this branch changed, so expect small conflicts there. Files new on this branch import `lucide-preact` directly (`PenStyles`, `Inputs`, `Zones`, `ClassTools`, `Clips`, `Templates`, `Crop`): point them at `./icons` too, and use the art the brief already asked for (`pencil`, `paintbrush`, `chalk`, `felt-marker`, `magnifier`, `clock`, `stopwatch`, `name-picker`, `dice`, `scoreboard`, `split-board`, `poll`, `mind-map`, `timeline`, `slides`, `video`, `audio`, `link`). New tiles are in the More menu in `ui/Board.tsx`.
-  2. **Then section A:** one look for panels and sheets, big labelled buttons everywhere, one selected state, clipped labels and wording. It waits for the icons because it touches the same buttons.
-  3. **Section I needs a panel.** The owner tests pen, palm, thick end, two writers, scaling and a slow PC.
-  4. **Owner's decision:** outline maps. India's border must follow an official source; do not draw or download one without their say.
+  2. **Section I needs a panel.** The owner tests pen, palm, thick end, two writers, scaling and a slow PC.
+  3. **Left out for now, by the owner's decision (1 Nov 2026):** outline maps. India's border must follow an official source; do not draw or download one without their say.
 - **Not verified, say so if asked:** the Office route for exact PowerPoint slides (no Office on this PC; `main/slides.ts` has never run against real Office); OpenBoard import (tested on a sample built to the format, not a real file); handwriting quality (tested on a stand-in model); contact sizes and simultaneous writers (simulated touches only).
 - **PR and install:** the whole of Step 1 is one PR and one install (§6), so do them after sections A and I, or sooner if the owner asks.
 
@@ -50,6 +50,7 @@ The gesture ring is a separate college project and is **not** part of the produc
 | **The owner's Note3 deep dive: the working guide for the next chats** | `docs/NOTE3-COMPETITIVE-DEEP-DIVE-2026-11-01.md`, written by the owner. **Read it fully.** Commit it on the first branch. |
 | 3D/asset licence research | `docs/EDUCATIONAL-3D-ASSETS-RESEARCH.md` |
 | Release history | `CHANGELOG.md` |
+| Licences: the circuit solver and all apparatus drawing are our own code, no outside code or art. Falstad's CircuitJS is GPL; if anything outside is added later, check its LICENSE file first. | |
 | **The owner's progress checklist (plain language)** | `docs/CHECKLIST.md` (Checklist 2). **Work through it in order; tick it after every milestone.** The finished first list: `docs/CHECKLIST-1-done.md`. |
 | GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#14 merged, `main` = 1.6.0-beta.10 |
 | Installed app (owner's laptop) | `%LOCALAPPDATA%\Programs\Floating Whiteboard` (per-user NSIS install, Start menu + desktop shortcut) |
@@ -86,7 +87,7 @@ The gesture ring is a separate college project and is **not** part of the produc
     - manual crop of a filled background picture (position presets only today);
     - a check at 125/150/200% Windows scaling on hardware;
     - capture polish: grabbing one window requests full-size thumbnails of every window, which is slow with many open.
-- **Checks green on `feature/checklist2-step1` (1 Nov):** typecheck clean, vitest 433; e2e adds ink 33, objects 25, instruments 15, templates 25, classroom 28, imports 32, recognize 16, and all the suites below pass with it.
+- **Checks green on `feature/checklist2-step1` (1 Nov):** typecheck clean, vitest 467; e2e adds ink 33, objects 25, instruments 15, templates 25, classroom 28, imports 32, recognize 16, labels 8, apparatus 31, and all the suites below pass with it.
 - **Checks green on `main`:**
   - typecheck clean, vitest 377;
   - e2e: tables 33, tools 19, export 18, reveals 34, theme 19, scale 25, connectors 33, shelf 31, lesson 44, papers 34, capture 26, board 25, share 21, track-a 15, run 46, phase1 23, phase2 35, grid 30,
@@ -174,6 +175,11 @@ Electron 44 + electron-vite, Preact + `@preact/signals`, Canvas2D, TypeScript.
   labs) and `elbow` ('h'/'v'). `p` always holds the real position, so painting, export and replay need nothing special. `engine/connectors.ts` is pure.
   `Board.commit` runs `withConnectors`, which moves attached arrows inside the same undo step: edit through `commit`, never `history.push` directly. Anything that
   copies objects with new ids must call `remapAnchors` or `withNewIds`. A new object type is attachable automatically; give it a `p` box.
+- **Apparatus:** `ApparatusItem` (`t: 'a'`): `kind` names a part in `engine/apparatus/parts-*.ts`, `params` is its state, numbers only. A part is data plus a `paint`, in its own units, so it scales and turns like any object. `world.ts` (`world`) holds what depends on the page: it solves the circuit (`circuit.ts`, our own nodal solver), traces rays (`optics.ts`), works out pH (`chem.ts`), and handles presses on terminals and controls (`intercept`, called from `InputRouter.beginTool`). Wires are line `ShapeItem`s with `wire: true`, pinned to terminals by `at`, so they follow through the normal connector path.
+  - Readings live in the world, never on the items, so they are not saved or undone. Values that build up over time (a burette running) change `params` **in place on purpose**: the item stays the same object, so history stays intact.
+  - `world.ts` must not import `@/state`: the main process reads lesson files through `items.ts`. The board passes in what it needs through `appHooks`.
+  - **To add a part:** add it to a `parts-*.ts` list. Give it `terminals` and `circuit` to join circuits. Add anything that reads its neighbours to `world.neighbours`.
+  - The old `science/` labs are separate and still frozen.
 - **Pen styles:** `StrokeItem.style` (pencil, brush, chalk, felt; none is the plain pen). `engine/ink.ts` holds widths, outline options, grain and bristles; `S.penStyle` is the choice. `ui/PenStyles.tsx` is the picker, the real-ink preview and slide to clear.
 - **A tool per input:** `engine/roles.ts` is pure. `InputRouter.applyRole` sets `S.override` and `S.inkOverride` for one gesture, only while the pen, marker or eraser is in hand. `ui/Inputs.tsx` is the sheet and the measuring.
 - **Selection bar:** `Act` in `ui/Editor.tsx` is big and named in board mode, a plain `Btn` on a laptop. `engine/objects.ts` is pure: `flipItem`, `safeLink` (only http and https, also checked when reading a file), `branchSpot` and `mindNode`, crop maths.
@@ -271,6 +277,8 @@ npm run e2e:templates      # templates, log and polar papers, fields, crop
 npm run e2e:classroom      # magnifier, clock, picker, dice, score, students, poll
 npm run e2e:imports        # PowerPoint, OpenBoard, clips
 npm run e2e:recognize      # handwriting, against a stand-in model
+npm run e2e:apparatus      # circuits by hand, titration, heating, optics, biology
+npm run e2e:labels         # every sheet: nothing cut off
 npm run e2e:share          # share to phones: local server, QR, stop/expiry
 npm run e2e:track-a        # pictures, PDF, equations, graphs, instruments, pages
 node e2e/run.mjs; node e2e/phase1.mjs; node e2e/phase2.mjs; node e2e/laser-audit.mjs; node e2e/agent.mjs; node e2e/replay.mjs

@@ -8,6 +8,7 @@ import { S, applySettings, boardMode, darkUi, showToast, startPersisting } from 
 import { BoardBar, BoardSaveChip, EdgeTabs, LayoutChooser } from '@/ui/Board'
 import { PalmCalibration } from '@/ui/Calibrate'
 import { InputsSheet } from '@/ui/Inputs'
+import { ApparatusTray } from '@/ui/Apparatus'
 import { RecognizeSheet } from '@/ui/Recognize'
 import { ClipPlayer, playing } from '@/ui/Clips'
 board.onPlayClip = it => { playing.value = it }
@@ -262,6 +263,7 @@ export function App(): JSX.Element {
       <Scoreboard />
       <ZonesLayer />
       <ClipPlayer />
+      <ApparatusTray />
       <ImportStatus />
       <Toast />
       <PalmCalibration />

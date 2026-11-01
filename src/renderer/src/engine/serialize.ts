@@ -47,6 +47,7 @@ export function itemToJson(it: Item): unknown {
   const meta: ObjectMeta = { group: it.group, locked: it.locked, opacity: it.opacity, step: it.step, ...(it.link ? { link: it.link } : {}) }
   if (it.t === 'l') return { ...it, p: [...it.p], params: { ...it.params }, reveal: { ...it.reveal }, ...(it.gesture ? { gesture: it.gesture.map(p => ({ ...p })) } : {}) }
   if (it.t === 'i') return { t: 'i', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, src: it.src, aspect: it.aspect, latex: it.latex, ...(it.flipX ? { flipX: true } : {}), ...(it.flipY ? { flipY: true } : {}), ...meta }
+  if (it.t === 'a') return { t: 'a', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, kind: it.kind, params: { ...it.params }, ...meta }
   if (it.t === 'm') return { t: 'm', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, kind: it.kind, src: it.src, name: it.name, poster: it.poster, aspect: it.aspect, ...meta }
   if (it.t === 'b') return { t: 'b', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, cols: [...it.cols], rows: [...it.rows], cells: it.cells.map(row => [...row]), fontSize: it.fontSize, textColor: it.textColor, head: it.head, ...meta }
   if (it.t === 'n') return { t: 'n', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, x: { ...it.x }, y: it.y && { ...it.y }, grid: it.grid, equal: it.equal, points: it.points?.map(q => [...q]), coords: it.coords, ...meta }
@@ -66,7 +67,7 @@ export function itemToJson(it: Item): unknown {
   }
   const common = { id: it.id, c: it.c, w: r2(it.w) || it.w, p: it.p.map(r2), angle: it.angle, fill: it.fill, ...meta, ...text }
   if (it.t === 't') return { t: 't', ...common, note: it.note }
-  return { t: 'h', ...common, k: it.k, dash: it.dash, radius: it.radius, from: it.from, to: it.to, elbow: it.elbow }
+  return { t: 'h', ...common, k: it.k, dash: it.dash, radius: it.radius, from: it.from, to: it.to, elbow: it.elbow, ...(it.wire ? { wire: true } : {}) }
 }
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
@@ -180,6 +181,15 @@ export function itemFromJson(raw: unknown): Item | null {
     if (o.points !== undefined) scale.points = (o.points as [number, number][]).map(q => [q[0], q[1]])
     return scale
   }
+  if (o.t === 'a') {
+    const p = o.p as number[]
+    if (p.length !== 4 || !p.every(isCoord) || p[2] <= p[0] || p[3] <= p[1] || typeof o.kind !== 'string' || !/^[a-z][a-z0-9-]{0,40}$/.test(o.kind) || !o.params || typeof o.params !== 'object') return null
+    const params: Record<string, number> = {}
+    const given = Object.entries(o.params as Record<string, unknown>)
+    if (given.length > 40) return null
+    for (const [key, value] of given) { if (!/^[a-zA-Z]{1,24}$/.test(key) || !isNum(value)) return null; params[key] = value }
+    return { t: 'a', id, c: o.c, w: o.w, p: [p[0], p[1], p[2], p[3]], kind: o.kind, params, ...meta, ...(o.angle !== undefined && isNum(o.angle) ? { angle: o.angle } : {}) }
+  }
   if (o.t === 'm') {
     const p = o.p as number[]
     if (p.length !== 4 || !p.every(isCoord) || p[2] <= p[0] || p[3] <= p[1] || (o.kind !== 'video' && o.kind !== 'audio')) return null
@@ -246,6 +256,7 @@ export function itemFromJson(raw: unknown): Item | null {
       if (from) s.from = from
       if (to) s.to = to
       if (o.elbow === 'h' || o.elbow === 'v') s.elbow = o.elbow
+      if (o.wire === true) s.wire = true
     }
     if (o.dash !== undefined) s.dash = o.dash as ShapeItem['dash']
     if (o.radius !== undefined) s.radius = o.radius as number

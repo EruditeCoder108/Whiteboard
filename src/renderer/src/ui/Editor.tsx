@@ -1,6 +1,6 @@
 import {
   AArrowDown, AArrowUp, AlignCenter, AlignLeft, AlignRight, Archive, ArrowDownToLine, ArrowUpToLine, Bold, Check,
-  Columns3, Copy, Crop, Ellipsis, ExternalLink, EyeOff, FlipHorizontal2, FlipVertical2, GitBranchPlus, Group, Heading, Link2, Minus, Play, ScanText, Sigma, Rows3, Italic, List, ListOrdered, LockKeyhole, Palette, Pencil,
+  Columns3, Copy, Crop, Ellipsis, ExternalLink, EyeOff, FlipHorizontal2, FlipVertical2, GitBranchPlus, Group, Heading, Link2, Minus, Play, ScanText, Sigma, SlidersHorizontal, Rows3, Italic, List, ListOrdered, LockKeyhole, Palette, Pencil,
   RotateCw, Scan, Trash2, Ungroup, UnlockKeyhole, X
 } from 'lucide-preact'
 import type { JSX } from 'preact'
@@ -17,6 +17,8 @@ import { safeLink } from '@/engine/objects'
 import { openCrop } from './Crop'
 import { playing } from './Clips'
 import { readHandwriting } from './Recognize'
+import { PartOptions } from './Apparatus'
+import { partOf } from '@/engine/apparatus/parts'
 import { PALETTE, S, boardMode, showToast } from '@/state/store'
 import { shelf } from '@/state/shelf'
 import { RevealOptions } from './Reveal'
@@ -220,7 +222,7 @@ function LinkOptions({ link, onDone }: { link?: string; onDone: () => void }): J
 export function SelectionToolbar(): JSX.Element | null {
   const items = S.selection.value
   S.viewRevision.value
-  const [panel, setPanel] = useState<'style' | 'more' | 'reveal' | 'link' | null>(null)
+  const [panel, setPanel] = useState<'style' | 'more' | 'reveal' | 'link' | 'part' | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   const [barHeight, setBarHeight] = useState(70)
   useLayoutEffect(() => {
@@ -260,7 +262,7 @@ export function SelectionToolbar(): JSX.Element | null {
   const openLink = (url: string): void => { void window.api.openLink(url).then(ok => { if (!ok) showToast('That link could not be opened') }) }
   return <div class={`selection-tools ui nodrag ${big ? 'big' : ''}`} ref={ref} data-testid="selection-toolbar" data-popover-keep="" style={{ left, top: toolbarTop, width }}>
     <div class="selection-actions panel" role="toolbar" aria-label="Selection actions">
-      <span class="selection-caption" title={locked ? 'Selection includes locked objects' : `${items.length} selected`}>{allLocked ? <LockKeyhole size={13} /> : items.length === 1 ? items[0].t === 'l' ? 'Lab' : items[0].t === 's' ? 'Stroke' : items[0].t === 't' ? items[0].note ? 'Note' : 'Text' : items[0].t === 'i' ? items[0].latex !== undefined ? 'Equation' : 'Picture' : items[0].t === 'g' ? 'Graph' : items[0].t === 'm' ? items[0].kind === 'audio' ? 'Audio' : 'Video' : items[0].t === 'b' ? 'Table' : items[0].t === 'n' ? items[0].y ? 'Axes' : 'Number line' : isConnector(items[0]) ? items[0].k === 'arrow' ? 'Arrow' : 'Line' : 'Shape' : `${items.length} selected`}</span>
+      <span class="selection-caption" title={locked ? 'Selection includes locked objects' : `${items.length} selected`}>{allLocked ? <LockKeyhole size={13} /> : items.length === 1 ? items[0].t === 'l' ? 'Lab' : items[0].t === 's' ? 'Stroke' : items[0].t === 't' ? items[0].note ? 'Note' : 'Text' : items[0].t === 'i' ? items[0].latex !== undefined ? 'Equation' : 'Picture' : items[0].t === 'g' ? 'Graph' : items[0].t === 'a' ? partOf(items[0].kind)?.name ?? 'Apparatus' : items[0].t === 'm' ? items[0].kind === 'audio' ? 'Audio' : 'Video' : items[0].t === 'b' ? 'Table' : items[0].t === 'n' ? items[0].y ? 'Axes' : 'Number line' : isConnector(items[0]) ? items[0].k === 'arrow' ? 'Arrow' : 'Line' : 'Shape' : `${items.length} selected`}</span>
       <div class="grow" />
       {only?.link && <Act icon={ExternalLink} label="Open link" title={`Open ${only.link}`} onClick={() => openLink(only.link!)} />}
       <Act icon={Palette} label="Style" title="Object style" active={panel === 'style'} disabled={allLocked} onClick={() => setPanel(panel === 'style' ? null : 'style')} />
@@ -274,6 +276,7 @@ export function SelectionToolbar(): JSX.Element | null {
         <Act icon={ScanText} label="To text" title="Handwriting to text" onClick={() => readHandwriting('text')} />
         <Act icon={Sigma} label="To maths" title="Handwriting to equation" onClick={() => readHandwriting('maths')} />
       </>}
+      {only?.t === 'a' && partOf(only.kind)?.settings && <Act icon={SlidersHorizontal} label="Set" title="Change its settings" active={panel === 'part'} onClick={() => setPanel(panel === 'part' ? null : 'part')} />}
       {only?.t === 'm' && <Act icon={Play} label="Play" title="Play the clip" onClick={() => { playing.value = only }} />}
       {only?.t === 'i' && only.latex === undefined && <Act icon={Crop} label="Crop" title="Crop the picture" disabled={locked} onClick={() => openCrop(only)} />}
       {shape && <Act icon={GitBranchPlus} label="Branch" title="Add a branch" disabled={locked} onClick={() => board.addBranch(shape)} />}
@@ -292,7 +295,7 @@ export function SelectionToolbar(): JSX.Element | null {
       <Act icon={Ellipsis} label="More" title="More selection actions" active={panel === 'more'} onClick={() => setPanel(panel === 'more' ? null : 'more')} />
     </div>
     {panel && <div class={`selection-detail panel ${panel}`} style={{ maxHeight: Math.max(80, vh - toolbarTop - 102) }}>
-      {panel === 'style' ? <ObjectStyles items={items} /> : panel === 'reveal' ? <RevealOptions items={items} /> : panel === 'link' ? <LinkOptions link={only?.link} onDone={() => setPanel(null)} /> : <>
+      {panel === 'style' ? <ObjectStyles items={items} /> : panel === 'reveal' ? <RevealOptions items={items} /> : panel === 'link' ? <LinkOptions link={only?.link} onDone={() => setPanel(null)} /> : panel === 'part' && only?.t === 'a' ? <PartOptions it={only} /> : <>
         {only?.t === 'b' && !locked && <>
           <MenuItem icon={Rows3} label="Add row" onClick={() => board.shapeTable('add-row')} />
           <MenuItem icon={Columns3} label="Add column" onClick={() => board.shapeTable('add-col')} />

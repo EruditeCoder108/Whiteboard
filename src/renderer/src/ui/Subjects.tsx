@@ -14,6 +14,7 @@ import { placeInView } from '@/engine/shelf'
 import { writingStrip } from '@/engine/strips'
 import { isDarkBg, showToast } from '@/state/store'
 import { calculatorOn } from './Tools'
+import { openTray, trayOn, traySubject } from './Apparatus'
 
 type Icon = typeof Ruler
 type Subject = 'maths' | 'physics' | 'chemistry' | 'biology' | 'english' | 'hindi'
@@ -46,15 +47,16 @@ const strip = (kind: 'fourline' | 'hindi', label: string): Entry => ({
   }
 })
 const labs: Entry = { icon: FlaskConical, label: 'Science labs', run: () => (S.popover.value = 'science'), stay: true }
+const apparatus = (from: 'physics' | 'chemistry' | 'biology'): Entry => ({ icon: TestTubes, label: 'Apparatus', on: () => trayOn.value && traySubject.value === from, run: () => openTray(from) })
 const picture: Entry = { icon: ImageIcon, label: 'Picture / diagram', run: () => { close(); void pickFiles('image/*').then(files => insertFiles(files)) } }
 const text: Entry = { icon: Type, label: 'Typed text', run: () => { close(); board.setTool('text') } }
 
 const TOOLS: Record<Subject, Entry[]> = {
   maths: [calculator, instrument('ruler', Ruler, 'Ruler'), instrument('setsquare', TriangleRight, 'Set square'), instrument('protractor', Gauge, 'Protractor'),
     instrument('compass', DraftingCompass, 'Compass'), numberLine, axes, equation, graph, paper('lines', Calculator, 'Squared paper'), paper('graph', LineChart, 'Graph paper')],
-  physics: [calculator, axes, equation, graph, paper('graph', LineChart, 'Graph paper'), instrument('ruler', Ruler, 'Ruler'), instrument('protractor', Gauge, 'Protractor'), labs],
-  chemistry: [periodic, { ...equation, label: 'Chemical equation' }, calculator, labs, picture, paper('lines', Calculator, 'Squared paper')],
-  biology: [labs, picture, text],
+  physics: [apparatus('physics'), calculator, axes, equation, graph, paper('graph', LineChart, 'Graph paper'), instrument('ruler', Ruler, 'Ruler'), instrument('protractor', Gauge, 'Protractor'), labs],
+  chemistry: [apparatus('chemistry'), periodic, { ...equation, label: 'Chemical equation' }, calculator, labs, picture, paper('lines', Calculator, 'Squared paper')],
+  biology: [apparatus('biology'), labs, picture, text],
   english: [strip('fourline', 'Four-line strip'), paper('fourline', BookOpen, 'Four-line paper'), paper('ruled', NotebookPen, 'Ruled paper'), text, picture],
   hindi: [strip('hindi', 'Hindi strip'), paper('hindi', NotebookPen, 'Hindi lines'), paper('ruled', BookOpen, 'Ruled paper'), text, picture]
 }

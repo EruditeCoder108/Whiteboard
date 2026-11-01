@@ -3,7 +3,7 @@
 Plain-language progress. ✅ done · 🔄 being built now · ⬜ not started.
 The full feature list is in `FEATURES.md`; the details of each release are in `CHANGELOG.md`. The finished first list is `CHECKLIST-1-done.md`.
 
-**The order:** first make the board itself better than every other whiteboard (Note 3 is the baseline). Then the big things. The large collection of scientific tools comes last.
+**The order:** first make the board itself better than every other whiteboard (Note 3 is the baseline). Then working scientific tools, then the big things.
 
 ## Step 1: on par with, and better than, every whiteboard app
 
@@ -60,20 +60,27 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - ⬜ Two people writing at the same time
 - ⬜ Display scaling (125%, 150%, 200%) and a slow school PC
 
-## Step 2: the animation library (Lesson Kit)
+## Step 2: working scientific tools (now)
+
+*More than Note 3 offers (about 10 to 12 for each subject), and they really work. Not hundreds.*
+
+- ✅ Parts that connect into real circuits: 17 parts, from cells, bulbs and switches to meters, a galvanometer, capacitors and a motor
+- ✅ Physics apparatus that works: pendulum, spring balance, magnet and compass, lenses, mirror, prism and rays, vernier
+- ✅ Chemistry apparatus that works: glassware, titration with real pH, burner and thermometer, balance, atomic shells
+- ✅ Biology apparatus that works: microscope, cell models, inside a leaf, stoma, breathing model, osmosis, DNA, flower
+- ✅ Ready-made examples to start from (circuits, rays, titration, heating)
+- ⬜ Pictures for the apparatus tiles and more parts, if teachers ask for them
+
+## Step 3: the animation library (Lesson Kit)
 
 - ⬜ 3D heart, mitosis, ray optics, 3D glassware
 - ⬜ 30 Class 10 diagrams and maths tools
 
-## Step 3: lectures and AI
+## Step 4: lectures and AI
 
 - ⬜ Lecture recording across pages, with audio
 - ⬜ AI lecture notes from the teacher's voice and board (faithful by default)
 - ⬜ Voice commands
-
-## Step 4: the large collection of scientific tools (last)
-
-- ⬜ Accurate, movable diagrams and apparatus: atomic shells, adjustable beakers, circuits, force arrows, and more
 
 **Not planned for now:** Flash, a built-in browser, novelty stamps, page-turn sounds, decorative frames, Word export.
 

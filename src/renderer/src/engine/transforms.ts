@@ -3,7 +3,7 @@ import { rotatePoint } from './items'
 
 /** World-space transform with scale about an anchor followed by rotation and translation. */
 export function transformItem(it: Item, anchor: [number, number], sx = 1, sy = 1, angle = 0, dx = 0, dy = 0): Item {
-  if (it.t === 'l' || it.t === 'i' || it.t === 'm') { const k = Math.max(0.02, Math.min(Math.abs(sx), Math.abs(sy))); sx = sy = k }
+  if (it.t === 'l' || it.t === 'i' || it.t === 'm' || it.t === 'a') { const k = Math.max(0.02, Math.min(Math.abs(sx), Math.abs(sy))); sx = sy = k }
   const point = (x: number, y: number): [number, number] => {
     const p = rotatePoint(anchor[0] + (x - anchor[0]) * sx, anchor[1] + (y - anchor[1]) * sy, ...anchor, angle)
     return [p[0] + dx, p[1] + dy]

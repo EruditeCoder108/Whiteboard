@@ -163,7 +163,9 @@ export class InputRouter {
     }
     this.toolSince = performance.now()
     const instruments = this.board.instruments
-    this.tool = instruments.active ? instruments.intercept(p) ?? instruments.snapTool(this.board.currentTool(), p) : this.board.currentTool()
+    // A switch, a slider or a terminal answers to whatever is in hand, except the tools meant to pass over things.
+    const part = activeTool.value === 'eraser' || activeTool.value === 'laser' ? null : this.board.partTool(p)
+    this.tool = part ?? (instruments.active ? instruments.intercept(p) ?? instruments.snapTool(this.board.currentTool(), p) : this.board.currentTool())
     this.mode = 'tool'
     this.tool.down(p)
     if (this.tool.allowsRadial) this.armLongPress(e, p)

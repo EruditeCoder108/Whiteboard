@@ -1206,6 +1206,25 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .table-count .scale-bump { width: 56px; height: 52px; }
 .table-count .scale-bump:disabled { opacity: .4; }
 .table-head-choice { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 16px; font-weight: 600; }
+/* ── apparatus ── */
+.apparatus-tray { position: absolute; z-index: 23; top: 12px; right: 12px; bottom: 96px; width: 340px; display: flex; flex-direction: column; padding: 8px 10px 10px; gap: 6px; }
+.window:not(.board) .apparatus-tray { top: 40px; bottom: 16px; }
+.tray-head { display: flex; align-items: center; justify-content: space-between; font-size: 15px; padding-left: 4px; }
+.tray-tabs { display: flex; gap: 4px; }
+.tray-tabs .chip { flex: 1; justify-content: center; min-height: 40px; font-size: 13px; }
+.tray-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; touch-action: pan-y; }
+.tray-examples { display: flex; flex-wrap: wrap; gap: 4px; }
+.tray-examples .chip { min-height: 40px; font-size: 12.5px; }
+.part-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.part-tile { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 3px; border-radius: var(--control, 10px); background: var(--hover); touch-action: manipulation; min-width: 0; }
+.part-tile:active { transform: scale(.96); }
+.part-tile span { font-size: 11.5px; font-weight: 600; text-align: center; line-height: 1.15; overflow-wrap: anywhere; }
+.part-picture { display: block; width: 100%; height: 72px; }
+.tray-hint { margin: 0; font-size: 12px; }
+.part-options { display: flex; flex-direction: column; gap: 10px; }
+.part-setting { display: flex; flex-direction: column; gap: 5px; }
+.part-setting .slider { width: 100%; }
+
 /* ── one look: panels, sheets and "this is selected" ──
    Warm, quiet surfaces and one way of showing what is chosen, everywhere. Sizes stay modest:
    only touch targets grow on the board, never the type. */

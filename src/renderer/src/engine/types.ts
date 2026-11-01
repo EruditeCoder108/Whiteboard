@@ -80,6 +80,8 @@ export interface ShapeItem extends ObjectMeta, TextStyle {
   to?: Anchor
   /** arrows and lines: square corners instead of a straight run, leaving sideways (h) or up and down (v) */
   elbow?: 'h' | 'v'
+  /** a wire between two terminals of apparatus: hangs in a soft curve, and carries current (see apparatus/world.ts) */
+  wire?: boolean
 }
 
 export interface TextItem extends ObjectMeta, TextStyle {
@@ -216,11 +218,23 @@ export interface ClipItem extends ObjectMeta {
   aspect: number
 }
 
-export type Item = StrokeItem | ShapeItem | TextItem | LabItem | ImageItem | GraphItem | ScaleItem | TableItem | ClipItem
-export type BoxItem = TextItem | LabItem | ImageItem | GraphItem | ScaleItem | TableItem | ClipItem
+/** A piece of working apparatus: `kind` says which (apparatus/parts.ts); `params` is its state, by name. */
+export interface ApparatusItem extends ObjectMeta {
+  t: 'a'
+  id: string
+  c: string
+  w: number
+  p: Rect
+  angle?: number
+  kind: string
+  params: Record<string, number>
+}
+
+export type Item = StrokeItem | ShapeItem | TextItem | LabItem | ImageItem | GraphItem | ScaleItem | TableItem | ClipItem | ApparatusItem
+export type BoxItem = TextItem | LabItem | ImageItem | GraphItem | ScaleItem | TableItem | ClipItem | ApparatusItem
 
 /** Objects whose geometry is just their rectangle. */
-export const isBox = (it: Item): it is BoxItem => it.t === 't' || it.t === 'l' || it.t === 'i' || it.t === 'g' || it.t === 'n' || it.t === 'b' || it.t === 'm'
+export const isBox = (it: Item): it is BoxItem => it.t === 't' || it.t === 'l' || it.t === 'i' || it.t === 'g' || it.t === 'n' || it.t === 'b' || it.t === 'm' || it.t === 'a'
 
 export const MARKER_ALPHA = 0.4
 

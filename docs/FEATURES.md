@@ -125,6 +125,12 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Graph of a function (several functions, editable) | ✅ |
 | Fraction bars, geometry shapes with measurements | ⏳ |
 | Unit converter | ⏳ 📚 |
+| **Working apparatus** (More › Apparatus, or Subjects): 58 parts that really work: 28 for physics, 17 for chemistry, 13 for biology | ✅ |
+| **Real circuits:** cells, batteries, AC supply, switches, resistors, rheostat, bulbs, LEDs, diodes, capacitors, coils, ammeter, voltmeter, galvanometer, fuses, motor, buzzer; drag between terminals to wire them; meters read true values; bulbs burn out and fuses blow; short circuits warn | ✅ |
+| **Light:** a ray box shines through lenses, mirrors and a prism on the page; white light splits into its colours | ✅ |
+| **Chemistry:** glassware with liquid levels, titration with worked-out pH and real indicator colours, burner that heats what is above it, thermometer and pH paper that read the vessel they stand in, balance, atomic shells to krypton | ✅ |
+| **Biology:** microscope with a focus knob and three slides, glass slide, plant and animal cells, bacterium, nerve cell, inside a leaf, a stoma that opens and closes, flower, breathing model, osmosis, DNA | ✅ |
+| Ready-made set-ups: Ohm's law, series and parallel, charging a capacitor, titration, heating, prism and more | ✅ |
 | Instruments with finger-sized buttons and live readings: a line's length along the ruler, a protractor arm that reads the angle, the compass radius | ✅ |
 | Graph entry by tapping: keys, common curves, live preview, zoom | ✅ |
 | Spotlight, curtain (screen cover), timer and stopwatch | ✅ |

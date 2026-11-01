@@ -17,6 +17,7 @@ import { paintGraph } from './graph'
 import { paintScale } from './scale'
 import { paintTable } from './table'
 import { paintClip } from './clip'
+import { paintPart } from './apparatus/world'
 
 export function rotatePoint(x: number, y: number, cx: number, cy: number, angle: number): [number, number] {
   const c = Math.cos(angle), s = Math.sin(angle)
@@ -56,6 +57,12 @@ const ELLIPSE_SEGMENTS = 72
 function linePoints(s: ShapeItem): number[] {
   const [x0, y0, x1, y1] = s.p
   const dx = x1 - x0, dy = y1 - y0
+  if (s.wire) {
+    // A wire hangs a little, like a real lead.
+    const sag = Math.min(70, Math.hypot(dx, dy) * .16), out: number[] = []
+    for (let i = 0; i <= 24; i++) { const t = i / 24; out.push(x0 + dx * t, y0 + dy * t + sag * 4 * t * (1 - t)) }
+    return out
+  }
   if (!s.elbow || Math.abs(dx) < 1 || Math.abs(dy) < 1) return [x0, y0, x1, y1]
   if (s.elbow === 'h') { const mx = (x0 + x1) / 2; return [x0, y0, mx, y0, mx, y1, x1, y1] }
   const my = (y0 + y1) / 2
@@ -287,6 +294,7 @@ function paintObject(ctx: CanvasRenderingContext2D, it: Item, alpha: number, lab
   if (it.t === 'n') { ctx.globalAlpha = alpha; paintScale(ctx, it); ctx.restore(); return }
   if (it.t === 'b') { ctx.globalAlpha = alpha; paintTable(ctx, it); ctx.restore(); return }
   if (it.t === 'm') { ctx.globalAlpha = alpha; paintClip(ctx, it); ctx.restore(); return }
+  if (it.t === 'a') { ctx.globalAlpha = alpha; paintPart(ctx, it); ctx.restore(); return }
   const path = itemPath(it)
   if (it.t === 's') {
     ctx.globalAlpha = alpha * (it.m ? MARKER_ALPHA : 1)

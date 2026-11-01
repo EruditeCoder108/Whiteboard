@@ -1,4 +1,4 @@
-import { Film, Presentation, LayoutTemplate, Network, Archive, Atom, Axis3d, MoveHorizontal, Table2, ArrowDownToLine, ChevronLeft, ChevronRight, Focus, FilePlus2, FileText, Image as ImageIcon, LineChart, Plus, Sigma, Trash2, FileDown } from 'lucide-preact'
+import { TestTubes, Film, Presentation, LayoutTemplate, Network, Archive, Atom, Axis3d, MoveHorizontal, Table2, ArrowDownToLine, ChevronLeft, ChevronRight, Focus, FilePlus2, FileText, Image as ImageIcon, LineChart, Plus, Sigma, Trash2, FileDown } from 'lucide-preact'
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { board } from '@/engine/instance'
@@ -7,6 +7,7 @@ import { S, currentColor } from '@/state/store'
 import { editEquation, editGraph, editScale, equationTarget, graphTarget, importing, insertFiles, loadTypesetter, pickFiles, svgDataUrl } from '@/state/insert'
 import { Btn, MenuItem, Sep } from './kit'
 import { capture } from '@/state/capture'
+import { openTray } from './Apparatus'
 
 export function InsertPopover(): JSX.Element {
   const close = (fn: () => void) => () => { S.popover.value = null; fn() }
@@ -18,6 +19,7 @@ export function InsertPopover(): JSX.Element {
       <MenuItem icon={FileText} label="PDF worksheet…" hint="one page each" onClick={close(() => void pickFiles('application/pdf,.pdf', false).then(files => insertFiles(files)))} />
       <MenuItem icon={Presentation} label="PowerPoint or OpenBoard…" hint=".pptx, .ubz" onClick={close(() => void pickFiles('.pptx,.ppt,.ubz', false).then(files => insertFiles(files)))} />
       <MenuItem icon={Film} label="Video or audio clip…" onClick={close(() => void pickFiles('video/*,audio/*,.mp4,.webm,.mp3,.m4a,.wav,.ogg,.aac', false).then(files => insertFiles(files)))} />
+      <MenuItem icon={TestTubes} label="Apparatus…" hint="circuits, glassware, models" onClick={() => openTray()} />
       <MenuItem icon={Table2} label="Table" onClick={() => { S.popover.value = 'table' }} />
       <MenuItem icon={Network} label="Mind map" onClick={close(() => board.startMindMap())} />
       <MenuItem icon={LayoutTemplate} label="Templates…" hint="Venn, KWL, timeline" onClick={() => { S.popover.value = 'templates' }} />

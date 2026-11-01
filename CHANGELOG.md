@@ -22,6 +22,14 @@
 - **Handwriting to text or equation** (optional): select the writing, and a model the teacher has connected reads it. The teacher checks it before it replaces anything.
 - **Capturing one window** no longer makes the system redraw every open window.
 - The More menu is wider, so everything shows at once on a board, and Settings and Background are in its first row.
+- **Working apparatus** (More › Apparatus, or Subjects): take parts out of a cupboard that stays open beside the board.
+  - **Circuits that really run:** drag between terminals to wire any of 17 parts. Ammeters, voltmeters and a galvanometer read true values, bulbs glow by power and burn out, fuses blow, and a short circuit warns.
+  - **Light:** a ray box shines through convex and concave lenses, a mirror and a prism, and white light splits into its colours.
+  - **Physics:** pendulum with its true period, spring balance, vernier caliper, bar magnet, a compass that turns towards it, force arrows.
+  - **Chemistry:** glassware you can fill by dragging, a burette that really titrates, with worked-out pH and true indicator colours. A burner heats what stands above it, and a thermometer or pH paper reads the vessel it is in. Balance, atomic shells up to krypton.
+  - **Biology:** microscope with a focus knob and three slides, labelled plant and animal cells, bacterium, nerve cell, flower, inside a leaf, a stoma that opens and closes, a breathing model, osmosis, DNA.
+  - **Ready-made set-ups** to start from: Ohm's law, series and parallel, charging a capacitor, rays through a lens, a prism, titration, heating water.
+- **One look:** quiet, warm panels and one way of showing what is selected. Touch targets grow on the board; the type does not. Plainer wording throughout.
 
 ## 1.6.0-beta.10 — Tables, reveals, light and dark mode, export preview, classroom tools — 2026-11-01
 
