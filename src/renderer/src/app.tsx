@@ -19,6 +19,7 @@ import { replay } from '@/state/replay'
 import { ReplayPanel, ReplayCanvas, ReplayControls, RecordingControls } from '@/ui/Replay'
 import { Dialog } from '@/ui/Dialog'
 import { SharePanel } from '@/ui/Share'
+import { LessonLibrary, NewLessonSheet } from '@/ui/Lessons'
 import { lesson } from '@/state/lesson'
 import { ScienceUI } from '@/ui/science/Science'
 import { PageBar, ImportStatus } from '@/ui/Insert'
@@ -173,6 +174,8 @@ export function App(): JSX.Element {
           const recordingOk = await replay.flush()
           if (saveBoardOnClose) autosave.markDirty()
           const ok = await autosave.flush()
+          // The lesson's own file gets its last changes too (the app's store above already has them).
+          await lesson.flush().catch(() => false)
           const settingsOk = await settings?.flush()
           window.api.win.flushed(ok && settingsOk === true && recordingOk)
         })().catch(() => { S.closing.value = false; window.api.win.flushed(false) })
@@ -235,6 +238,8 @@ export function App(): JSX.Element {
       <ImportStatus />
       <Toast />
       <PalmCalibration />
+      {S.popover.value === 'lessons' && <LessonLibrary />}
+      {S.popover.value === 'new-lesson' && <NewLessonSheet />}
       <Dialog />
       <SharePanel />
       {S.ready.value && !S.layoutChosen.value && <LayoutChooser />}

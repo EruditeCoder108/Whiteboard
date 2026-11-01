@@ -97,13 +97,11 @@ try {
     { t: 'shape', s: 'ellipse', c: '#e5484d', w: 3, p: [120, 10, 240, 100] }
   ] }))
   await app.evaluate(({ dialog }, path) => { dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [path] }) }, legacyPath)
+  // The lesson on the board saves itself into the library, so opening another one needs no question.
+  const linked = await fw(page, async w => { await w.lessonState.lesson.flush(); return w.lessonState.lessonPath.value })
+  check('the lesson on the board was saved to a file of its own before anything replaced it', !!linked && await itemCount(page) === currentCount, String(linked))
   await page.keyboard.press('Control+o')
-  // The lesson on the board is not saved to a file: opening another one asks first. Cancel keeps it.
-  await page.getByRole('alertdialog').waitFor()
-  await page.getByRole('button', { name: 'Cancel' }).click()
-  check('opening over unsaved work asks first, and Cancel leaves the lesson as it was', await itemCount(page) === currentCount && await page.getByRole('alertdialog').count() === 0)
-  await page.keyboard.press('Control+o')
-  await page.getByRole('button', { name: 'Don’t save' }).click()
+  await page.getByRole('button', { name: 'Open a file…' }).click()
   await page.waitForFunction(() => window.__fw.board.doc.items.length === 2)
   check('Python board imports through the normal open command', await fw(page, (w) => w.board.doc.items[0].t === 's' && w.board.doc.items[1].t === 'h'))
   check('an imported Python board has no lesson file of its own, so saving asks where', await fw(page, async w => (await window.api.lessons.getLink()).path === null))

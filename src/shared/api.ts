@@ -32,6 +32,23 @@ export interface RecentLesson {
   name: string
   savedAt: string
 }
+/** What the lesson library shows about a lesson file. */
+export interface LibraryLesson {
+  path: string
+  name: string
+  /** the teacher's grouping: a subject, class or course ('' when none) */
+  subject: string
+  pages: number
+  kind: 'notebook' | 'canvas'
+  modified: string
+  created: string
+  /** a small picture of the first page (data URL) */
+  thumb?: string
+  /** kept in the library folder (rather than elsewhere on the PC) */
+  inLibrary: boolean
+}
+/** Sent along with a save so the library can show the lesson without opening it. */
+export interface LessonInfo { subject?: string; pages: number; kind: 'notebook' | 'canvas'; thumb?: string }
 /** Which file the lesson on the board belongs to, and whether it has changes that file does not. */
 export interface LessonLink {
   path: string | null
@@ -108,8 +125,19 @@ export interface Api {
     /** A lesson from the recent list. */
     open(path: string): Promise<{ path: string; json: string } | null>
     /** Write the lesson file in one piece (the previous file stays until the new one is complete). */
-    save(path: string, json: string): Promise<SaveResult>
+    save(path: string, json: string, info?: LessonInfo): Promise<SaveResult>
     forget(path: string): Promise<void>
+    /** Every lesson: the library folder plus lessons kept elsewhere that were used here. */
+    library(): Promise<LibraryLesson[]>
+    /** A free path for a new lesson in the library folder. */
+    create(name: string, subject: string): Promise<string | null>
+    rename(path: string, name: string): Promise<{ ok: true; path: string } | { ok: false; error: string }>
+    duplicate(path: string): Promise<string | null>
+    /** To the Recycle Bin. */
+    remove(path: string): Promise<SaveResult>
+    setSubject(path: string, subject: string): Promise<SaveResult>
+    /** Show the file in File Explorer. */
+    reveal(path: string): Promise<void>
     getLink(): Promise<LessonLink>
     setLink(link: LessonLink): Promise<SaveResult>
   }

@@ -56,6 +56,7 @@ export function notebookToCanvas(pages: ({ items: Item[]; frame?: Frame } & Page
     if (pg.color) frame.color = pg.color
     if (pg.texture) frame.texture = pg.texture
     if (pg.title) frame.title = pg.title
+    if (pg.section) frame.section = pg.section
     if (pg.art) frame.art = pg.art // placed on the sheet, so it moves with it
     frames.push(frame)
     x += PAGE_W + FRAME_GAP
@@ -108,6 +109,7 @@ export function canvasToNotebook(items: Item[], frames: LookFrame[], surface: Pa
     if (f.color) page.color = f.color
     if (f.texture) page.texture = f.texture
     if (f.title) page.title = f.title
+    if (f.section) page.section = f.section
     if (f.art) page.art = f.art
     else if (i === 0) Object.assign(page, surfaceArt)
     return page

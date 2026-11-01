@@ -77,7 +77,10 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Your own background picture: fit or fill, position, strength, long-page placement; kept in the lesson, survives erase/clear, save, convert and export | ✅ |
 | More papers: outline maps of India and the world, logarithmic, polar | ⏳ |
 | Templates: Venn diagram, timeline, KWL chart, worksheet | ⏳ |
-| Recent lessons, a new lesson and open from a pen drive (in the board's More menu; no separate home screen yet) | ✅ |
+| **My lessons:** every lesson filed by subject with a first-page picture and date; search, open, rename, copy, show in folder, delete to the Recycle Bin | ✅ |
+| New lesson with a name, subject or class, and notebook or canvas | ✅ |
+| Every lesson saves itself to its own file (Documents › Floating Whiteboard › Lessons); Ctrl+S saves at once | ✅ |
+| Page sections: headings in the page sorter ("Warm-up", "Practice"), saved with the lesson | ✅ |
 | Autosave that never loses work | ✅ |
 
 ## 3. Import, export and sharing
@@ -90,7 +93,7 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | OpenBoard lesson import (`.ubz`) | ⏳ |
 | Export as PDF: a notebook exports its sheets with their paper (blank ones included), a framed canvas one page per frame; long pages split by screen | ✅ |
 | Export a page, everything or the selection as a picture (paper and board colour included, or ink only) | ✅ |
-| Lesson files: New, Open, Save (Ctrl+S saves the lesson), Save as, recent lessons, ask before replacing unsaved work | ✅ |
+| Lesson files: New, Open, Save now, Save a copy, recent lessons; open from a pen drive | ✅ |
 | Board colour, paper and page names saved with the lesson; kept through notebook ⇄ canvas | ✅ |
 | Undo for page and board changes (delete, move, copy, convert, colour, paper) | ✅ |
 | Record the board, replay it step by step, export the replay as a video | ✅ |

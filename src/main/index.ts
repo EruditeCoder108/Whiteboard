@@ -6,7 +6,8 @@ import {
   ipcMain,
   screen,
   clipboard,
-  safeStorage
+  safeStorage,
+  shell
 } from 'electron'
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
@@ -371,7 +372,8 @@ function registerIpc(): void {
     const owner = w()
     if (!owner) return null
     const fileName = typeof name === 'string' && name.trim() ? name.replace(/[\\/:*?"<>|]/g, '_').slice(0, 120) : 'lesson.wbd'
-    const r = await dialog.showSaveDialog(owner, { title: 'Save lesson', defaultPath: join(app.getPath('documents'), fileName), filters: [{ name: 'Whiteboard lesson', extensions: ['wbd'] }] })
+    await fs.mkdir(lessons.libraryDir, { recursive: true }).catch(() => {})
+    const r = await dialog.showSaveDialog(owner, { title: 'Save a copy of the lesson', defaultPath: join(lessons.libraryDir, fileName), filters: [{ name: 'Whiteboard lesson', extensions: ['wbd'] }] })
     if (r.canceled || !r.filePath) return null
     lessons.allow(r.filePath)
     return r.filePath
@@ -386,8 +388,17 @@ function registerIpc(): void {
     return lessons.open(r.filePaths[0])
   })
   ipcMain.handle('lessons:open', (_e, path: unknown) => { stopShare(); return lessons.open(path) })
-  ipcMain.handle('lessons:save', (_e, path: unknown, json: unknown) => lessons.save(path, json))
+  ipcMain.handle('lessons:save', (_e, path: unknown, json: unknown, info: unknown) => lessons.save(path, json, info))
   ipcMain.handle('lessons:forget', (_e, path: string) => lessons.forget(path))
+  ipcMain.handle('lessons:library', () => lessons.library())
+  ipcMain.handle('lessons:create', (_e, name: unknown, subject: unknown) => lessons.create(name, subject))
+  ipcMain.handle('lessons:rename', (_e, path: unknown, name: unknown) => lessons.rename(path, name))
+  ipcMain.handle('lessons:duplicate', (_e, path: unknown) => lessons.duplicate(path))
+  ipcMain.handle('lessons:remove', (_e, path: unknown) => lessons.remove(path))
+  ipcMain.handle('lessons:set-subject', (_e, path: unknown, subject: unknown) => lessons.setSubject(path, subject))
+  ipcMain.handle('lessons:reveal', async (_e, path: unknown) => {
+    if (typeof path === 'string' && (await lessons.library()).some(l => l.path === path)) shell.showItemInFolder(path)
+  })
   ipcMain.handle('lessons:get-link', () => lessons.link())
   ipcMain.handle('lessons:set-link', (_e, link: unknown) => lessons.setLink(link))
 
@@ -520,7 +531,9 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(async () => {
     app.setAppUserModelId('com.sambhav.floating-whiteboard')
     storage = new DiskStore(app.getPath('userData'))
-    lessons = new Lessons(app.getPath('userData'))
+    // Lessons made here live in Documents\Floating Whiteboard\Lessons; deleting one sends it to the Recycle Bin.
+    // (FW_LESSONS_DIR: tests keep their lessons in their own throw-away profile.)
+    lessons = new Lessons(app.getPath('userData'), process.env.FW_LESSONS_DIR || join(app.getPath('documents'), 'Floating Whiteboard', 'Lessons'), (p) => shell.trashItem(p))
     setTimeout(() => { void storage.collectAssets().catch(() => {}) }, 60_000)
     agentBridge = new AgentBridge(app.getPath('userData'), app.isPackaged ? join(process.resourcesPath, 'mcp/whiteboard-mcp.cjs') : join(app.getAppPath(), 'mcp/whiteboard-mcp.cjs'), callBoard)
     await agentBridge.disable()

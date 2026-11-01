@@ -11,7 +11,7 @@ import type { ShapeKind } from '@/engine/types'
 import { InsertPopover, EquationEditor, GraphEditor } from './Insert'
 import { PresentPopover } from './Present'
 import { equationTarget, graphTarget } from '@/state/insert'
-import { LessonSheet, ExportSheet } from './Lessons'
+import { ExportSheet } from './Lessons'
 import { Btn, MenuItem, Row, Segmented, Sep, Slider, Swatch, Switch } from './kit'
 import { calibrating } from './Calibrate'
 import { PaperPicker } from './Paper'
@@ -146,9 +146,9 @@ export function MenuPopover(): JSX.Element {
   return (
     <div class="popover panel ui menu" data-popover-keep="">
       <MenuItem icon={FilePlus2} label="New lesson" hint="Ctrl+N" onClick={close(actions.newLesson)} />
-      <MenuItem icon={FolderOpen} label="Open lesson…" hint="Ctrl+O" onClick={() => (S.popover.value = 'lessons')} />
-      <MenuItem icon={Save} label="Save lesson" hint="Ctrl+S" onClick={close(actions.saveLesson)} />
-      <MenuItem icon={SaveAll} label="Save lesson as…" hint="Ctrl+Shift+S" onClick={close(actions.saveLessonAs)} />
+      <MenuItem icon={FolderOpen} label="My lessons…" hint="Ctrl+O" onClick={() => (S.popover.value = 'lessons')} />
+      <MenuItem icon={Save} label="Save now" hint="Ctrl+S · it also saves itself" onClick={close(actions.saveLesson)} />
+      <MenuItem icon={SaveAll} label="Save a copy…" hint="Ctrl+Shift+S" onClick={close(actions.saveLessonAs)} />
       <Sep />
       <MenuItem icon={Share2} label="Export picture or PDF…" hint="Ctrl+E" onClick={() => (S.popover.value = 'export')} />
       <MenuItem icon={History} label="Recovery backups…" onClick={() => (S.popover.value = 'recovery')} />
@@ -244,7 +244,7 @@ const SHORTCUTS: [string, [string, string][]][] = [
   ['Tools', [['V / Q / H', 'Select · Lasso · Hand'], ['P / M / E', 'Pen · Highlighter · Eraser'], ['T / N', 'Text / Sticky note'], ['E again', 'Eraser: Stroke ⇄ Pixel'], ['K', 'Laser pointer'], ['L A R O', 'Line · Arrow · Rect · Oval'], ['[  ]', 'Brush size']]],
   ['Pen, mouse & touch', [['Hold press', 'Radial menu'], ['Barrel button', 'Eraser while held'], ['2 fingers', 'Pan & pinch-zoom'], ['Shift', 'Straight / square shapes'], ['Alt + drag', 'Move window']]],
   ['Board', [['Ctrl+Z / Y', 'Undo / Redo'], ['Ctrl+A', 'Select all'], ['Ctrl+D', 'Duplicate'], ['Ctrl+C / V', 'Copy / Paste objects'], ['Ctrl+G', 'Group selection'], ['Ctrl+Shift+G', 'Ungroup selection'], ['Enter', 'Edit selected text'], ['Delete', 'Delete selection'], ['Ctrl+Shift+C', 'Copy image']]],
-  ['Lesson', [['Ctrl+N', 'New lesson'], ['Ctrl+O', 'Open lesson'], ['Ctrl+S', 'Save lesson'], ['Ctrl+Shift+S', 'Save lesson as'], ['Ctrl+E', 'Export picture or PDF']]],
+  ['Lesson', [['Ctrl+N', 'New lesson'], ['Ctrl+O', 'My lessons'], ['Ctrl+S', 'Save now (lessons also save themselves)'], ['Ctrl+Shift+S', 'Save a copy'], ['Ctrl+E', 'Export picture or PDF']]],
   ['Object editing', [['Ctrl+L', 'Lock / Unlock selection'], ['Ctrl+Alt+C / V', 'Copy / Paste style'], ['Arrow keys', 'Nudge · Shift for 10 px'], ['Page Up / Down', 'Bring front / Send back'], ['Shift + resize', 'Keep proportions'], ['Shift + rotate', 'Snap to 15°'], ['Ctrl+Enter', 'Finish typing'], ['Esc', 'Cancel typing or drag']]],
   ['View', [['Ctrl+Wheel', 'Zoom'], ['Space + drag', 'Pan'], ['Ctrl+0 / 1 / 2', '100% / Fit all / Fit selection'], ['G', 'Cycle grid'], ['Tab', 'Hide / show interface'], ['Ctrl+Shift+Space', 'Pass-through (global)'], ['Ctrl+Shift+H', 'Hide window (global)']]]
 ]
@@ -281,7 +281,6 @@ export function Popovers(): JSX.Element {
       {p === 'recovery' && <RecoveryPopover />}
       {p === 'insert' && <InsertPopover />}
       {/* on the smart board these sheets open above the toolbar (see BoardBar) */}
-      {!onBoard && p === 'lessons' && <LessonSheet />}
       {!onBoard && p === 'export' && <ExportSheet />}
       {p === 'present' && <PresentPopover />}
       {p === 'equation' && <EquationEditor key={equationTarget.value?.id ?? 'new'} />}

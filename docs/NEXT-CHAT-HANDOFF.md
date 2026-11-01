@@ -33,14 +33,21 @@ The gesture ring is a separate college project and is **not** part of the produc
 | Release history | `CHANGELOG.md` |
 | GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#3 merged, lesson integrity on branch `feature/lesson-integrity` |
 | Installed app (owner's laptop) | `%LOCALAPPDATA%\Programs\Floating Whiteboard` (per-user NSIS install, Start menu + desktop shortcut) |
-| Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.4.exe` (ignored by git) |
+| Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.5.exe` (ignored by git) |
 | Older unrelated projects in the parent folder | `..\android-library`, `..\*.pyw` (the original Python board). Leave them alone. |
 
 ## 3. State right now
 
-- `main` holds 1.6.0-beta.4: Lesson integrity (PR #4), **Background & paper** (§6, PR #5), **Share to phones**
-  (local Wi-Fi + QR, built by the second agent, PR #6) and **board surfaces** (textured chalkboard/green/slate/paper,
-  `engine/texture.ts`). See `CHANGELOG.md`.
+- **`docs/CHECKLIST.md` is the owner's plain-language progress list.** Tick items (✅ / 🔄 / ⬜) whenever a milestone
+  finishes or starts; keep it short and jargon-free. `FEATURES.md` stays the detailed feature list.
+
+- `main` holds 1.6.0-beta.5: Lesson integrity (PR #4), **Background & paper** (§6, PR #5), **Share to phones**
+  (local Wi-Fi + QR, built by the second agent, PR #6), **board surfaces** (PR #7, `engine/texture.ts`) and
+  **My lessons + autosave + page sections**. See `CHANGELOG.md`.
+- **Owner's direction (2026-11-01):** a professional smart-board app: every lesson autosaves to its own file;
+  lessons are organised (name, subject, dates) in My lessons. **Next: light/dark mode for the whole app**, done
+  "intelligently" (interface theme Light / Dark / Auto that follows the board; print-friendly PDF of dark boards as
+  part of it). Export preview is deferred as polish. Board textures are "almost enough"; tune them only if asked.
 - **The owner offered to install Note 3** (trial) so its board surfaces can be studied with computer use. They
   said Note 3's boards "feel organic" (textured blackboard, grey-green board, many customisable backgrounds). If
   it's installed, compare our surfaces side by side and tune `engine/texture.ts` (cloud/grain amounts) and the
@@ -82,8 +89,9 @@ Read the whole document first, not just §7. Work through it iteratively, one mi
 
 **A. Next deep-dive milestones.** Lesson integrity (F1–F6, F9) and §6 Background & paper are done.
 Pick from the deep dive in this order, one branch each, and tell the owner in plain words after each:
-1. §9 output: print-friendly export of dark boards, export preview (page size and pagination), page sections.
-   (Capture to lesson is with the second agent; review and merge its branch when it reports.)
+1. **Light/dark theme for the whole app** (see the owner's direction in §3), including print-friendly PDFs of dark
+   boards. (Capture to lesson is with the second agent; review and merge its branch when it reports, then give it
+   `docs/agent-tasks/note3-study.md`, a study of the whole Note 3 app.)
 2. §8 reusable content: personal resource shelf, tables, connectors/mind maps, number line/axes, prepared reveals.
 3. Page sections (rest of F9); F8 and F7 when the foundations/panel exist.
 The look of a page is `PageLook` (`engine/pages.ts`): paper, color, title, origin, spacing, strength, lines, art.
@@ -136,6 +144,14 @@ Electron 44 + electron-vite, Preact + `@preact/signals`, Canvas2D, TypeScript.
 - **Board surface** = colour + texture. `lessonTexture` (file root `texture`) with a per-page/frame `look.texture`
   override, exactly like colour; `board.setSurface({color, texture}, onlyHere)`. `texture.ts` makes two seamless
   layers in code (grain tile 1:1, cloud tile drawn ×7) and paints them at screen scale, anchored to the world.
+- **Lessons and files:** every lesson has a file. `state/lesson.ts` autosaves it 1.5 s after each change
+  (`lesson.flush()`, also on close), creating it in the library (`lessons.create`) when it has none. Main
+  `lessons.ts`: the library folder (`Documents\Floating Whiteboard\Lessons`, or `FW_LESSONS_DIR`, which `e2e/lib.mjs`
+  sets so tests never write to the real Documents), `library.json` index (subject, pages, kind, first-page thumb),
+  rename/duplicate/remove (Recycle Bin via `shell.trashItem`). UI: `ui/Lessons.tsx` `LessonLibrary` and
+  `NewLessonSheet`, mounted in `app.tsx` (popover names `lessons`, `new-lesson`).
+- **Page sections:** `look.section` on the page (or frame) where a section starts; `board.setSection`/`sectionAt`;
+  headings in the page sorter (`SectionHead` in `ui/Board.tsx`).
 - **Background picture** (`look.art`): stored in the assets table like pictures (`art.a` key), placed per screen of
   the sheet by `artTargets`/`placeArt`. Not inherited by new pages or frames. `board.setArt`, `pictureToBackground`,
   `state/background.ts`.
@@ -169,6 +185,11 @@ Electron 44 + electron-vite, Preact + `@preact/signals`, Canvas2D, TypeScript.
   not a script written through a heredoc. No Python on this PC: for multi-edit scripts write Node (`node file.js`,
   `fs` + exact replacement, convert CRLF → LF → CRLF).
 - Direct writes to `S.bgColor`/`S.grid` in e2e no longer work; use `w.board.setColor` / `setPaper`.
+- **Never edit files with PowerShell `Get-Content -Raw` / `Set-Content`:** Windows PowerShell 5 reads UTF-8 without a
+  BOM as ANSI and garbles characters like … ’ ⇄ (it happened to `e2e/phase1.mjs`). Use the Edit tool, or Node
+  (`fs.readFileSync(f, 'utf8')`). Use the Edit tool for `package.json` version bumps too.
+- Full-screen sheets (the library, New lesson, dialogs) must be mounted in `app.tsx`, not inside `BoardBar` or
+  `Popovers`; inside the toolbar container they are boxed in and their buttons can't be clicked.
 - Opening/creating a lesson over unsaved work shows a dialog (`role=alertdialog`); e2e must click *Don’t save* / *Cancel*.
 - Popovers are rendered by `Popovers()` in laptop mode and by `BoardBar` in board mode; render a new sheet in only one.
 
