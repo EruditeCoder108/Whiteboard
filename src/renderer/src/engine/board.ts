@@ -12,7 +12,8 @@ import type { BoardMeta, PageData, ParsedBoard } from './serialize'
 import { EraserTool, HandTool, LaserTool, PenTool, SelectTool, ShapeTool, TextTool } from './tools'
 import type { Tool, ToolHost } from './tool-types'
 import { newId } from './types'
-import type { Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, LabItem, ImageItem, GraphItem, ScaleItem } from './types'
+import type { Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, LabItem, ImageItem, GraphItem, ScaleItem, TableItem } from './types'
+import { MAX_COLS, MAX_ROWS, addCol, addRow, cellAt, fitTable, newTable, removeCol, removeRow, setCell, tableFont } from './table'
 import { onImageReady, preloadImages } from './media'
 import { Instruments } from './instruments'
 import { MAX_ZOOM, MIN_ZOOM, fitRect, panBy as panView, toWorld, zoomAboutCentre, zoomAt } from './view'
@@ -824,7 +825,12 @@ export class Board implements ToolHost {
 
   pasteStyle(): void { if (this.copiedStyle) this.patchSelection(this.copiedStyle) }
 
-  fitItem(it: Item): Item { return it.t === 't' ? fitTextHeight(it, this.cctx) : it }
+  fitItem(it: Item): Item {
+    if (it.t === 't') return fitTextHeight(it, this.cctx)
+    if (it.t !== 'b') return it
+    const ctx = this.cctx
+    return fitTable(it, (text, head) => { ctx.save(); ctx.font = tableFont(it, head); const width = ctx.measureText(text).width; ctx.restore(); return width })
+  }
 
   createText(wx: number, wy: number, note = false): void {
     const item: TextItem = { t: 't', id: newId(), c: note ? '#172033' : S.penColor.value, w: 1, p: [wx, wy, wx + (note ? 230 : 300), wy + (note ? 230 : 62)], text: '', fontSize: note ? 24 : 28, note, fill: note ? '#fff2a8' : 'none' }
@@ -1892,6 +1898,64 @@ export class Board implements ToolHost {
     this.setTool('select')
     this.commitAdd(it)
     this.setSelection([it])
+  }
+
+  // ── tables ──────────────────────────────────────────────────────────────────
+  /** The cell the table's commands act on, the one last tapped; otherwise they act at the end. */
+  lastCell: { id: string; r: number; c: number } | null = null
+  /** opens the text field on a cell (wired by the UI) */
+  onEditCell: ((cell: { id: string; r: number; c: number }) => void) | null = null
+
+  insertTable(rows: number, cols: number, head: boolean): TableItem {
+    this.commitText()
+    const r = this.visibleRect()
+    const it: TableItem = { t: 'b', id: newId(), c: S.penColor.value, w: 2.5, ...newTable(rows, cols, (r[0] + r[2]) / 2, (r[1] + r[3]) / 2 - (r[3] - r[1]) * .04, (r[2] - r[0]) * .86, (r[3] - r[1]) * .76), ...(head ? { head: true } : {}) }
+    this.lastCell = null
+    this.setTool('select')
+    this.commitAdd(it)
+    this.setSelection([it])
+    return it
+  }
+
+  editTableCell(it: TableItem, wx: number, wy: number): void {
+    const cell = cellAt(it, wx, wy)
+    if (cell) this.openCell(it, cell.r, cell.c)
+  }
+
+  openCell(it: TableItem, r: number, c: number): void {
+    this.lastCell = { id: it.id, r, c }
+    this.onEditCell?.(this.lastCell)
+  }
+
+  /** A finished cell: one undo step, and its row grows if the text needs it. */
+  setTableCell(id: string, r: number, c: number, text: string): void {
+    this.lastCell = { id, r, c }
+    this.changeTable(id, it => setCell(it, r, c, text), 'Type in a table')
+  }
+
+  private changeTable(id: string, change: (it: TableItem) => TableItem, label: string): void {
+    const current = this.doc.items.find(x => x.id === id)
+    if (!current || current.t !== 'b') return
+    const next = change(current)
+    if (next === current) return
+    this.editSelectionItems([current], () => this.fitItem(next), label)
+  }
+
+  /** Add or remove a row or column of the selected table, at the cell last tapped; a heading row on or off. */
+  shapeTable(what: 'add-row' | 'add-col' | 'remove-row' | 'remove-col' | 'head'): void {
+    const it = this.selection[0]
+    if (this.selection.length !== 1 || !it || it.t !== 'b' || it.locked) return
+    const at = this.lastCell?.id === it.id ? this.lastCell : null
+    this.changeTable(it.id, t => {
+      switch (what) {
+        case 'add-row': return t.rows.length < MAX_ROWS ? addRow(t, at?.r) : t
+        case 'add-col': return t.cols.length < MAX_COLS ? addCol(t, at?.c) : t
+        case 'remove-row': return removeRow(t, at?.r)
+        case 'remove-col': return removeCol(t, at?.c)
+        case 'head': { const { head, ...rest } = t; return head ? rest : { ...rest, head: true } }
+      }
+    }, 'Change a table')
+    if (at && (what === 'remove-row' || what === 'remove-col')) this.lastCell = null
   }
 
   /** A number line or axes on this page, selected and ready to move. */

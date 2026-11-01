@@ -40,6 +40,8 @@ export interface ToolHost {
   pruneSelection(): void
   createText(wx: number, wy: number, note?: boolean): void
   fitItem(it: Item): Item
+  /** a tap on a cell of the selected table */
+  editTableCell?(it: import('./types').TableItem, wx: number, wy: number): void
   pauseLab?(it: import('./types').LabItem): void
   labTime?(it: import('./types').LabItem): number
 }

@@ -36,8 +36,8 @@ export function placeInView(items: Item[], view: Rect, room = .8): Item[] {
 }
 
 /** Below this contrast, ink cannot be read from the classroom. */
-const VANISHES = 2
-const READABLE = 2.6
+const VANISHES = 3
+const READABLE = 3.4
 
 const rgbOf = (hex: string): number[] => {
   const h = hex.replace('#', '')
@@ -70,6 +70,10 @@ export function readableOn(items: Item[], from: string, bg: string, least = VANI
   return items.map(it => {
     if (it.t === 's') return it.m || fix(it.c) === it.c ? it : { ...it, c: fix(it.c) }
     if ((it.t === 'i' && it.latex !== undefined) || it.t === 'n') return fix(it.c) === it.c ? it : { ...it, c: fix(it.c) } // drawn in the object's own colour
+    if (it.t === 'b') {
+      const c = fix(it.c), textColor = it.textColor ? fix(it.textColor) : undefined
+      return c === it.c && textColor === it.textColor ? it : { ...it, c, ...(textColor ? { textColor } : {}) }
+    }
     if (it.t !== 'h' && it.t !== 't') return it
     const filled = !!it.fill && it.fill !== 'none'
     if (it.t === 't' && (filled || it.note)) return it

@@ -139,6 +139,7 @@ export function installShortcuts(cancelRadial: () => void): () => void {
       case 'Enter': {
         const selected = board.selection[0]
         if (board.selection.length === 1 && (selected.t === 't' || selected.t === 'h')) { e.preventDefault(); return board.editText(selected) }
+        if (board.selection.length === 1 && selected.t === 'b' && !selected.locked) { e.preventDefault(); return board.openCell(selected, board.lastCell?.id === selected.id ? board.lastCell.r : 0, board.lastCell?.id === selected.id ? board.lastCell.c : 0) }
         break
       }
       // With a selection these reorder objects; otherwise they turn pages (presentation clickers send them).

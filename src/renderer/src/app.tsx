@@ -29,6 +29,7 @@ import { CurtainLayer, SpotlightLayer, TimerWidget } from '@/ui/Present'
 import { editEquation, editGraph, editScale, insertFiles, scaleTarget } from '@/state/insert'
 import { ScaleEditor } from '@/ui/Scale'
 import { RevealBar } from '@/ui/Reveal'
+import { TableCellEditor, TableChooser, editingCell } from '@/ui/Table'
 import { CalculatorWidget, PeriodicSheet } from '@/ui/Tools'
 import { ExportPreview } from '@/ui/ExportPreview'
 
@@ -94,6 +95,7 @@ export function App(): JSX.Element {
       autosave.markDirty()
     }
     board.onEdit = (label, timing) => replay.capture(label, timing)
+    board.onEditCell = cell => { editingCell.value = cell }
     board.onEditMedia = it => it.t === 'g' ? editGraph(it) : it.t === 'n' ? editScale(it) : editEquation(it)
     const onDragOver = (e: DragEvent): void => { if (e.dataTransfer?.types.includes('Files')) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' } }
     const onDrop = (e: DragEvent): void => {
@@ -240,6 +242,7 @@ export function App(): JSX.Element {
       {hidden && !S.passthrough.value && <MiniBar />}
       {!S.passthrough.value && <><ReplayControls /><RecordingControls /></>}
       {!S.passthrough.value && <Editor />}
+      {!S.passthrough.value && <TableCellEditor />}
       <Radial />
       <TimerWidget />
       <CalculatorWidget />
@@ -251,6 +254,7 @@ export function App(): JSX.Element {
       {S.popover.value === 'scale' && <ScaleEditor key={scaleTarget.value?.id ?? 'new'} />}
       {S.popover.value === 'export-preview' && <ExportPreview />}
       {S.popover.value === 'periodic' && <PeriodicSheet />}
+      {S.popover.value === 'table' && <TableChooser />}
       {S.popover.value === 'shelf' && <ShelfSheet />}
       {S.popover.value === 'shelf-save' && <ShelfSaveSheet />}
       <Dialog />

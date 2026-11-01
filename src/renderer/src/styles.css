@@ -1192,3 +1192,17 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .periodic-key { display: flex; flex-wrap: wrap; gap: 6px; }
 .periodic-key .chip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; }
 .periodic-key i { width: 16px; height: 16px; border-radius: 4px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15); }
+
+/* ── tables ─────────────────────────────────────────────────────────────── */
+.table-card { width: min(520px, 100%); }
+.table-preview { display: grid; gap: 2px; padding: 2px; border-radius: 8px; background: var(--line); max-height: 180px; overflow: hidden; }
+.table-preview i { display: block; min-height: 10px; height: 26px; background: var(--panel); }
+.table-preview i.head { background: var(--accent-soft); }
+.table-count { display: flex; align-items: center; gap: 10px; }
+.table-count > span { flex: 1; font-size: 16px; font-weight: 600; }
+.table-count b { min-width: 44px; text-align: center; font-size: 22px; }
+.table-count .scale-bump { width: 56px; height: 52px; }
+.table-count .scale-bump:disabled { opacity: .4; }
+.table-head-choice { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 16px; font-weight: 600; }
+.table-cell-editor { position: absolute; z-index: 26; box-shadow: 0 0 0 2.5px #4262ff; border-radius: 2px; }
+.table-cell-editor textarea { display: block; width: 100%; height: 100%; border: 0; outline: none; resize: none; background: transparent; overflow: hidden; user-select: text; -webkit-user-select: text; }

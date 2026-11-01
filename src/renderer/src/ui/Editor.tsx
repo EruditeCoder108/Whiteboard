@@ -1,6 +1,6 @@
 import {
   AlignCenter, AlignLeft, AlignRight, Archive, ArrowDownToLine, ArrowUpToLine, Bold, Check,
-  Copy, Ellipsis, EyeOff, Group, Italic, List, ListOrdered, LockKeyhole, Palette, Pencil,
+  Columns3, Copy, Ellipsis, EyeOff, Group, Heading, Minus, Rows3, Italic, List, ListOrdered, LockKeyhole, Palette, Pencil,
   RotateCw, Scan, Trash2, Ungroup, UnlockKeyhole, X
 } from 'lucide-preact'
 import type { JSX } from 'preact'
@@ -150,7 +150,7 @@ function TextStyles({ items }: { items: EditableItem[] }): JSX.Element {
 
 function ObjectStyles({ items }: { items: Item[] }): JSX.Element {
   const unlocked = items.filter(it => !it.locked), text = unlocked.filter(editable), fill = unlocked.filter(filled)
-  const bordered = unlocked.filter(it => !isBox(it) || it.t === 'n'), shapes = unlocked.filter(it => it.t === 'h')
+  const bordered = unlocked.filter(it => !isBox(it) || it.t === 'n' || it.t === 'b'), shapes = unlocked.filter(it => it.t === 'h')
   const rounded = shapes.filter(it => it.t === 'h' && it.k === 'rect')
   const connectors = unlocked.filter(isConnector)
   return <div class="object-style-content">
@@ -210,10 +210,11 @@ export function SelectionToolbar(): JSX.Element | null {
   const run = (fn: () => void): void => { setPanel(null); fn() }
   return <div class="selection-tools ui nodrag" ref={ref} data-testid="selection-toolbar" data-popover-keep="" style={{ left, top: toolbarTop, width }}>
     <div class="selection-actions panel" role="toolbar" aria-label="Selection actions">
-      <span class="selection-caption" title={locked ? 'Selection includes locked objects' : `${items.length} selected`}>{allLocked ? <LockKeyhole size={13} /> : items.length === 1 ? items[0].t === 'l' ? 'Lab' : items[0].t === 's' ? 'Stroke' : items[0].t === 't' ? items[0].note ? 'Note' : 'Text' : items[0].t === 'i' ? items[0].latex !== undefined ? 'Equation' : 'Picture' : items[0].t === 'g' ? 'Graph' : items[0].t === 'n' ? items[0].y ? 'Axes' : 'Number line' : isConnector(items[0]) ? items[0].k === 'arrow' ? 'Arrow' : 'Line' : 'Shape' : `${items.length} selected`}</span>
+      <span class="selection-caption" title={locked ? 'Selection includes locked objects' : `${items.length} selected`}>{allLocked ? <LockKeyhole size={13} /> : items.length === 1 ? items[0].t === 'l' ? 'Lab' : items[0].t === 's' ? 'Stroke' : items[0].t === 't' ? items[0].note ? 'Note' : 'Text' : items[0].t === 'i' ? items[0].latex !== undefined ? 'Equation' : 'Picture' : items[0].t === 'g' ? 'Graph' : items[0].t === 'b' ? 'Table' : items[0].t === 'n' ? items[0].y ? 'Axes' : 'Number line' : isConnector(items[0]) ? items[0].k === 'arrow' ? 'Arrow' : 'Line' : 'Shape' : `${items.length} selected`}</span>
       <div class="grow" />
       <Btn icon={Palette} title="Object style" active={panel === 'style'} disabled={allLocked} onClick={() => setPanel(panel === 'style' ? null : 'style')} />
       {single && <Btn icon={Pencil} title={single.text ? 'Edit text  (Enter)' : 'Add text  (Enter)'} disabled={locked} onClick={() => board.editText(single)} />}
+      {only?.t === 'b' && <Btn icon={Pencil} title="Type in the table" disabled={locked} onClick={() => board.openCell(only, board.lastCell?.id === only.id ? board.lastCell.r : 0, board.lastCell?.id === only.id ? board.lastCell.c : 0)} />}
       {media && <Btn icon={Pencil} title={media.t === 'n' ? 'Change the scale' : media.t === 'g' ? 'Edit graph' : 'Edit equation'} disabled={locked} onClick={() => board.onEditMedia?.(media)} />}
       {items.length > 1 && <Btn icon={grouped ? Ungroup : Group} title={grouped ? 'Ungroup  (Ctrl+Shift+G)' : 'Group  (Ctrl+G)'} disabled={locked} onClick={() => grouped ? board.ungroupSelection() : board.groupSelection()} />}
       <Btn icon={Copy} title="Duplicate selection  (Ctrl+D)" onClick={() => board.duplicateSelection()} />
@@ -225,6 +226,13 @@ export function SelectionToolbar(): JSX.Element | null {
     </div>
     {panel && <div class={`selection-detail panel ${panel}`} style={{ maxHeight: Math.max(80, vh - toolbarTop - 102) }}>
       {panel === 'style' ? <ObjectStyles items={items} /> : panel === 'reveal' ? <RevealOptions items={items} /> : <>
+        {only?.t === 'b' && !locked && <>
+          <MenuItem icon={Rows3} label="Add row" onClick={() => board.shapeTable('add-row')} />
+          <MenuItem icon={Columns3} label="Add column" onClick={() => board.shapeTable('add-col')} />
+          {only.rows.length > 1 && <MenuItem icon={Minus} label="Remove row" onClick={() => board.shapeTable('remove-row')} />}
+          {only.cols.length > 1 && <MenuItem icon={Minus} label="Remove column" onClick={() => board.shapeTable('remove-col')} />}
+          <MenuItem icon={Heading} label="Heading row" hint={only.head ? 'on' : 'off'} onClick={() => board.shapeTable('head')} />
+        </>}
         <MenuItem icon={EyeOff} label="Hide for class" onClick={() => setPanel('reveal')} />
         <MenuItem icon={Archive} label="Save to My shelf" onClick={() => run(() => shelf.startSelection())} />
         <MenuItem icon={ArrowUpToLine} label="Bring to front" onClick={() => run(() => board.arrangeSelection('front'))} />
