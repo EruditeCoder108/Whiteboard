@@ -5,6 +5,7 @@ import { MAX_EXTENT, PAGE_H, PAGE_W } from '@/engine/pages'
 import type { Frame } from '@/engine/pages'
 import type { GraphItem, ImageItem } from '@/engine/types'
 import { S, showToast } from './store'
+import { exportName } from './lesson'
 
 /** Equation or graph currently open in its editor (null: inserting a new one). */
 export const equationTarget = signal<ImageItem | null>(null)
@@ -113,14 +114,14 @@ export async function pasteClipboardImage(): Promise<boolean> {
   return false
 }
 
-export async function exportPdf(): Promise<void> {
+/** PDF of the whole lesson. A page lengthened with "more space below" gets one sheet per screen unless `split` is false. */
+export async function exportPdf(opts: { split?: boolean } = {}): Promise<void> {
   try {
     importing.value = 'Preparing PDF…'
-    const pages = await board.exportPages(S.bgColor.value)
+    const pages = await board.exportPages(opts)
     importing.value = ''
-    if (!pages.length) return showToast('Nothing to export yet — the board is empty')
-    const stamp = new Date().toISOString().slice(0, 10)
-    const path = await window.api.files.savePdf(pages, `lesson_${stamp}.pdf`)
+    if (!pages.length) return showToast('Nothing to export yet — the lesson is empty')
+    const path = await window.api.files.savePdf(pages, exportName('pdf'))
     if (path) showToast('PDF saved  ' + path.split(/[\\/]/).pop())
   } catch {
     showToast('Could not export the PDF. Please try another location.', 5000)

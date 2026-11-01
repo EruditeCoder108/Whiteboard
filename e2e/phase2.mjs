@@ -144,7 +144,7 @@ try {
   await saved()
   const json = await fw(page, w => w.board.serialize())
   check('saved format includes editable Phase 2 objects', JSON.parse(json).version === 2 && JSON.parse(json).items.length === 3)
-  const png = await fw(page, async w => Array.from(new Uint8Array(await w.board.exportPng('#ffffff', true))))
+  const png = await fw(page, async w => Array.from(new Uint8Array(await w.board.exportPng({ scope: 'content' }))))
   writeFileSync(join(shotDir, 'phase2-export.png'), Buffer.from(png))
   check('PNG export contains a valid rendered image', png[0] === 137 && png[1] === 80 && png.length > 10000)
   await screenshot('phase2-board')

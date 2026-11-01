@@ -1,6 +1,7 @@
 import { itemBounds, translateItem } from './items'
 import { DEFAULT_FRAME, MAX_EXTENT, PAGE_H, PAGE_W, frameForContent, frameRect } from './pages'
-import type { Frame } from './pages'
+import type { Frame, LookFrame, PageLook } from './pages'
+import type { Paper } from './grid'
 import type { Item, Rect } from './types'
 
 /** Space between frames laid out side by side on a canvas. */
@@ -18,6 +19,12 @@ const bounds = (items: Item[]): Rect | null => {
 const centre = (it: Item): [number, number] => { const b = itemBounds(it); return [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2] }
 const holds = (f: Frame, [x, y]: [number, number]): boolean => { const r = frameRect(f); return x >= r[0] && x < r[2] && y >= r[1] && y < r[3] }
 
+/** A paper origin moved along with the ink it sits under; (0, 0) is "not set". */
+const moved = (origin: [number, number] | undefined, dx: number, dy: number): [number, number] | undefined => {
+  const x = (origin?.[0] ?? 0) + dx || 0, y = (origin?.[1] ?? 0) + dy || 0
+  return x || y ? [x, y] : undefined
+}
+
 /** Where the next frame goes on a canvas: to the right of the last frame, or of the drawing. */
 export function nextFrameSlot(frames: Frame[], items: Item[]): { x: number; y: number } {
   const last = frames.at(-1)
@@ -26,14 +33,22 @@ export function nextFrameSlot(frames: Frame[], items: Item[]): { x: number; y: n
   return b ? { x: Math.ceil(b[2] + FRAME_GAP), y: Math.floor(b[1]) } : { x: 0, y: 0 }
 }
 
-/** Notebook → canvas: the sheets side by side, left to right in page order, each one a frame. */
-export function notebookToCanvas(pages: { items: Item[]; frame?: Frame }[]): { items: Item[]; frames: Frame[] } {
-  const items: Item[] = [], frames: Frame[] = []
+/**
+ * Notebook → canvas: the sheets side by side, left to right in page order, each one a frame that
+ * keeps its page's paper, colour and title (the paper pattern moves with its ink).
+ */
+export function notebookToCanvas(pages: ({ items: Item[]; frame?: Frame } & PageLook)[]): { items: Item[]; frames: LookFrame[] } {
+  const items: Item[] = [], frames: LookFrame[] = []
   let x = 0
   for (const pg of pages) {
     const f = pg.frame ?? frameForContent(bounds(pg.items))
-    for (const it of pg.items) items.push(translateItem(it, x - f.x, -f.y))
-    frames.push({ x, y: 0, extent: f.extent })
+    const dx = x - f.x, dy = -f.y
+    for (const it of pg.items) items.push(translateItem(it, dx, dy))
+    const frame: LookFrame = { x, y: 0, extent: f.extent }
+    if (pg.paper) { frame.paper = pg.paper; const origin = moved(pg.origin, dx, dy); if (origin) frame.origin = origin }
+    if (pg.color) frame.color = pg.color
+    if (pg.title) frame.title = pg.title
+    frames.push(frame)
     x += PAGE_W + FRAME_GAP
   }
   return { items, frames }
@@ -52,9 +67,11 @@ export function tileFrames(b: Rect): Frame[] {
 
 /**
  * Canvas → notebook: every frame becomes a page holding what is drawn in it (judged by each
- * object's centre). Drawing outside all frames is covered by extra pages, so nothing is lost.
+ * object's centre) with the frame's paper, colour and title. Frames without a paper of their own
+ * show the canvas paper (`surface`), so the page looks as the frame did. Drawing outside all
+ * frames is covered by extra pages, so nothing is lost.
  */
-export function canvasToNotebook(items: Item[], frames: Frame[]): { items: Item[]; frame: Frame }[] {
+export function canvasToNotebook(items: Item[], frames: LookFrame[], surface: Paper = 'none'): ({ items: Item[]; frame: Frame } & PageLook)[] {
   const sheets = frames.map(f => ({ f, items: [] as Item[] }))
   const rest: Item[] = []
   for (const it of items) {
@@ -64,10 +81,19 @@ export function canvasToNotebook(items: Item[], frames: Frame[]): { items: Item[
   }
   const b = bounds(rest)
   if (b) {
-    const extra = tileFrames(b).map(f => ({ f, items: [] as Item[] }))
+    const extra = tileFrames(b).map(f => ({ f: f as LookFrame, items: [] as Item[] }))
     for (const it of rest) (extra.find(s => holds(s.f, centre(it))) ?? extra[0]).items.push(it)
     sheets.push(...extra.filter(s => s.items.length))
   }
-  if (!sheets.length) return [{ items: [], frame: { ...DEFAULT_FRAME } }]
-  return sheets.map(s => ({ items: s.items.map(it => translateItem(it, -s.f.x, -s.f.y)), frame: { x: 0, y: 0, extent: s.f.extent } }))
+  if (!sheets.length) return [{ items: [], frame: { ...DEFAULT_FRAME }, paper: surface }]
+  return sheets.map(({ f, items: inside }) => {
+    const page: { items: Item[]; frame: Frame } & PageLook = {
+      items: inside.map(it => translateItem(it, -f.x, -f.y)), frame: { x: 0, y: 0, extent: f.extent }, paper: f.paper ?? surface
+    }
+    const origin = moved(f.paper ? f.origin : undefined, -f.x, -f.y)
+    if (origin) page.origin = origin
+    if (f.color) page.color = f.color
+    if (f.title) page.title = f.title
+    return page
+  })
 }

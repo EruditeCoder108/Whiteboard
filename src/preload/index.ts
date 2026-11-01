@@ -45,16 +45,25 @@ const api: Api = {
     loadBoard: () => ipcRenderer.invoke('store:load-board'),
     saveBoard: (json, assets) => ipcRenderer.invoke('store:save-board', json, assets),
     listBackups: () => ipcRenderer.invoke('store:list-backups'),
-    loadBackup: (id) => ipcRenderer.invoke('store:load-backup', id)
+    loadBackup: (id) => ipcRenderer.invoke('store:load-backup', id),
+    archiveBoard: () => ipcRenderer.invoke('store:archive-board')
+  },
+  lessons: {
+    recent: () => ipcRenderer.invoke('lessons:recent'),
+    pickSavePath: (name) => ipcRenderer.invoke('lessons:pick-save-path', name),
+    pickOpen: () => ipcRenderer.invoke('lessons:pick-open'),
+    open: (path) => ipcRenderer.invoke('lessons:open', path),
+    save: (path, json) => ipcRenderer.invoke('lessons:save', path, json),
+    forget: (path) => ipcRenderer.invoke('lessons:forget', path),
+    getLink: () => ipcRenderer.invoke('lessons:get-link'),
+    setLink: (link) => ipcRenderer.invoke('lessons:set-link', link)
   },
   files: {
     openRecording: () => ipcRenderer.invoke('files:open-recording'),
     saveRecording: (json, name) => ipcRenderer.invoke('files:save-recording', json, name),
     saveVideo: (video, name) => ipcRenderer.invoke('files:save-video', video, name),
     savePng: (png, name) => ipcRenderer.invoke('files:save-png', png, name),
-    savePdf: (pages, name) => ipcRenderer.invoke('files:save-pdf', pages, name),
-    openBoard: () => ipcRenderer.invoke('files:open-board'),
-    saveBoardAs: (json, name) => ipcRenderer.invoke('files:save-board-as', json, name)
+    savePdf: (pages, name) => ipcRenderer.invoke('files:save-pdf', pages, name)
   }
 }
 

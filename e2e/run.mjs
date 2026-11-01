@@ -215,7 +215,7 @@ await page.keyboard.press('Escape'); await page.mouse.click(900, 600)
 await setTool('pen')
 
 // ── persistence ──────────────────────────────────────────────────────────────────────────────
-await fw(page, (w) => { w.S.bgColor.value = '#fbf6e9'; w.S.grid.value = 'dots' })
+await fw(page, (w) => { w.board.setColor('#fbf6e9'); w.board.setPaper('dots') })
 await sleep(1500)                         // let the debounced autosave land
 const countBefore = await itemCount(page)
 await shot('main')

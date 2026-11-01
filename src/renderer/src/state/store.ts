@@ -7,13 +7,15 @@ export type ToolName = 'select' | 'lasso' | 'text' | 'sticky' | 'hand' | 'pen' |
 export type EraserMode = 'stroke' | 'pixel'
 import { PAPERS } from '@/engine/grid'
 import type { Paper } from '@/engine/grid'
-/** the visible page's background paper (new pages take the current one) */
+import { isBoardColor, isDarkColor, luminance } from '@/engine/colour'
+export { luminance } from '@/engine/colour'
+/** the visible page's background paper */
 export type GridMode = Paper
 /** board: big classroom touch panel (bottom toolbar, pages); laptop: compact side dock */
 export type Layout = 'board' | 'laptop'
 export type BarSide = 'left' | 'center' | 'right'
 export type { BoardKind } from '@/engine/pages'
-export type PopoverName = 'props' | 'shapes' | 'menu' | 'settings' | 'help' | 'recovery' | 'agent' | 'replay' | 'science' | 'insert' | 'equation' | 'graph' | 'maths' | 'present' | 'board-menu' | 'pages' | 'paper' | 'subjects' | null
+export type PopoverName = 'props' | 'shapes' | 'menu' | 'settings' | 'help' | 'recovery' | 'agent' | 'replay' | 'science' | 'insert' | 'equation' | 'graph' | 'maths' | 'present' | 'board-menu' | 'pages' | 'paper' | 'subjects' | 'lessons' | 'export' | null
 
 export const SHAPE_TOOLS: ShapeKind[] = ['line', 'arrow', 'rect', 'ellipse', 'diamond', 'triangle']
 export const isShapeTool = (t: ToolName): t is ShapeKind => (SHAPE_TOOLS as string[]).includes(t)
@@ -49,8 +51,9 @@ export const S = {
   markerSize: signal(20),
   eraserSize: signal(28),
   eraserMode: signal<EraserMode>('stroke'),
-  grid: signal<GridMode>('none'),
-  bgColor: signal('#ffffff'),
+  /** Where the colour and paper of a new lesson come from: the teacher's last choice. */
+  defaultPaper: signal<GridMode>('none'),
+  defaultColor: signal('#ffffff'),
   /** board opacity, percent */
   bgAlpha: signal(96),
   smoothing: signal(4),
@@ -68,6 +71,15 @@ export const S = {
   palmSize: signal(60),
 
   // ── transient ───────────────────────────────────────────────────────────────
+  /** The visible page's paper and board colour. They belong to the lesson (see Board), not to settings. */
+  grid: signal<GridMode>('none'),
+  bgColor: signal('#ffffff'),
+  /** The paper and colour of the page or canvas frame in view, and which of the two it is (null: the canvas itself). */
+  here: signal<{ paper: GridMode; color: string; unit: 'page' | 'frame' | null }>({ paper: 'none', color: '#ffffff', unit: null }),
+  /** Counts every change to the lesson; compared with the count at the last save to tell if it is saved. */
+  contentRevision: signal(0),
+  /** What the undo for the last page or board change would restore ('' when there is none). */
+  undoLabel: signal(''),
   /** set while the pen's eraser end / barrel button is active */
   override: signal<ToolName | null>(null),
   /** the board's kind (it lives in the board file, not in settings) */
@@ -122,22 +134,23 @@ export const currentSize = computed(() =>
   styleKey.value === 'marker' ? S.markerSize.value : styleKey.value === 'eraser' ? S.eraserSize.value : S.penSize.value
 )
 
-export const luminance = (hex: string): number => {
-  const h = hex.replace('#', '')
-  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h
-  const r = parseInt(full.slice(0, 2), 16)
-  const g = parseInt(full.slice(2, 4), 16)
-  const b = parseInt(full.slice(4, 6), 16)
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255
+export const isDarkBg = computed(() => isDarkColor(S.bgColor.value))
+
+/** New ink must stay readable on the board: white chalk on a dark board, dark ink on a light one. */
+export function keepInkReadable(): void {
+  const L = luminance(S.penColor.value)
+  if (isDarkBg.value && L < 0.2) S.penColor.value = '#ffffff'
+  else if (!isDarkBg.value && L > 0.85) S.penColor.value = '#111827'
 }
-export const isDarkBg = computed(() => luminance(S.bgColor.value) < 0.45)
 
 // ── toasts ────────────────────────────────────────────────────────────────────
-export const toast = signal<{ id: number; text: string } | null>(null)
+export interface ToastAction { label: string; run: () => void }
+export const toast = signal<{ id: number; text: string; action?: ToastAction } | null>(null)
 let toastId = 0
 let toastTimer: number | undefined
-export function showToast(text: string, ms = 2200): void {
-  toast.value = { id: ++toastId, text }
+/** A short message; with `action` it carries one button (Undo) that stays tappable as long as the message is up. */
+export function showToast(text: string, ms = 2200, action?: ToastAction): void {
+  toast.value = { id: ++toastId, text, action }
   window.clearTimeout(toastTimer)
   toastTimer = window.setTimeout(() => (toast.value = null), ms)
 }
@@ -145,7 +158,7 @@ export function showToast(text: string, ms = 2200): void {
 // ── persistence ───────────────────────────────────────────────────────────────
 const PERSISTED = [
   'tool', 'lastShape', 'penColor', 'penSize', 'markerColor', 'markerSize', 'eraserSize',
-  'eraserMode', 'grid', 'bgColor', 'bgAlpha', 'smoothing', 'pressure', 'fingerDraw', 'onTop',
+  'eraserMode', 'defaultPaper', 'defaultColor', 'bgAlpha', 'smoothing', 'pressure', 'fingerDraw', 'onTop',
   'radialEnabled', 'radialDelay', 'layout', 'layoutChosen', 'barSide', 'palmErase', 'palmSize'
 ] as const
 
@@ -157,7 +170,10 @@ export function snapshotSettings(): Record<string, unknown> {
 
 export function applySettings(raw: unknown): void {
   if (!raw || typeof raw !== 'object') return
-  const o = raw as Record<string, unknown>
+  const o = { ...(raw as Record<string, unknown>) }
+  // Settings from before lessons kept their own look: the old board colour and paper become the defaults.
+  if (!('defaultColor' in o) && 'bgColor' in o) o.defaultColor = o.bgColor
+  if (!('defaultPaper' in o) && 'grid' in o) o.defaultPaper = o.grid
   for (const k of PERSISTED) {
     if (!(k in o)) continue
     const sig = S[k] as unknown as { value: unknown }
@@ -165,11 +181,11 @@ export function applySettings(raw: unknown): void {
     if (typeof value !== typeof sig.value) continue
     const enums: Partial<Record<typeof PERSISTED[number], readonly string[]>> = {
       tool: ['select', 'lasso', 'text', 'sticky', 'hand', 'pen', 'marker', 'eraser', 'laser', ...SHAPE_TOOLS],
-      lastShape: SHAPE_TOOLS, eraserMode: ['stroke', 'pixel'], grid: PAPERS,
+      lastShape: SHAPE_TOOLS, eraserMode: ['stroke', 'pixel'], defaultPaper: PAPERS,
       layout: ['board', 'laptop'], barSide: ['left', 'center', 'right']
     }
     if (enums[k] && !enums[k]!.includes(value as string)) continue
-    if (['penColor', 'markerColor', 'bgColor'].includes(k) && !/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value as string)) continue
+    if (['penColor', 'markerColor', 'defaultColor'].includes(k) && !isBoardColor(value)) continue
     if (typeof value === 'number') {
       if (!Number.isFinite(value)) continue
       const ranges: Partial<Record<typeof PERSISTED[number], readonly [number, number]>> = {

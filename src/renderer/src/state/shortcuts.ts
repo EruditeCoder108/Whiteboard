@@ -3,6 +3,7 @@ import { isTyping } from '@/engine/input'
 import { radial } from '@/engine/radial'
 import { actions } from './actions'
 import { S } from './store'
+import { dialog } from './dialog'
 import { replay } from './replay'
 import { clipboardImage, pasteClipboardImage, refreshClipboardImage } from './insert'
 
@@ -11,6 +12,8 @@ export function installShortcuts(cancelRadial: () => void): () => void {
   const onKey = (e: KeyboardEvent): void => {
     if (!S.ready.value || S.closing.value) return
     if (isTyping(e)) return
+    // A question on screen is answered with the buttons; Esc is "cancel".
+    if (dialog.value) { if (e.key === 'Escape') { e.preventDefault(); dialog.value.resolve('cancel') } return }
     if (S.replaying.value) {
       if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) replay.playing.value ? replay.pause() : replay.play(); return }
       if (e.key === 'Escape') { e.preventDefault(); replay.close(); S.popover.value = 'replay'; return }
@@ -65,9 +68,17 @@ export function installShortcuts(cancelRadial: () => void): () => void {
         case 'd':
           e.preventDefault()
           return board.duplicateSelection()
+        // The lesson is the file: Ctrl+S saves it (and asks where the first time); pictures and PDFs are under Export (Ctrl+E).
         case 's':
           e.preventDefault()
-          return void (shift ? actions.saveBoardFile() : actions.savePng())
+          return void (shift ? actions.saveLessonAs() : actions.saveLesson())
+        case 'n':
+          e.preventDefault()
+          return void actions.newLesson()
+        case 'e':
+          e.preventDefault()
+          S.popover.value = S.popover.value === 'export' ? null : 'export'
+          return
         case 'c':
           if (shift) {
             e.preventDefault()
@@ -90,7 +101,7 @@ export function installShortcuts(cancelRadial: () => void): () => void {
           return board.fitSelection()
         case 'o':
           e.preventDefault()
-          return void actions.openBoard()
+          return void actions.openLesson()
         case '0':
           e.preventDefault()
           return board.resetZoom()

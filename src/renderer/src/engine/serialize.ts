@@ -1,9 +1,9 @@
 import type { GraphItem, ImageItem, Item, ObjectMeta, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
 import { assetKey } from './media'
-import { isPaper } from './grid'
-import type { Paper } from './grid'
-import { isBoardKind, isDefaultFrame, validFrame } from './pages'
-import type { BoardKind, Frame } from './pages'
+import { hasLook, isBoardKind, lookJson, validLook, validLookFrame } from './pages'
+import type { BoardKind, Frame, LookFrame, PageLook } from './pages'
+import { isBoardColor, sameColor, DEFAULT_BOARD_COLOR } from './colour'
+import { isDefaultFrame, validFrame } from './pages'
 import { newId } from './types'
 import { MAX_ZOOM, MIN_ZOOM } from './view'
 import { clamp } from './geometry'
@@ -193,23 +193,29 @@ export function serializeBoard(items: Item[], view?: View): string {
   return JSON.stringify(file)
 }
 
-export interface PageData { items: Item[]; view?: View; paper?: Paper; frame?: Frame }
-
-/** What kind of board this is; a canvas also keeps its frames. */
-export interface BoardMeta { kind: BoardKind; frames: Frame[] }
+/** A page's ink and where it is looking, plus how it looks (paper, own colour, title). */
+export interface PageData extends PageLook { items: Item[]; view?: View; frame?: Frame }
 
 /**
- * Notebooks, framed canvases and boards with pictures use format 4; a plain canvas keeps the
- * older single-board format. With `inline` the pictures are embedded (portable files); otherwise
- * they are returned separately so autosave writes each picture once.
+ * What kind of board this is; a canvas also keeps its frames. `color` is the lesson's board
+ * colour: every page shows it unless the page sets its own.
+ */
+export interface BoardMeta { kind: BoardKind; frames: LookFrame[]; color?: string }
+
+/**
+ * Notebooks, framed canvases, boards with pictures and anything with an appearance of its own
+ * (a paper, a colour other than white, a page title) use format 4; only a bare, white, plain canvas
+ * keeps the older single-board format. With `inline` the pictures are embedded (portable files);
+ * otherwise they are returned separately so autosave writes each picture once.
  */
 export function serializePages(pages: PageData[], page: number, inline: boolean, meta: BoardMeta = { kind: 'canvas', frames: [] }): { json: string; assets: Record<string, string> } {
   const plain = meta.kind === 'canvas' && !meta.frames.length && pages.length === 1
-  if (plain && !pages[0].items.some(it => it.t === 'i') && (!pages[0].frame || isDefaultFrame(pages[0].frame))) return { json: serializeBoard(pages[0].items, pages[0].view), assets: {} }
+  const bare = !hasLook(pages[0]) && (!meta.color || sameColor(meta.color, DEFAULT_BOARD_COLOR))
+  if (plain && bare && !pages[0].items.some(it => it.t === 'i') && (!pages[0].frame || isDefaultFrame(pages[0].frame))) return { json: serializeBoard(pages[0].items, pages[0].view), assets: {} }
   const assets: Record<string, string> = {}
   const pageJson = pages.map(pg => ({
     view: pg.view ? { x: r2(pg.view.x), y: r2(pg.view.y), zoom: r3(pg.view.zoom) } : undefined,
-    ...(pg.paper ? { paper: pg.paper } : {}),
+    ...lookJson(pg),
     ...(pg.frame ? { frame: { x: r2(pg.frame.x), y: r2(pg.frame.y), extent: pg.frame.extent } } : {}),
     items: pg.items.map(it => {
       if (it.t !== 'i') return itemToJson(it)
@@ -219,8 +225,9 @@ export function serializePages(pages: PageData[], page: number, inline: boolean,
       return { ...rest, a: key }
     })
   }))
-  const frames = meta.kind === 'canvas' && meta.frames.length ? { frames: meta.frames.map(f => ({ x: r2(f.x), y: r2(f.y), extent: f.extent })) } : {}
-  const file = { format: FORMAT, version: PAGES_VERSION, kind: meta.kind, ...frames, page, pages: pageJson, ...(inline ? { assets } : { assetKeys: Object.keys(assets) }) }
+  const frames = meta.kind === 'canvas' && meta.frames.length ? { frames: meta.frames.map(f => ({ x: r2(f.x), y: r2(f.y), extent: f.extent, ...lookJson(f) })) } : {}
+  const color = meta.color && isBoardColor(meta.color) ? { color: meta.color } : {}
+  const file = { format: FORMAT, version: PAGES_VERSION, kind: meta.kind, ...color, ...frames, page, pages: pageJson, ...(inline ? { assets } : { assetKeys: Object.keys(assets) }) }
   return { json: JSON.stringify(file), assets }
 }
 
@@ -234,7 +241,9 @@ export interface ParsedBoard {
   page?: number
   /** format 4 only; older files are plain canvases */
   kind?: BoardKind
-  frames?: Frame[]
+  frames?: LookFrame[]
+  /** the lesson's board colour; files from before it was saved have none */
+  color?: string
 }
 
 const isAssetKey = (v: unknown): v is string => typeof v === 'string' && /^[0-9a-f]{16,32}$/.test(v)
@@ -248,7 +257,7 @@ function parsePages(f: Record<string, unknown>, externalAssets: boolean): Parsed
   let skipped = 0, total = 0
   const pages: PageData[] = []
   for (const raw of f.pages as unknown[]) {
-    const pg = raw as { view?: unknown; items?: unknown; paper?: unknown; frame?: unknown }
+    const pg = raw as { view?: unknown; items?: unknown; frame?: unknown }
     if (!pg || typeof pg !== 'object' || !Array.isArray(pg.items)) return null
     total += pg.items.length
     if (total > MAX_ITEMS) return null
@@ -265,14 +274,14 @@ function parsePages(f: Record<string, unknown>, externalAssets: boolean): Parsed
       ids.add(it.id)
       items.push(it)
     }
-    pages.push({ items, view: parseView(pg.view, false), paper: isPaper(pg.paper) ? pg.paper : undefined, frame: validFrame(pg.frame) })
+    pages.push({ items, view: parseView(pg.view, false), ...validLook(raw), frame: validFrame(pg.frame) })
   }
   if (total && !pages.some(pg => pg.items.length)) return null
   const page = Number.isSafeInteger(f.page) && (f.page as number) >= 0 && (f.page as number) < pages.length ? f.page as number : 0
   // Files from before board kinds: several pages read as a notebook, one page as a canvas.
   const kind: BoardKind = isBoardKind(f.kind) ? f.kind : pages.length > 1 ? 'notebook' : 'canvas'
-  const frames = kind === 'canvas' && Array.isArray(f.frames) ? (f.frames as unknown[]).slice(0, MAX_PAGES).map(validFrame).filter((x): x is Frame => !!x) : []
-  return { items: pages[page].items, view: pages[page].view, skipped, legacy: false, pages, page, kind, frames }
+  const frames = kind === 'canvas' && Array.isArray(f.frames) ? (f.frames as unknown[]).slice(0, MAX_PAGES).map(validLookFrame).filter((x): x is LookFrame => !!x) : []
+  return { items: pages[page].items, view: pages[page].view, skipped, legacy: false, pages, page, kind, frames, color: isBoardColor(f.color) ? f.color : undefined }
 }
 
 function parseView(v: unknown, legacy: boolean): View | undefined {

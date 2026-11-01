@@ -69,10 +69,10 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | PDF worksheets: a page each in a notebook, a frame each on a canvas; slides fill the sheet, portrait sheets sit at a readable width and the sheet grows to fit | ✅ |
 | **Page sorter:** thumbnails, reorder, duplicate, delete | ✅ |
 | **Page map** for a long page (drag to scroll) | ✅ |
-| **Background library, per page:** white, black and green chalkboard, ruled, four-line English, Hindi writing lines, mm graph paper, squares, dots, music staff | ✅ |
+| **Background library, per page:** white, black and green chalkboard, ruled, four-line English, Hindi writing lines, graph paper, squares, dots, music staff | ✅ |
 | More papers: isometric, outline maps of India and the world, your own image | ⏳ |
 | Templates: Venn diagram, timeline, KWL chart, worksheet | ⏳ |
-| Home screen with recent lessons, a new lesson and open-from-pen-drive | 🛠 |
+| Recent lessons, a new lesson and open from a pen drive (in the board's More menu; no separate home screen yet) | ✅ |
 | Autosave that never loses work | ✅ |
 
 ## 3. Import, export and sharing
@@ -83,8 +83,11 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | PDF worksheets and textbook pages: one page each, write on them | ✅ |
 | PowerPoint: present it under the overlay now; import it as pages later | ✅ / ⏳ |
 | OpenBoard lesson import (`.ubz`) | ⏳ |
-| Export as PDF: a notebook exports whole sheets with their paper (blank ones included), a framed canvas one page per frame | ✅ |
-| Export a page as a picture | ⏳ |
+| Export as PDF: a notebook exports its sheets with their paper (blank ones included), a framed canvas one page per frame; long pages split by screen | ✅ |
+| Export a page, everything or the selection as a picture (paper and board colour included, or ink only) | ✅ |
+| Lesson files: New, Open, Save (Ctrl+S saves the lesson), Save as, recent lessons, ask before replacing unsaved work | ✅ |
+| Board colour, paper and page names saved with the lesson; kept through notebook ⇄ canvas | ✅ |
+| Undo for page and board changes (delete, move, copy, convert, colour, paper) | ✅ |
 | Record the board, replay it step by step, export the replay as a video | ✅ |
 | **QR code share over the school's Wi-Fi** (students scan, PDF downloads; no cloud) | ⏳ |
 | PDFs small enough to forward on WhatsApp | 🎙 |

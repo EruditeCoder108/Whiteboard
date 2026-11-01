@@ -8,7 +8,7 @@ import { cloneItem, itemBounds, paintItem, hitObject, translateItem } from './it
 import { fitTextHeight, textAlign, textColor } from './text'
 import { transformItem } from './transforms'
 import { parseBoard, serializePages, MAX_TEXT_LENGTH, itemFromJson } from './serialize'
-import type { ParsedBoard } from './serialize'
+import type { BoardMeta, PageData, ParsedBoard } from './serialize'
 import { EraserTool, HandTool, LaserTool, PenTool, SelectTool, ShapeTool, TextTool } from './tools'
 import type { Tool, ToolHost } from './tool-types'
 import { newId } from './types'
@@ -16,16 +16,31 @@ import type { Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, La
 import { onImageReady, preloadImages } from './media'
 import { Instruments } from './instruments'
 import { MAX_ZOOM, MIN_ZOOM, fitRect, panBy as panView, toWorld, zoomAboutCentre, zoomAt } from './view'
-import { S, SHAPE_TOOLS, activeTool, isDarkBg, showToast } from '@/state/store'
+import { S, SHAPE_TOOLS, activeTool, isDarkBg, keepInkReadable, showToast } from '@/state/store'
 import type { ToolName } from '@/state/store'
 import type { InkTiming } from './replay'
-import { paintGrid } from './grid'
+import { DEFAULT_BOARD_COLOR, sameColor } from './colour'
 import type { Paper } from './grid'
-import { DEFAULT_FRAME, MAX_EXTENT, PAGE_H, PAGE_W, clampToFrame, fitZoom, frameForContent, frameRect, frameView, scrollOf } from './pages'
-import type { BoardKind, Frame } from './pages'
+import { backdropOf, paintBackdrop } from './scene'
+import type { Backdrop } from './scene'
+import { DEFAULT_FRAME, MAX_EXTENT, MAX_TITLE, PAGE_H, PAGE_W, clampToFrame, fitZoom, frameForContent, frameRect, frameView, scrollOf } from './pages'
+import type { BoardKind, Frame, LookFrame, PageLook } from './pages'
 import { canvasToNotebook, nextFrameSlot, notebookToCanvas } from './convert'
 import { LabRuntime, supportedLab } from './science/runtime'
 import { activeLabId, scienceInspector } from '@/state/science'
+
+/** A page that is not on screen: its ink, camera, undo history and look. */
+interface PageRec extends PageLook { items: Item[]; view: View; history: HistoryState; frame?: Frame }
+
+/** A snapshot of the lesson's structure, to put back after a page or board-level change. */
+interface Structure { pages: PageRec[]; pageIndex: number; kind: BoardKind; frames: LookFrame[]; color: string }
+
+/** `o` without the given look settings (they fall back to the lesson's). */
+function without<T extends PageLook>(o: T, ...keys: (keyof PageLook)[]): T {
+  const out = { ...o }
+  for (const k of keys) delete out[k]
+  return out
+}
 
 /**
  * Owns the document, the viewport canvases and the render loop.
@@ -50,17 +65,24 @@ export class Board implements ToolHost {
   /** before the visible page is replaced (recording cannot span pages) */
   onPageChange: (() => void) | null = null
 
-  /** Pages other than the visible one keep their items, camera and undo history here. */
-  /** paper: the page's background (undefined = keep whatever the board shows) */
-  private pages: { items: Item[]; view: View; history: HistoryState; paper?: Paper; frame?: Frame }[] = [{ items: [], view: this.view, history: { undo: [], redo: [] } }]
+  /** Pages other than the visible one keep their items, camera, undo history and look here. */
+  private pages: PageRec[] = [{ items: [], view: this.view, history: { undo: [], redo: [] }, paper: 'none' }]
   /** the visible page's sheet (page mode keeps the view on it) */
   private sheet: Frame = { ...DEFAULT_FRAME }
+  /** the visible page's look: paper, a colour of its own, title. A canvas's is the canvas surface. */
+  private look: PageLook = { paper: 'none' }
+  /** the board colour every page shows unless it sets its own */
+  private lessonColor = DEFAULT_BOARD_COLOR
   /** notebook: pages of fixed sheets; canvas: one endless page, optionally with frames */
   private boardKind: BoardKind = 'canvas'
-  /** canvas only: sheet-sized frames, stepped through like slides */
-  private frames: Frame[] = []
+  /** canvas only: sheet-sized frames, stepped through like slides; each may set its own look */
+  private frames: LookFrame[] = []
   private framesRev = 0
   private pageIndex = 0
+  /** Counts every change to the lesson itself (not scrolling or turning pages); "saved" compares it. */
+  private contentRev = 0
+  /** The one page/board-structure change that can still be undone (see `remember`). */
+  private undoSlot: { label: string; rev: number; snap: Structure; restore: () => void } | null = null
 
   private stage!: HTMLElement
   private boardCv!: HTMLCanvasElement
@@ -286,7 +308,7 @@ export class Board implements ToolHost {
     for (const it of drafts) this.refresh(itemBounds(it))
     S.canUndo.value = this.history.canUndo
     S.canRedo.value = this.history.canRedo
-    this.onChange?.()
+    this.changed()
     this.onEdit?.(label, timing)
     this.requestOverlay()
   }
@@ -500,9 +522,10 @@ export class Board implements ToolHost {
 
   private blit(preview: boolean): void {
     const f = this.sheet
-    const gridKey = `${this.view.x},${this.view.y},${this.view.zoom},${S.grid.value},${isDarkBg.value},${this.boardKind},${f.x},${f.y},${f.extent},${this.framesRev}`
+    const gridKey = `${this.view.x},${this.view.y},${this.view.zoom},${S.grid.value},${S.bgColor.value},${this.look.origin ?? ''},${this.boardKind},${f.x},${f.y},${f.extent},${this.framesRev}`
     if (gridKey !== this.gridKey) {
-      paintGrid(this.gctx, this.view, this.w, this.h, this.dpr, S.grid.value, isDarkBg.value)
+      // The paper of this page (or of the canvas) over the board colour, which the window supplies.
+      paintBackdrop(this.gctx, this.view, this.w, this.h, this.dpr, { color: S.bgColor.value, paper: S.grid.value, origin: this.look.origin ?? [0, 0] }, false)
       if (this.paged) this.paintDesk()
       else if (this.frames.length) this.paintFrames()
       this.gridKey = gridKey
@@ -556,6 +579,8 @@ export class Board implements ToolHost {
 
   undo(): void {
     if (this.currentTool().underway()) return
+    // A page or board change still on offer was the latest thing done, so it comes first.
+    if (this.undoStructure()) return
     this.applyHistory(this.history.undo(), 'undo')
   }
 
@@ -865,21 +890,146 @@ export class Board implements ToolHost {
 
   private syncPages(): void { S.page.value = this.pageIndex; S.pageCount.value = this.pages.length }
 
+  // ── what changed, and the one structural change that can be undone ──────────
+  /** Count of changes to the lesson itself; scrolling and turning pages do not count. */
+  get revision(): number { return this.contentRev }
+
+  /** The lesson changed: bump the revision and save. `undo` makes this change undoable until the next one. */
+  private changed(undo?: { label: string; snap: Structure }): void {
+    this.contentRev++
+    if (undo) { const { label, snap } = undo; this.undoSlot = { label, rev: this.contentRev, snap, restore: () => this.restoreStructure(snap) } }
+    S.contentRevision.value = this.contentRev
+    S.undoLabel.value = this.structureUndoLabel ?? ''
+    S.canUndo.value = this.history.canUndo || !!this.structureUndoLabel
+    this.onChange?.()
+  }
+
+  /** What `undoStructure` would put back, e.g. "Deleted page 3"; null once anything else has changed. */
+  get structureUndoLabel(): string | null { return this.undoSlot && this.undoSlot.rev === this.contentRev ? this.undoSlot.label : null }
+
+  undoStructure(): boolean {
+    if (!this.structureUndoLabel || this.currentTool().underway()) return false
+    this.undoSlot!.restore()
+    return true
+  }
+
+  /**
+   * Everything an undo has to bring back: pages (items are immutable, so they are shared, not copied),
+   * frames, board kind and colour. Taken before a change; valid to restore only while nothing else
+   * has changed since, which is what makes plain snapshots safe.
+   */
+  private structure(): Structure {
+    const live: PageRec = { items: this.doc.items, view: this.view, history: this.history.peek(), ...this.look, frame: this.sheet }
+    return { pages: this.pages.map((pg, i) => i === this.pageIndex ? live : pg), pageIndex: this.pageIndex, kind: this.boardKind, frames: this.frames.map(f => ({ ...f })), color: this.lessonColor }
+  }
+
+  private restoreStructure(s: Structure): void {
+    this.commitText()
+    this.onPageChange?.()
+    this.history.take()
+    this.pages = s.pages.slice()
+    this.frames = s.frames.map(f => ({ ...f }))
+    this.lessonColor = s.color
+    this.setKind(s.kind)
+    this.showPage(Math.min(s.pageIndex, this.pages.length - 1))
+    this.changed()
+  }
+
+  // ── a page's look: board colour, paper, title ───────────────────────────────
+  /** Keep the signals the interface reads in step with the visible page. */
+  private syncLook(forceInk = false): void {
+    const dark = isDarkBg.value
+    S.bgColor.value = this.look.color ?? this.lessonColor
+    S.grid.value = this.look.paper ?? 'none'
+    // A change between light and dark boards swaps an unreadable pen colour (white on white).
+    if (forceInk || isDarkBg.value !== dark) keepInkReadable()
+    this.syncHere()
+  }
+
+  /** The colour and paper of the page, or canvas frame, the teacher is looking at (what the picker edits). */
+  private syncHere(): void {
+    const f = !this.paged ? this.frames[S.frameIndex.value] : undefined
+    const next = f ? { paper: f.paper ?? this.look.paper ?? 'none', color: f.color ?? this.lessonColor, unit: 'frame' as const }
+      : { paper: this.look.paper ?? 'none', color: S.bgColor.value, unit: this.paged ? 'page' as const : null }
+    const cur = S.here.value
+    if (cur.paper !== next.paper || cur.color !== next.color || cur.unit !== next.unit) S.here.value = next
+  }
+
+  /** Board colour. By default for the whole lesson; `onlyHere` sets just this page or frame. */
+  setColor(color: string, onlyHere = false): void {
+    const snap = this.structure()
+    const f = !this.paged ? S.frameIndex.value : -1
+    const same = sameColor(color, this.lessonColor)
+    if (onlyHere && this.paged) this.look = same ? without(this.look, 'color') : { ...this.look, color }
+    else if (onlyHere && f >= 0) this.frames[f] = same ? without(this.frames[f], 'color') : { ...this.frames[f], color }
+    else {
+      this.lessonColor = color
+      this.look = without(this.look, 'color')
+      this.pages = this.pages.map(pg => without(pg, 'color'))
+      this.frames = this.frames.map(fr => without(fr, 'color'))
+    }
+    this.lookChanged(onlyHere ? 'Changed the colour of one page' : 'Changed the board colour', snap)
+  }
+
+  /** Paper. By default for this page (or frame); `everywhere` sets every page and the canvas itself. */
+  setPaper(paper: Paper, everywhere = false): void {
+    const snap = this.structure()
+    const f = !this.paged ? S.frameIndex.value : -1
+    if (!everywhere && f >= 0) this.frames[f] = { ...this.frames[f], paper, origin: [this.frames[f].x, this.frames[f].y] }
+    else {
+      this.look = without({ ...this.look, paper }, 'origin')
+      if (everywhere) {
+        this.pages = this.pages.map(pg => without({ ...pg, paper }, 'origin'))
+        this.frames = this.frames.map(fr => without(fr, 'paper', 'origin'))
+      }
+    }
+    this.lookChanged(everywhere ? 'Changed the paper of every page' : 'Changed the paper', snap)
+  }
+
+  private lookChanged(label: string, snap: Structure): void {
+    // Picking colours one after another is one change to undo, back to how it was before the first.
+    const first = this.structureUndoLabel === label ? this.undoSlot!.snap : snap
+    this.syncLook()
+    this.framesChanged()
+    this.changed({ label, snap: first })
+  }
+
+  /** Name a notebook page or canvas frame (empty clears the name). */
+  setTitle(i: number, title: string): void {
+    const t = title.trim().slice(0, MAX_TITLE)
+    const named = <T extends PageLook>(o: T): T => t ? { ...o, title: t } : without(o, 'title')
+    if (this.paged) {
+      if (i === this.pageIndex) this.look = named(this.look)
+      else if (this.pages[i]) this.pages[i] = named(this.pages[i])
+      else return
+    } else if (this.frames[i]) this.frames[i] = named(this.frames[i])
+    else return
+    this.framesChanged()
+    this.changed()
+  }
+
+  /** The name of notebook page `i` or canvas frame `i`. */
+  titleOf(i: number): string {
+    return (this.paged ? i === this.pageIndex ? this.look.title : this.pages[i]?.title : this.frames[i]?.title) ?? ''
+  }
+
   private stashPage(): void {
-    this.pages[this.pageIndex] = { items: this.doc.items, view: this.view, history: this.history.take(), paper: S.grid.value, frame: this.sheet }
+    this.pages[this.pageIndex] = { items: this.doc.items, view: this.view, history: this.history.take(), ...this.look, frame: this.sheet }
   }
 
   private showPage(i: number): void {
     const pg = this.pages[i]
     this.pageIndex = i
-    if (pg.paper) S.grid.value = pg.paper
+    const { items: _i, view: _v, history: _h, frame: _f, ...look } = pg
+    this.look = { ...look, paper: look.paper ?? 'none' }
     this.labs.clear(); this.labDraft.clear(); activeLabId.value = null
     this.doc.replaceAll(pg.items)
     this.sheet = pg.frame ?? frameForContent(this.doc.bounds())
     this.history.restore(pg.history)
     this.setSelection([])
+    this.syncLook()
     this.setView(pg.view)
-    S.canUndo.value = this.history.canUndo; S.canRedo.value = this.history.canRedo
+    S.canUndo.value = this.history.canUndo || !!this.structureUndoLabel; S.canRedo.value = this.history.canRedo
     this.refresh(null)
     this.syncPages()
   }
@@ -895,47 +1045,59 @@ export class Board implements ToolHost {
 
   goToPage(i: number): boolean {
     if (i === this.pageIndex || i < 0 || i >= this.pages.length || !this.leavePage()) return false
+    // Turning to another page ends the offer to undo what was done on this one.
+    this.undoSlot = null
+    S.undoLabel.value = ''
     this.showPage(i)
     this.onChange?.()
     return true
   }
 
+  /** A new page takes the paper and colour of the one before it. */
+  private inherited(): PageLook { return { paper: this.look.paper ?? 'none', ...(this.look.color ? { color: this.look.color } : {}) } }
+
   addPage(items: Item[] = [], view?: View, at = this.pageIndex + 1, frame: Frame = { ...DEFAULT_FRAME }): void {
     if (!this.paged && !items.length) return this.addFrame() // a canvas has no pages: the next frame instead
+    const snap = this.structure()
     if (!this.leavePage()) return
     const start = view ?? (this.paged ? frameView(frame, this.w, this.h) : { x: -80, y: -80, zoom: 1 })
-    this.pages.splice(at, 0, { items, view: start, history: { undo: [], redo: [] }, paper: S.grid.value, frame })
+    this.pages.splice(at, 0, { items, view: start, history: { undo: [], redo: [] }, ...this.inherited(), frame })
     this.showPage(at)
-    this.onChange?.()
+    this.changed({ label: 'Added a page', snap })
   }
 
   deletePage(): void {
     if (this.pages.length === 1) return this.clearBoard()
+    const snap = this.structure(), n = this.pageIndex + 1
     if (!this.leavePage()) return
     this.pages.splice(this.pageIndex, 1)
     this.showPage(Math.min(this.pageIndex, this.pages.length - 1))
-    this.onChange?.()
-    showToast('Page deleted')
+    this.changed({ label: `Deleted page ${n}`, snap })
+    showToast(`Page ${n} deleted`, 7000, { label: 'Undo', run: () => this.undoStructure() })
   }
 
   /** Copy a page (items are immutable, so sharing them is safe) and show the copy after it. */
   duplicatePage(i = this.pageIndex): void {
+    const snap = this.structure()
     if (!this.leavePage()) return
     const pg = this.pages[i]
     if (!pg) return
-    this.pages.splice(i + 1, 0, { items: pg.items.map(it => ({ ...it, id: newId() })), view: { ...pg.view }, history: { undo: [], redo: [] }, paper: pg.paper, frame: pg.frame && { ...pg.frame } })
+    const { items, view, history: _h, frame, ...look } = pg
+    this.pages.splice(i + 1, 0, { ...look, items: items.map(it => ({ ...it, id: newId() })), view: { ...view }, history: { undo: [], redo: [] }, frame: frame && { ...frame } })
     this.showPage(i + 1)
-    this.onChange?.()
+    this.changed({ label: `Copied page ${i + 1}`, snap })
   }
 
   /** Reorder pages; the visible page stays visible. */
   movePage(from: number, to: number): void {
-    if (from === to || from < 0 || to < 0 || from >= this.pages.length || to >= this.pages.length || !this.leavePage()) return
+    if (from === to || from < 0 || to < 0 || from >= this.pages.length || to >= this.pages.length) return
+    const snap = this.structure()
+    if (!this.leavePage()) return
     const [pg] = this.pages.splice(from, 1)
     this.pages.splice(to, 0, pg)
     const shown = this.pageIndex === from ? to : this.pageIndex > from && this.pageIndex <= to ? this.pageIndex - 1 : this.pageIndex < from && this.pageIndex >= to ? this.pageIndex + 1 : this.pageIndex
     this.showPage(shown)
-    this.onChange?.()
+    this.changed({ label: `Moved page ${from + 1}`, snap })
   }
 
   // ── board kind ───────────────────────────────────────────────────────────────
@@ -957,20 +1119,23 @@ export class Board implements ToolHost {
    * every frame gets pages of its own.
    */
   convertTo(kind: BoardKind): boolean {
-    if (kind === this.boardKind || !this.leavePage()) return false
-    const paper = S.grid.value
-    const empty = !this.pages.some(pg => pg.items.length)
-    const fresh = { undo: [], redo: [] }
-    if (empty) {
-      this.pages = [{ items: [], view: this.view, history: fresh, paper }]
+    if (kind === this.boardKind) return false
+    const snap = this.structure()
+    if (!this.leavePage()) return false
+    // The paper of the page being left becomes the canvas paper (and the other way round).
+    const surface = this.look.paper ?? 'none'
+    const blank = !this.pages.some(pg => pg.items.length) && this.pages.every(pg => !pg.title && !pg.color && (pg.paper ?? 'none') === surface)
+    const fresh = (): HistoryState => ({ undo: [], redo: [] })
+    if (blank) {
+      this.pages = [{ items: [], view: this.view, history: fresh(), paper: surface }]
       this.frames = []
     } else if (kind === 'canvas') {
       const { items, frames } = notebookToCanvas(this.pages)
-      this.pages = [{ items, view: this.view, history: fresh, paper }]
+      this.pages = [{ items, view: this.view, history: fresh(), paper: surface }]
       this.frames = frames
     } else {
-      this.pages = canvasToNotebook(this.pages.flatMap(pg => pg.items), this.frames)
-        .map(s => ({ items: s.items, view: this.view, history: { undo: [], redo: [] }, paper, frame: s.frame }))
+      this.pages = canvasToNotebook(this.pages.flatMap(pg => pg.items), this.frames, surface)
+        .map(s => ({ ...s, view: this.view, history: fresh() }))
       this.frames = []
     }
     this.setKind(kind)
@@ -979,8 +1144,23 @@ export class Board implements ToolHost {
       if (this.frames.length) this.goToFrame(0, false)
       else this.setView({ x: -80, y: -80, zoom: 1 })
     }
-    this.onChange?.()
+    this.changed({ label: kind === 'notebook' ? 'Turned into a notebook' : 'Turned into a canvas', snap })
     return true
+  }
+
+  /** A blank lesson: one empty page of the given kind, with the board colour and paper chosen last. */
+  newLesson(kind: BoardKind): void {
+    if (S.editing.value) this.cancelText()
+    this.onPageChange?.()
+    this.labs.clear(); this.labDraft.clear(); activeLabId.value = null
+    this.lessonColor = S.defaultColor.value
+    this.frames = []
+    this.pages = [{ items: [], view: { x: -80, y: -80, zoom: 1 }, history: { undo: [], redo: [] }, paper: S.defaultPaper.value }]
+    this.undoSlot = null
+    this.setKind(kind)
+    this.history.take()
+    this.showPage(0)
+    this.changed()
   }
 
   // ── canvas frames ──────────────────────────────────────────────────────────
@@ -1000,6 +1180,7 @@ export class Board implements ToolHost {
     const [cx, cy] = this.viewCentre()
     const i = this.frames.findIndex(f => { const r = frameRect(f); return cx >= r[0] && cx <= r[2] && cy >= r[1] && cy <= r[3] })
     if (S.frameIndex.value !== i) S.frameIndex.value = i
+    this.syncHere()
   }
 
   /** The first screen of a frame, filling the view. */
@@ -1026,26 +1207,30 @@ export class Board implements ToolHost {
     if (this.paged) return
     const [cx, cy] = this.viewCentre()
     const slot = where === 'here' ? { x: Math.round(cx - PAGE_W / 2), y: Math.round(cy - PAGE_H / 2) } : nextFrameSlot(this.frames, this.doc.items)
+    const snap = this.structure()
     this.frames.push({ ...slot, extent: 1 })
     this.framesChanged()
     this.goToFrame(this.frames.length - 1)
-    this.onChange?.()
+    this.changed({ label: 'Added a frame', snap })
   }
 
   /** Remove a frame; what is drawn inside it stays on the canvas. */
   deleteFrame(i: number): void {
     if (!this.frames[i]) return
+    const snap = this.structure()
     this.frames.splice(i, 1)
     this.framesChanged()
-    this.onChange?.()
+    this.changed({ label: `Removed frame ${i + 1}`, snap })
+    showToast(`Frame ${i + 1} removed · your drawing stays`, 7000, { label: 'Undo', run: () => this.undoStructure() })
   }
 
   moveFrame(from: number, to: number): void {
     if (from === to || !this.frames[from] || !this.frames[to]) return
+    const snap = this.structure()
     const [f] = this.frames.splice(from, 1)
     this.frames.splice(to, 0, f)
     this.framesChanged()
-    this.onChange?.()
+    this.changed({ label: `Moved frame ${from + 1}`, snap })
   }
 
   /** A sheet of content (a PDF page, say): its own page in a notebook, the next frame on a canvas. */
@@ -1060,20 +1245,38 @@ export class Board implements ToolHost {
     this.frames.push({ x: slot.x, y: slot.y, extent: frame.extent })
     this.framesChanged()
     this.goToFrame(this.frames.length - 1, false)
-    this.onChange?.()
+    this.changed()
   }
+
+  /** The backdrop of the canvas itself, and of a frame (its own paper and colour, else the canvas's). */
+  private surfaceBackdrop(): Backdrop { return backdropOf({ color: this.lessonColor, paper: 'none' }, { paper: this.look.paper ?? 'none', origin: this.look.origin }) }
+  private frameBackdrop(f: LookFrame): Backdrop { return backdropOf({ color: this.lessonColor, paper: this.look.paper ?? 'none' }, f) }
 
   /** Canvas: frame outlines with their numbers, quiet enough to draw over. */
   private paintFrames(): void {
     const ctx = this.gctx, { view, dpr } = this
     const dark = isDarkBg.value
+    const screenRect = (f: Frame): number[] => {
+      const [x0, y0, x1, y1] = frameRect(f)
+      return [(x0 - view.x) * view.zoom, (y0 - view.y) * view.zoom, (x1 - view.x) * view.zoom, (y1 - view.y) * view.zoom]
+    }
+    // A frame that sets its own paper or colour is painted over the canvas, inside its edges.
+    this.frames.forEach(f => {
+      if (!f.paper && !f.color) return
+      const r = screenRect(f)
+      if (r[2] < 0 || r[3] < 0 || r[0] > this.w || r[1] > this.h) return
+      ctx.save()
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.beginPath(); ctx.rect(r[0], r[1], r[2] - r[0], r[3] - r[1]); ctx.clip()
+      paintBackdrop(ctx, view, this.w, this.h, dpr, this.frameBackdrop(f), true)
+      ctx.restore()
+    })
     ctx.save()
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.font = '600 12px "Segoe UI", system-ui, sans-serif'
     ctx.textBaseline = 'middle'
     this.frames.forEach((f, i) => {
-      const [x0, y0, x1, y1] = frameRect(f)
-      const r = [(x0 - view.x) * view.zoom, (y0 - view.y) * view.zoom, (x1 - view.x) * view.zoom, (y1 - view.y) * view.zoom]
+      const r = screenRect(f)
       if (r[2] < 0 || r[3] < 0 || r[0] > this.w || r[1] > this.h) return
       const current = i === S.frameIndex.value
       ctx.strokeStyle = dark ? `rgba(160,185,255,${current ? .6 : .32})` : `rgba(47,107,255,${current ? .55 : .28})`
@@ -1081,7 +1284,7 @@ export class Board implements ToolHost {
       ctx.setLineDash(current ? [] : [8, 6])
       ctx.strokeRect(r[0], r[1], r[2] - r[0], r[3] - r[1])
       ctx.setLineDash([])
-      const label = String(i + 1), w = ctx.measureText(label).width + 14
+      const label = f.title ? `${i + 1} · ${f.title}` : String(i + 1), w = ctx.measureText(label).width + 14
       ctx.fillStyle = dark ? 'rgba(160,185,255,.85)' : 'rgba(47,107,255,.85)'
       ctx.beginPath(); ctx.roundRect(r[0], r[1] - 22, w, 18, 5); ctx.fill()
       ctx.fillStyle = dark ? '#10131c' : '#fff'
@@ -1109,7 +1312,7 @@ export class Board implements ToolHost {
     this.sheet = { ...this.sheet, extent: this.sheet.extent + 1 }
     this.gridKey = ''
     this.scrollPage(1, true)
-    this.onChange?.()
+    this.changed()
     return true
   }
 
@@ -1126,7 +1329,7 @@ export class Board implements ToolHost {
     this.sheet = { ...this.sheet, extent: this.sheet.extent - 1 }
     this.gridKey = ''
     this.setView(this.view)
-    this.onChange?.()
+    this.changed()
     return true
   }
 
@@ -1183,18 +1386,15 @@ export class Board implements ToolHost {
   }
 
   /** Picture of notebook page i, or of canvas frame i; paper included. */
-  paintPageThumb(i: number, cv: HTMLCanvasElement, bg: string): void {
-    const pg = this.paged ? this.pageData()[i] : this.pageData()[0]
+  paintPageThumb(i: number, cv: HTMLCanvasElement): void {
+    const pages = this.pageData()
+    const pg = this.paged ? pages[i] : pages[0]
     const ctx = cv.getContext('2d')
     const f = this.paged ? pg?.frame ?? DEFAULT_FRAME : this.frames[i]
     if (!pg || !ctx || !f) return
+    const back = this.paged ? backdropOf({ color: this.lessonColor, paper: 'none' }, pg) : this.frameBackdrop(this.frames[i])
     const view = { x: f.x, y: f.y, zoom: cv.width / PAGE_W }
-    paintGrid(ctx, view, cv.width, cv.height, 1, pg.paper ?? 'none', isDarkBg.value)
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.globalCompositeOperation = 'destination-over'
-    ctx.fillStyle = bg
-    ctx.fillRect(0, 0, cv.width, cv.height)
-    ctx.globalCompositeOperation = 'source-over'
+    paintBackdrop(ctx, view, cv.width, cv.height, 1, back, true)
     ctx.setTransform(view.zoom, 0, 0, view.zoom, -view.x * view.zoom, -view.y * view.zoom)
     for (const it of pg.items) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
   }
@@ -1212,7 +1412,7 @@ export class Board implements ToolHost {
     this.sheet = { ...f }
     this.gridKey = ''
     if (this.paged) this.setView(frameView(this.sheet, this.w, this.h))
-    this.onChange?.()
+    this.changed()
   }
 
   /** Fit the page's content to the window width (reading a document page). */
@@ -1225,39 +1425,51 @@ export class Board implements ToolHost {
   }
 
   /** Every page, with the visible one (and any open text edit) taken live. */
-  pageData(): { items: Item[]; view: View; paper?: Paper; frame?: Frame }[] {
+  pageData(): PageData[] {
     const draft = S.editing.value
     const items = draft ? (draft.isNew ? [...this.doc.items, draft.item] : this.doc.items.map(it => it.id === draft.item.id ? draft.item : it)) : this.doc.items
-    return this.pages.map((pg, i) => i === this.pageIndex ? { items, view: this.view, paper: S.grid.value, frame: this.sheet } : { items: pg.items, view: pg.view, paper: pg.paper, frame: pg.frame })
+    return this.pages.map((pg, i) => i === this.pageIndex
+      ? { ...this.look, items, view: this.view, frame: this.sheet }
+      : { paper: pg.paper, color: pg.color, title: pg.title, origin: pg.origin, items: pg.items, view: pg.view, frame: pg.frame })
   }
 
+  private meta(): BoardMeta { return { kind: this.boardKind, frames: this.frames, color: this.lessonColor } }
+
   /** Portable JSON with pictures embedded. */
-  serialize(): string { return serializePages(this.pageData(), this.pageIndex, true, { kind: this.boardKind, frames: this.frames }).json }
+  serialize(): string { return serializePages(this.pageData(), this.pageIndex, true, this.meta()).json }
 
   /** Autosave JSON; pictures are returned separately so each is written to disk once. */
-  serializeForStore(): { json: string; assets: Record<string, string> } { return serializePages(this.pageData(), this.pageIndex, false, { kind: this.boardKind, frames: this.frames }) }
+  serializeForStore(): { json: string; assets: Record<string, string> } { return serializePages(this.pageData(), this.pageIndex, false, this.meta()) }
 
+  /**
+   * Replace the board with a saved one. A file from before appearance was saved (no colour, no
+   * papers) keeps the colour and paper the board has now (`undoable`: opening it on top of this
+   * board) or the teacher's last choices (the first load at start-up). With `undoable` the replaced
+   * board can be brought back with `undoStructure`.
+   */
   load(json: string, opts: { undoable: boolean }): ParsedBoard | null {
     const parsed = parseBoard(json)
     if (!parsed) return null
     if (S.editing.value) this.cancelText()
+    const snap = opts.undoable ? this.structure() : null
+    this.onPageChange?.()
     this.labs.clear(); this.labDraft.clear(); activeLabId.value = null
     const kind = parsed.kind ?? 'canvas'
-    if (!opts.undoable || (parsed.pages && parsed.pages.length > 1) || kind !== this.boardKind || parsed.frames?.length) {
-      // Notebooks, framed canvases and a change of board kind replace the board; not an undoable edit.
-      const fallback = parsed.view ?? this.view
-      this.pages = (parsed.pages ?? [{ items: parsed.items, view: parsed.view }]).map(pg => ({ items: pg.items, view: pg.view ?? fallback, history: { undo: [], redo: [] }, paper: pg.paper, frame: pg.frame }))
-      this.frames = kind === 'canvas' ? (parsed.frames ?? []).map(f => ({ ...f })) : []
-      this.setKind(kind)
-      this.history.take()
-      this.showPage(parsed.page ?? 0)
-      return parsed
-    }
-    const before = this.doc.snapshot()
-    this.doc.replaceAll(parsed.items)
-    this.setSelection([])
-    this.commit(this.doc.diff(before))
-    this.refresh(null)
+    const portable = !!parsed.pages // format 4 carries its own appearance
+    const fallbackPaper: Paper = opts.undoable ? this.look.paper ?? 'none' : S.defaultPaper.value
+    const fallback = parsed.view ?? this.view
+    this.lessonColor = parsed.color ?? (portable || !opts.undoable ? S.defaultColor.value : this.lessonColor)
+    this.pages = (parsed.pages ?? [{ items: parsed.items, view: parsed.view }]).map((pg: PageData) => ({
+      paper: pg.paper ?? (portable ? 'none' : fallbackPaper), color: pg.color, title: pg.title, origin: pg.origin,
+      items: pg.items, view: pg.view ?? fallback, history: { undo: [], redo: [] }, frame: pg.frame
+    }))
+    this.frames = kind === 'canvas' ? (parsed.frames ?? []).map(f => ({ ...f })) : []
+    this.undoSlot = null
+    this.setKind(kind)
+    this.history.take()
+    this.showPage(parsed.page ?? 0)
+    this.syncLook(true)
+    this.changed(snap ? { label: 'Opened a board', snap } : undefined)
     return parsed
   }
 
@@ -1317,80 +1529,99 @@ export class Board implements ToolHost {
     this.afterEdit(label)
   }
 
-  /** PNG of each page, pictures decoded first; for PDF export. */
-  async exportPages(bg: string): Promise<ArrayBuffer[]> {
+  // ── output ──────────────────────────────────────────────────────────────────
+  /** What "this page" means when saving a picture: a notebook's page, a canvas's whole drawing. */
+  get defaultScope(): PictureScope { return this.paged ? 'page' : 'content' }
+
+  /**
+   * One PNG per sheet of paper for a PDF. A page lengthened with "more space below" is split into one
+   * picture per screen (`split`, the default), so each fills a sheet and stays readable; trailing
+   * screens with nothing on them are left out. `split: false` keeps a long page whole.
+   * Blank pages are kept, and a notebook whose pages only have paper still prints that paper.
+   */
+  async exportPages(opts: { split?: boolean } = {}): Promise<ArrayBuffer[]> {
+    const split = opts.split ?? true
     const out: ArrayBuffer[] = []
     const pages = this.pageData()
-    if (!this.paged && this.frames.length) {
-      // A framed canvas exports one PDF page per frame, in frame order.
-      const items = pages[0].items
-      if (!items.length) return out
+    const sheet = async (items: Item[], f: Frame, back: Backdrop): Promise<void> => {
       await preloadImages(items)
-      for (const f of this.frames) {
-        const png = await this.renderSheet(items.filter(it => rectsHit(itemBounds(it), frameRect(f))), f, pages[0].paper ?? 'none', bg)
+      const screens = split ? this.usedScreens(items, f) : 1
+      for (let k = 0; k < screens; k++) {
+        const rect: Rect = split ? [f.x, f.y + k * PAGE_H, f.x + PAGE_W, f.y + (k + 1) * PAGE_H] : frameRect(f)
+        const png = await this.renderRect(items, rect, 1.5, back)
         if (png) out.push(png)
       }
+    }
+    if (!this.paged && this.frames.length) {
+      // A framed canvas exports one sheet per frame, in frame order.
+      const items = pages[0].items
+      if (!items.length && !this.frames.some(f => (f.paper ?? pages[0].paper ?? 'none') !== 'none')) return out
+      for (const f of this.frames) await sheet(items, f, this.frameBackdrop(f))
       return out
     }
     if (this.paged) {
-      // A notebook keeps every sheet, blank ones included, with its paper.
-      if (!pages.some(pg => pg.items.length)) return out
-      for (const pg of pages) {
-        await preloadImages(pg.items)
-        const png = await this.renderSheet(pg.items, pg.frame ?? DEFAULT_FRAME, pg.paper ?? 'none', bg)
-        if (png) out.push(png)
-      }
+      if (!pages.some(pg => pg.items.length || (pg.paper ?? 'none') !== 'none')) return out
+      for (const pg of pages) await sheet(pg.items, pg.frame ?? DEFAULT_FRAME, backdropOf({ color: this.lessonColor, paper: 'none' }, pg))
       return out
     }
-    for (const pg of pages) {
-      await preloadImages(pg.items)
-      const png = await this.renderPng(pg.items, bg, true, 2)
-      if (png) out.push(png)
-    }
+    const items = pages[0].items
+    const b = this.doc.bounds(items)
+    if (!b) return out
+    await preloadImages(items)
+    const png = await this.renderRect(items, padRect(b, 48), 2, this.surfaceBackdrop())
+    if (png) out.push(png)
     return out
   }
 
-  private async renderSheet(items: Item[], f: Frame, paper: Paper, bg: string, scale = 1.5): Promise<ArrayBuffer | null> {
-    const cv = document.createElement('canvas')
-    cv.width = Math.round(PAGE_W * scale); cv.height = Math.round(PAGE_H * f.extent * scale)
-    const ctx = cv.getContext('2d')!
-    paintGrid(ctx, { x: f.x, y: f.y, zoom: scale }, cv.width, cv.height, 1, paper, isDarkBg.value)
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.globalCompositeOperation = 'destination-over'
-    ctx.fillStyle = bg
-    ctx.fillRect(0, 0, cv.width, cv.height)
-    ctx.globalCompositeOperation = 'source-over'
-    ctx.setTransform(scale, 0, 0, scale, -f.x * scale, -f.y * scale)
-    for (const it of items) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
-    const blob = await new Promise<Blob | null>((res) => cv.toBlob(res, 'image/png'))
-    return blob ? await blob.arrayBuffer() : null
+  /** How many screens of a sheet to print: down to the last one that has something on it. */
+  private usedScreens(items: Item[], f: Frame): number {
+    let bottom = f.y
+    for (const it of items) if (rectsHit(itemBounds(it), frameRect(f))) bottom = Math.max(bottom, itemBounds(it)[3])
+    return clamp(Math.ceil((bottom - f.y) / PAGE_H), 1, f.extent)
   }
 
-  /** Render everything (cropped to its bounds) to a PNG. */
-  async exportPng(bg: string, bgOpaque: boolean, maxScale = 2): Promise<ArrayBuffer | null> {
-    await preloadImages(this.doc.items)
-    return this.renderPng(this.doc.items, bg, bgOpaque, maxScale)
-  }
-
-  private async renderPng(items: Item[], bg: string, bgOpaque: boolean, maxScale: number): Promise<ArrayBuffer | null> {
-    const b = this.doc.bounds(items)
-    if (!b) return null
-    const pad = 48
-    const w = b[2] - b[0] + pad * 2
-    const h = b[3] - b[1] + pad * 2
-    const scale = Math.min(maxScale, 9000 / Math.max(w, h))
-    const cv = document.createElement('canvas')
-    cv.width = Math.max(1, Math.round(w * scale))
-    cv.height = Math.max(1, Math.round(h * scale))
-    const ctx = cv.getContext('2d')!
-    if (bgOpaque) {
-      ctx.fillStyle = bg
-      ctx.fillRect(0, 0, cv.width, cv.height)
+  /**
+   * A picture of the board as a PNG, painted exactly as on screen (paper included; `paper: false`
+   * gives ink on a transparent background).
+   *  - page: a notebook's page; on a canvas the frame in view, or what is on screen
+   *  - content: everything drawn, cropped to it
+   *  - selection: the selected objects, cropped to them
+   */
+  async exportPng(opts: { scope?: PictureScope; paper?: boolean; maxScale?: number } = {}): Promise<ArrayBuffer | null> {
+    const scope = opts.scope ?? this.defaultScope
+    const items = scope === 'selection' ? this.selection : this.doc.items
+    let rect: Rect, back: Backdrop
+    if (scope === 'page') {
+      const frame = !this.paged ? this.frames[S.frameIndex.value] : undefined
+      if (this.paged) { rect = frameRect(this.sheet); back = backdropOf({ color: this.lessonColor, paper: 'none' }, this.look) }
+      else if (frame) { rect = frameRect(frame); back = this.frameBackdrop(frame) }
+      else { rect = [this.view.x, this.view.y, this.view.x + this.w / this.view.zoom, this.view.y + this.h / this.view.zoom]; back = this.surfaceBackdrop() }
+      // an empty page is worth saving only when it has paper (a printable practice sheet)
+      if (!items.length && back.paper === 'none' && sameColor(back.color, DEFAULT_BOARD_COLOR)) return null
+    } else {
+      const b = this.doc.bounds(items)
+      if (!b) return null
+      rect = padRect(b, 48)
+      back = this.paged ? backdropOf({ color: this.lessonColor, paper: 'none' }, this.look) : this.surfaceBackdrop()
     }
-    ctx.scale(scale, scale)
-    ctx.translate(-b[0] + pad, -b[1] + pad)
-    for (const it of items) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
+    await preloadImages(items)
+    const longest = Math.max(rect[2] - rect[0], rect[3] - rect[1])
+    return this.renderRect(items, rect, Math.min(opts.maxScale ?? 2, 9000 / longest), opts.paper === false ? null : back)
+  }
+
+  /** One rectangle of the world as a PNG: its backdrop (null: none), then the objects that touch it. */
+  private async renderRect(items: Item[], r: Rect, scale: number, back: Backdrop | null): Promise<ArrayBuffer | null> {
+    const cv = document.createElement('canvas')
+    cv.width = Math.max(1, Math.round((r[2] - r[0]) * scale)); cv.height = Math.max(1, Math.round((r[3] - r[1]) * scale))
+    const ctx = cv.getContext('2d')!
+    if (back) paintBackdrop(ctx, { x: r[0], y: r[1], zoom: scale }, cv.width, cv.height, 1, back, true)
+    ctx.setTransform(scale, 0, 0, scale, -r[0] * scale, -r[1] * scale)
+    for (const it of items) if (rectsHit(itemBounds(it), r)) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
     const blob = await new Promise<Blob | null>((res) => cv.toBlob(res, 'image/png'))
     return blob ? await blob.arrayBuffer() : null
   }
 }
+
+export type PictureScope = 'page' | 'content' | 'selection'
+
+const padRect = (b: Rect, pad: number): Rect => [b[0] - pad, b[1] - pad, b[2] + pad, b[3] + pad]

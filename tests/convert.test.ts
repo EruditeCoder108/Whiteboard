@@ -33,7 +33,7 @@ describe('notebook ⇄ canvas', () => {
   })
 
   it('a canvas with nothing on it becomes one blank page', () => {
-    expect(canvasToNotebook([], [])).toEqual([{ items: [], frame: { x: 0, y: 0, extent: 1 } }])
+    expect(canvasToNotebook([], [])).toEqual([{ items: [], frame: { x: 0, y: 0, extent: 1 }, paper: 'none' }])
   })
 
   it('a new frame goes after the last one, or beside the drawing', () => {

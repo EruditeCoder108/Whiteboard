@@ -141,6 +141,9 @@ export class DiskStore {
     }
   }
 
+  /** The next save keeps the board as it is now as a backup, whatever the interval (before a lesson is replaced). */
+  keepNextBackup(): void { this.lastBackup = 0 }
+
   async saveBoard(json: string, assets?: unknown): Promise<SaveResult> {
     try {
       if (typeof json !== 'string' || Buffer.byteLength(json) > MAX_FILE_BYTES) throw new Error('Board exceeds the 300 MB save limit')

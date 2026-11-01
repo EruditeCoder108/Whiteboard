@@ -159,3 +159,19 @@ export function MenuItem({
     </button>
   )
 }
+
+/** A large touch tile: icon with its name underneath (there is no hover on a touch panel). */
+export function Tile({ icon: Icon, label, on, onClick, danger, disabled }: {
+  icon: IconType; label: string; on?: boolean; onClick: () => void; danger?: boolean; disabled?: boolean
+}): JSX.Element {
+  return (
+    <button type="button" class={`tile nodrag ${on ? 'on' : ''} ${danger ? 'danger' : ''}`} aria-pressed={on} disabled={disabled} onClick={onClick}>
+      <Icon size={24} strokeWidth={1.8} /><span>{label}</span>
+    </button>
+  )
+}
+
+/** A heading with a grid of tiles under it. */
+export function Section({ title, children, cols }: { title: string; children: ComponentChildren; cols?: number }): JSX.Element {
+  return <><div class="sheet-head">{title}</div><div class="tiles" style={cols ? { gridTemplateColumns: `repeat(${cols}, 1fr)` } : undefined}>{children}</div></>
+}

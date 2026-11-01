@@ -11,9 +11,10 @@ afterEach(() => {
 
 describe('settings persistence', () => {
   it('rejects invalid tools, colours and non-finite values, and bounds numeric settings', () => {
-    applySettings({ tool: 'unknown', grid: 'invalid', penColor: '#12345', penSize: NaN, markerSize: 999, bgAlpha: -10, smoothing: Infinity, pressure: 'false', radialDelay: 50 })
+    applySettings({ tool: 'unknown', defaultPaper: 'invalid', defaultColor: 'red', penColor: '#12345', penSize: NaN, markerSize: 999, bgAlpha: -10, smoothing: Infinity, pressure: 'false', radialDelay: 50 })
     expect(S.tool.value).toBe(original.tool)
-    expect(S.grid.value).toBe(original.grid)
+    expect(S.defaultPaper.value).toBe(original.defaultPaper)
+    expect(S.defaultColor.value).toBe(original.defaultColor)
     expect(S.penColor.value).toBe(original.penColor)
     expect(S.penSize.value).toBe(original.penSize)
     expect(S.markerSize.value).toBe(60)
@@ -21,6 +22,16 @@ describe('settings persistence', () => {
     expect(S.smoothing.value).toBe(original.smoothing)
     expect(S.pressure.value).toBe(true)
     expect(S.radialDelay.value).toBe(300)
+  })
+
+  it('reads the board colour and paper that older versions kept in settings as the defaults for new lessons', () => {
+    applySettings({ bgColor: '#1d3b33', grid: 'graph' })
+    expect(S.defaultColor.value).toBe('#1d3b33')
+    expect(S.defaultPaper.value).toBe('graph')
+    applySettings({ bgColor: '#000000', grid: 'dots', defaultColor: '#fbf6e9', defaultPaper: 'ruled' })
+    expect(S.defaultColor.value).toBe('#fbf6e9')
+    expect(S.defaultPaper.value).toBe('ruled')
+    expect(Object.keys(snapshotSettings())).not.toContain('bgColor')
   })
 
   it('flushes the latest settings before the debounce fires and exposes write failures', async () => {

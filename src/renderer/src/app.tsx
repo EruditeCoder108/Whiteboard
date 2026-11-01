@@ -17,6 +17,8 @@ import { BoardAgent } from '@/engine/agent'
 import { AgentPanel } from '@/ui/AgentPanel'
 import { replay } from '@/state/replay'
 import { ReplayPanel, ReplayCanvas, ReplayControls, RecordingControls } from '@/ui/Replay'
+import { Dialog } from '@/ui/Dialog'
+import { lesson } from '@/state/lesson'
 import { ScienceUI } from '@/ui/science/Science'
 import { PageBar, ImportStatus } from '@/ui/Insert'
 import { CurtainLayer, SpotlightLayer, TimerWidget } from '@/ui/Present'
@@ -109,6 +111,7 @@ export function App(): JSX.Element {
         saveBoardOnClose = saved.json !== null || !saved.message
         settings = startPersisting((d) => window.api.store.saveSettings(d))
         S.ready.value = true
+        await lesson.init()
         await replay.load()
         S.documentRevision.value = board.doc.version
         S.saveStatus.value = 'saved'
@@ -231,6 +234,7 @@ export function App(): JSX.Element {
       <ImportStatus />
       <Toast />
       <PalmCalibration />
+      <Dialog />
       {S.ready.value && !S.layoutChosen.value && <LayoutChooser />}
       {(!S.ready.value || S.closing.value) && <div class="loading-cover" role="status">
         <span>{S.closing.value ? 'Saving before closing…' : S.saveError.value ? 'Could not load your board' : 'Loading your board…'}</span>
