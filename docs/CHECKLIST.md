@@ -20,9 +20,6 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - ✅ My lessons: all lessons filed by subject, with a picture, date and pages; open, rename, copy, delete
 - ✅ Page sections (Warm-up / Example / Practice headings in the page sorter)
 - ✅ Capture to lesson: freeze a screen, window or area and write on it *(built by the second agent)*
-- ⬜ Light and dark mode for the whole app (toolbars, menus, sheets), plus print-friendly PDFs of dark boards
-- 🔄 Study of the whole Note 3 app, with a report and screenshots *(second agent is doing it now)*
-- ⬜ Export preview *(later: polish)*
 
 ## Step 2: reusable teaching content
 
@@ -32,13 +29,18 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - ⬜ Number line and coordinate axes as real tools
 - ⬜ Prepared reveals (hide an answer, tap to show)
 
+**End of Step 2 (moved here from Step 1):**
+- ⬜ Light and dark mode for the whole app (toolbars, menus, sheets), plus print-friendly PDFs of dark boards
+- 🔄 Study of the whole Note 3 app, with a report and screenshots; then build its best ideas *(second agent is studying it now)*
+- ⬜ Export preview: see the pages before saving the PDF
+
 ## Step 3: tested on a real smart board
 
 - ⬜ Pen, finger and palm on the actual panel
 - ⬜ Two people writing at the same time
 - ⬜ Display scaling (125%, 150%, 200%) and a slow school PC
 
-## Later (the big tracks)
+## Later: the big tracks (they get a new checklist once Step 3 is done)
 
 - ⬜ Lesson Kit: 3D heart, mitosis, ray optics, Class 10 diagrams (the library)
 - ⬜ Lecture recording across pages, with audio

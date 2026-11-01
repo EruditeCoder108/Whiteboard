@@ -1,6 +1,6 @@
 # Next chat handoff
 
-**Updated 1 November 2026 (after the Lesson integrity milestone).** Read this first in every new chat, then update it before the chat ends
+**Updated 1 November 2026 (after Step 1 of the checklist; 1.6.0-beta.6).** Read this first in every new chat, then update it before the chat ends
 (see the last section). Paths are relative to the repository root
 `D:\Projects 2\whiteboard\app` unless they start with a drive letter.
 
@@ -31,46 +31,64 @@ The gesture ring is a separate college project and is **not** part of the produc
 | **The owner's Note3 deep dive: the working guide for the next chats** | `docs/NOTE3-COMPETITIVE-DEEP-DIVE-2026-11-01.md`, written by the owner. **Read it fully.** Commit it on the first branch. |
 | 3D/asset licence research | `docs/EDUCATIONAL-3D-ASSETS-RESEARCH.md` |
 | Release history | `CHANGELOG.md` |
-| GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#3 merged, lesson integrity on branch `feature/lesson-integrity` |
+| **The owner's progress checklist (plain language)** | `docs/CHECKLIST.md`. **Work through it in order; tick it after every milestone.** |
+| GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#9 merged, `main` = 1.6.0-beta.6 |
 | Installed app (owner's laptop) | `%LOCALAPPDATA%\Programs\Floating Whiteboard` (per-user NSIS install, Start menu + desktop shortcut) |
 | Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.6.exe` (ignored by git) |
 | Older unrelated projects in the parent folder | `..\android-library`, `..\*.pyw` (the original Python board). Leave them alone. |
 
 ## 3. State right now
 
-- **`docs/CHECKLIST.md` is the owner's plain-language progress list.** Tick items (✅ / 🔄 / ⬜) whenever a milestone
-  finishes or starts; keep it short and jargon-free. `FEATURES.md` stays the detailed feature list.
-
-- `main` holds 1.6.0-beta.6: Lesson integrity (PR #4), **Background & paper** (§6, PR #5), **Share to phones**
-  (local Wi-Fi + QR, built by the second agent, PR #6), **board surfaces** (PR #7, `engine/texture.ts`),
-  **My lessons + autosave + page sections** (PR #8) and **Capture to lesson** (second agent). See `CHANGELOG.md`.
-- **Owner's direction (2026-11-01):** a professional smart-board app: every lesson autosaves to its own file;
-  lessons are organised (name, subject, dates) in My lessons. **Next: light/dark mode for the whole app**, done
-  "intelligently" (interface theme Light / Dark / Auto that follows the board; print-friendly PDF of dark boards as
-  part of it). Export preview is deferred as polish. Board textures are "almost enough"; tune them only if asked.
-- **The owner offered to install Note 3** (trial) so its board surfaces can be studied with computer use. They
-  said Note 3's boards "feel organic" (textured blackboard, grey-green board, many customisable backgrounds). If
-  it's installed, compare our surfaces side by side and tune `engine/texture.ts` (cloud/grain amounts) and the
-  `SURFACES` colours in `state/store.ts`. Add more surfaces there; never add image files for textures.
-- **A second agent (ChatGPT) works in parallel** from written briefs in `docs/agent-tasks/`. It works in its own
-  worktree (`D:\Projects 2\whiteboard\app-<task>`), pushes its branch, never merges. The lead reviews (security,
-  the file list it was given, tests), merges through a PR, and writes the changelog/FEATURES/handoff entries.
-  Done: `qr-share.md` (`src/main/share.ts`, `pdf.ts`, `ui/Share.tsx`) and `capture.md` (`src/main/capture.ts`,
-  `state/capture.ts`, `ui/Capture.tsx`; merged as 1.6.0-beta.6). **In progress: `note3-study.md`**, a research study
-  of the whole Note 3 app with screenshots, written to `D:\Projects 2\whiteboard\note3-study\REPORT.md` (no code).
-  When it reports, read the report and turn its "Top 10" into checklist items. The owner trusts the agent more now:
-  review its branches lightly (safety-critical parts and the merge), then polish small things.
-  Known polish for capture: grabbing one window asks for full-size thumbnails of every window (slow with many open).
-- **Deep dive progress:** §7 **F1–F6 and F9 done**. **§6 done:** spacing/strength/line colour with scope and restore,
-  isometric papers, lesson layouts, graph renderer fixed (§6.5), writing papers adapt to zoom on the canvas, custom
-  background picture with full lifecycle (§6.4), one backdrop description everywhere (§6.8). **Not done:** F7, F8,
-  page *sections*, print-friendly export for dark boards, export preview, logarithmic/polar/map papers, a separate
-  "default for new pages only" scope (new lessons take the last choice; new pages copy the page before),
-  manual crop of a filled picture (position presets only), a check at 125/150/200% Windows scaling on hardware.
-- **Checks green on the branch:** vitest 269 pass (new `tests/papers.test.ts`). e2e: papers 30 (new), plus the
-  existing suites (see §8).
-- **Never tested on a real touch panel.** Swipe feel, palm threshold, soft-pen width, IR pens, and the size of
-  the new lesson tiles are unverified on hardware.
+- **`docs/CHECKLIST.md` is the owner's plain-language progress list and the plan.** Step 1 is done (apart from
+  three items moved to the end of Step 2). Tick items (✅ / 🔄 / ⬜) whenever a milestone starts or finishes; keep it
+  short and jargon-free. `FEATURES.md` stays the detailed feature list.
+- `main` = **1.6.0-beta.6**, installed on the owner's laptop. Built in the last chat (see `CHANGELOG.md`):
+  - lesson integrity (F1–F6, F9; PR #4);
+  - Background & paper (§6; PR #5);
+  - Share to phones (second agent; PR #6);
+  - textured board surfaces (PR #7);
+  - My lessons + autosave + page sections (PR #8);
+  - Capture to lesson (second agent; PR #9).
+- **Owner's direction (2026-11-01):** a *professional* smart-board app. Finish the checklist **up to the end of
+  Step 3 properly (not rushed)**, then make a **new checklist for the big tracks** (Lesson Kit library, lecture
+  recording, AI notes). The order:
+  - **Step 2 next:** reusable teaching content (My shelf, tables, attached arrows, number line and axes, reveals).
+  - **End of Step 2:** the three deferred items:
+    - light/dark mode for the whole app, done "intelligently": Light / Dark / Auto that follows the board, with
+      print-friendly PDFs of dark boards as part of it;
+    - acting on the Note 3 study;
+    - export preview (polish).
+  - **Step 3:** real-panel testing.
+  - Board textures are "almost enough"; tune them only if asked.
+- **A second agent (ChatGPT) works in parallel** from written briefs in `docs/agent-tasks/` (the owner pastes them).
+  - It works in its own worktree (`D:\Projects 2\whiteboard\app-<task>`), pushes its branch and never merges.
+  - The lead reviews, merges through a PR, and writes the CHANGELOG/FEATURES/CHECKLIST entries. The owner now trusts
+    it: review lightly (safety-critical parts plus the merge), then polish.
+  - Done: `qr-share.md` and `capture.md`.
+  - **Now running: `note3-study.md`**, a research study of the whole Note 3 app with screenshots →
+    `D:\Projects 2\whiteboard\note3-study\REPORT.md` (no code). When the owner pastes its summary, read the report,
+    turn its "Top 10" into checklist items (Step 2 or the end of Step 2), and give the agent its next brief.
+  - **Keep it busy:** when it finishes, give it the next independent Step 2 item, with files that don't overlap
+    yours, in a new brief in `docs/agent-tasks/`.
+- **Note 3 is installed on this PC** (Start menu name "Note"; its window belongs to `note.exe` /
+  `easirunner.exe`). The second agent controls it for the study; the lead should not drive it at the same time.
+- **Deep dive progress:**
+  - **Done:** §7 F1–F6 and F9 (titles + sections); §6 (all of 6.2–6.8); §9 Capture, local QR share, organised lessons
+    with autosave.
+  - **Open:**
+    - F7 (simultaneous writers, needs a panel) and F8 (multipage recording, a big track);
+    - print-friendly dark export and export preview (end of Step 2);
+    - logarithmic, polar and map papers;
+    - manual crop of a filled background picture (position presets only today);
+    - a check at 125/150/200% Windows scaling on hardware;
+    - capture polish: grabbing one window requests full-size thumbnails of every window, which is slow with many open.
+- **Checks green on `main`:**
+  - typecheck clean, vitest 308;
+  - e2e: lesson 44, papers 34, capture 26, board 25, share 21, track-a 15, run 46, phase1 23, phase2 35, grid 30,
+    canvas 13, replay 30, agent 40, laser 15;
+  - phase2 can flake once when run straight after many suites; a rerun passes.
+- **Never tested on a real touch panel.** Swipe feel, palm threshold, soft-pen width, IR pens and tile sizes are
+  unverified on hardware (Step 3).
 
 ## 4. What to do next (recommended order)
 
@@ -90,13 +108,25 @@ Read the whole document first, not just §7. Work through it iteratively, one mi
 5. Where the deep dive and `MASTER-PLAN.md` disagree on order, the deep dive's "make a whole lesson
    dependable first" wins. The library (Track B) and AI notes (Track C) come after.
 
-**A. Next deep-dive milestones.** Lesson integrity (F1–F6, F9) and §6 Background & paper are done.
-Pick from the deep dive in this order, one branch each, and tell the owner in plain words after each:
-1. **Light/dark theme for the whole app** (see the owner's direction in §3), including print-friendly PDFs of dark
-   boards. (Capture to lesson is with the second agent; review and merge its branch when it reports, then give it
-   `docs/agent-tasks/note3-study.md`, a study of the whole Note 3 app.)
-2. §8 reusable content: personal resource shelf, tables, connectors/mind maps, number line/axes, prepared reveals.
-3. Page sections (rest of F9); F8 and F7 when the foundations/panel exist.
+**A. Next milestones: follow `docs/CHECKLIST.md` in order, one branch each, and tell the owner in plain words after
+each.** Step 2 is the deep dive's §8 ("Teaching tools and reusable content"); read §8.1–8.6 for each item's
+required outcome:
+1. **My shelf**: save a selection (drawing, diagram, picture group) once and reuse it in any lesson, stored in the
+   app's data folder, with large touch tiles, rename and delete.
+2. **Tables**: an editable table object (rows, columns, cell text, resize), using the shared editing lifecycle.
+3. **Attached arrows (connectors)**: arrows that stay attached to boxes when they move (mind maps, flowcharts).
+4. **Number line and coordinate axes** as real objects with an explicit scale and labels (§6.6: measured, not
+   decorative).
+5. **Prepared reveals**: hide an answer behind a cover that is tapped away during class.
+6. **End of Step 2**:
+   - light/dark mode for the whole app (with print-friendly PDFs of dark boards);
+   - turn the Note 3 study's top items into work;
+   - export preview.
+7. **Step 3**: real-panel acceptance with the owner (pen/palm, two writers F7, scaling, a slow PC).
+
+Then **make a new checklist for the big tracks** (B below) with the owner. Good candidates for the second agent
+in Step 2: tables, or the number line and axes (each mostly new files). Keep My shelf and connectors yourself
+(they touch the board engine).
 The look of a page is `PageLook` (`engine/pages.ts`): paper, color, title, origin, spacing, strength, lines, art.
 `engine/scene.ts` turns it into a `Backdrop` painted everywhere; `engine/grid.ts` plans each paper as `PaperPass`es
 (testable without a canvas). Extend these; never add a parallel paper path.
