@@ -26,6 +26,7 @@
     "e2e:agent": "electron-vite build && node e2e/agent.mjs",
     "e2e:track-a": "electron-vite build && node e2e/track-a.mjs",
     "e2e:board": "electron-vite build && node e2e/board.mjs",
+    "e2e:share": "electron-vite build && node e2e/share.mjs",
     "e2e:lesson": "electron-vite build && node e2e/lesson.mjs",
     "e2e:papers": "electron-vite build && node e2e/papers.mjs",
     "e2e:replay": "electron-vite build && node e2e/replay.mjs",
@@ -44,11 +45,13 @@
     "mediabunny": "1.61.3",
     "pdfjs-dist": "4.10.38",
     "perfect-freehand": "^1.2.0",
-    "preact": "^10.27.0"
+    "preact": "^10.27.0",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.0",
     "@types/node": "^24.0.0",
+    "@types/qrcode": "^1.5.6",
     "electron": "^44.0.0",
     "electron-builder": "^26.0.0",
     "electron-vite": "^5.0.0",
@@ -98,6 +101,14 @@
       "artifactName": "Floating-Whiteboard-portable-${version}.exe"
     },
     "extraResources": [
+      {
+        "from": "node_modules/qrcode/license",
+        "to": "notices/qrcode.txt"
+      },
+      {
+        "from": "node_modules/dijkstrajs/LICENSE.md",
+        "to": "notices/dijkstrajs.txt"
+      },
       {
         "from": "LICENSE",
         "to": "LICENSE"
