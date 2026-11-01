@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PAGE_H, PAGE_W, clampToFrame, fitZoom, frameForContent, frameView, scrollOf, validFrame } from '@/engine/pages'
+import { PAGE_H, clampToFrame, fitZoom, frameForContent, frameView, scrollOf, validFrame } from '@/engine/pages'
 
 const W = 1920, H = 1080
 const sheet = { x: 0, y: 0, extent: 1 }
@@ -11,10 +11,9 @@ describe('page mode', () => {
     expect(v.x).toBeCloseTo(0); expect(v.y).toBeCloseTo(0)
   })
 
-  it('zoomed in, the view stays inside the sheet', () => {
+  it('a notebook page cannot be zoomed in either: it has one fixed size', () => {
     const v = clampToFrame({ x: 5000, y: -400, zoom: 3 }, sheet, W, H)
-    expect(v.x + W / v.zoom).toBeCloseTo(PAGE_W)
-    expect(v.y).toBeCloseTo(0)
+    expect(v).toEqual({ x: 0, y: 0, zoom: fitZoom(W, H) })
   })
 
   it('a taller (16:10) screen centres the sheet with letterbox bands', () => {

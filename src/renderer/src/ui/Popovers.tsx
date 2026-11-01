@@ -170,11 +170,11 @@ export function SettingsPopover(): JSX.Element {
         value={S.layout.value}
         onChange={(v) => actions.chooseLayout(v)}
       />
-      <div class="pop-sub">Pages</div>
+      <div class="pop-sub">This board <i>(converts, nothing is lost)</i></div>
       <Segmented
-        options={[{ value: 'pages', label: 'Fixed pages' }, { value: 'canvas', label: 'Endless canvas' }]}
-        value={S.pageMode.value}
-        onChange={(v) => actions.setPageMode(v)}
+        options={[{ value: 'notebook', label: 'Notebook' }, { value: 'canvas', label: 'Canvas' }]}
+        value={S.kind.value}
+        onChange={(v) => actions.convertBoard(v)}
       />
       <PaperPicker />
       <Row label="Opacity" hint="Lower it to see the screen through the board">

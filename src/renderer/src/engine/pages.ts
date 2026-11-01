@@ -1,13 +1,16 @@
 import { clamp } from './geometry'
 import type { Rect, View } from './types'
-import { MAX_ZOOM } from './view'
 
 /**
- * Page mode: every page is a fixed 16:9 sheet (PAGE_W × PAGE_H world units per screen) that can
- * be extended downward a screen at a time. The view always fills the screen with the sheet:
- * zooming in is allowed, zooming out past "whole width" and panning off the sheet are not, so a
- * teacher can never get lost. Canvas mode leaves the view free (the endless board).
+ * Two kinds of board:
+ *  - notebook: a stack of fixed 16:9 sheets (PAGE_W × PAGE_H world units per screen). A sheet always
+ *    fills the screen at one fixed size: no zooming, no panning, nothing beyond its edges. It can be
+ *    lengthened a screen at a time ("more space below"), which only scrolls up and down.
+ *  - canvas: one endless board, free to pan and zoom, with no pages. Sheet-sized frames can be placed
+ *    on it and stepped through like slides; that is where the canvas and pagination meet.
  */
+export type BoardKind = 'notebook' | 'canvas'
+export const isBoardKind = (v: unknown): v is BoardKind => v === 'notebook' || v === 'canvas'
 export const PAGE_W = 1600
 export const PAGE_H = 900
 export const MAX_EXTENT = 8
@@ -23,9 +26,9 @@ export const rectInside = (a: Rect, b: Rect): boolean => a[0] >= b[0] && a[1] >=
 /** Zoom at which the sheet's width (or one screen of it) exactly fills the viewport. */
 export const fitZoom = (w: number, h: number): number => Math.min(w / PAGE_W, h / PAGE_H)
 
-/** Keep a view on the sheet: no smaller than the fit, and never showing beyond its edges. */
+/** A notebook view: the sheet at its one fixed size, only ever scrolled up and down. */
 export function clampToFrame(v: View, f: Frame, w: number, h: number): View {
-  const zoom = clamp(v.zoom, fitZoom(w, h), MAX_ZOOM)
+  const zoom = fitZoom(w, h)
   const vw = w / zoom, vh = h / zoom
   const [x0, y0, x1, y1] = frameRect(f)
   const x = vw >= x1 - x0 ? x0 - (vw - (x1 - x0)) / 2 : clamp(v.x, x0, x1 - vw)

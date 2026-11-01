@@ -1,6 +1,6 @@
 import { getModel, labDuration, EXPLORE_REVEAL } from './science/models'
 import { isShowcase } from './science/showcase-models'
-import { effect, untracked } from '@preact/signals'
+import { effect } from '@preact/signals'
 import { Doc, History, opBounds, restyleItems } from './doc'
 import type { EditOp, HistoryState } from './doc'
 import { clamp, inflate, lerp, rectsHit, unionRect } from './geometry'
@@ -21,8 +21,9 @@ import type { ToolName } from '@/state/store'
 import type { InkTiming } from './replay'
 import { paintGrid } from './grid'
 import type { Paper } from './grid'
-import { DEFAULT_FRAME, MAX_EXTENT, PAGE_H, PAGE_W, clampToFrame, fitZoom, frameForContent, frameRect, frameView, rectInside, scrollOf } from './pages'
-import type { Frame } from './pages'
+import { DEFAULT_FRAME, MAX_EXTENT, PAGE_H, PAGE_W, clampToFrame, fitZoom, frameForContent, frameRect, frameView, scrollOf } from './pages'
+import type { BoardKind, Frame } from './pages'
+import { canvasToNotebook, nextFrameSlot, notebookToCanvas } from './convert'
 import { LabRuntime, supportedLab } from './science/runtime'
 import { activeLabId, scienceInspector } from '@/state/science'
 
@@ -54,6 +55,11 @@ export class Board implements ToolHost {
   private pages: { items: Item[]; view: View; history: HistoryState; paper?: Paper; frame?: Frame }[] = [{ items: [], view: this.view, history: { undo: [], redo: [] } }]
   /** the visible page's sheet (page mode keeps the view on it) */
   private sheet: Frame = { ...DEFAULT_FRAME }
+  /** notebook: pages of fixed sheets; canvas: one endless page, optionally with frames */
+  private boardKind: BoardKind = 'canvas'
+  /** canvas only: sheet-sized frames, stepped through like slides */
+  private frames: Frame[] = []
+  private framesRev = 0
   private pageIndex = 0
 
   private stage!: HTMLElement
@@ -151,21 +157,11 @@ export class Board implements ToolHost {
       this.dirtyBlit = true
       this.schedule()
     })
-    const stopMode = effect(() => {
-      if (S.pageMode.value !== 'pages') return
-      // Opening the endless canvas as a page: make the sheet cover what is already drawn.
-      untracked(() => {
-        const b = this.doc.bounds()
-        if (b && !rectInside(b, frameRect(this.sheet))) this.sheet = frameForContent(b)
-        this.setView(frameView(this.sheet, this.w, this.h))
-      })
-    })
     return () => {
       ro.disconnect()
       resolution.removeEventListener('change', onResolution)
       stop()
       stopGrid()
-      stopMode()
       cancelAnimationFrame(this.raf)
       this.labs.clear()
       if (this.anim) cancelAnimationFrame(this.anim.raf)
@@ -177,8 +173,7 @@ export class Board implements ToolHost {
     const r = this.stage.getBoundingClientRect()
     const dpr = window.devicePixelRatio || 1
     if (Math.abs(r.width - this.w) < 0.5 && Math.abs(r.height - this.h) < 0.5 && dpr === this.dpr) return
-    // A page that filled the old screen fills the new one, at the same scroll position.
-    const refit = this.paged && this.w > 0 && this.view.zoom <= fitZoom(this.w, this.h) * 1.002
+    // A notebook page fills the new screen at the same scroll position.
     const scroll = scrollOf(this.view, this.sheet, this.h)
     this.w = r.width
     this.h = r.height
@@ -191,7 +186,7 @@ export class Board implements ToolHost {
     }
     this.cv0 = null
     this.gridKey = ''
-    if (this.paged) this.setView(refit ? frameView(this.sheet, this.w, this.h, scroll) : this.view)
+    if (this.paged) this.setView(frameView(this.sheet, this.w, this.h, scroll))
     S.viewRevision.value++
     this.refresh(null)
     this.requestOverlay()
@@ -306,6 +301,7 @@ export class Board implements ToolHost {
     this.dirtyBlit = true
     this.schedule()
     this.requestOverlay()
+    if (this.frames.length) this.syncFrame()
     if (changed) this.onViewChange?.()
   }
 
@@ -504,10 +500,11 @@ export class Board implements ToolHost {
 
   private blit(preview: boolean): void {
     const f = this.sheet
-    const gridKey = `${this.view.x},${this.view.y},${this.view.zoom},${S.grid.value},${isDarkBg.value},${this.paged},${f.x},${f.y},${f.extent}`
+    const gridKey = `${this.view.x},${this.view.y},${this.view.zoom},${S.grid.value},${isDarkBg.value},${this.boardKind},${f.x},${f.y},${f.extent},${this.framesRev}`
     if (gridKey !== this.gridKey) {
       paintGrid(this.gctx, this.view, this.w, this.h, this.dpr, S.grid.value, isDarkBg.value)
       if (this.paged) this.paintDesk()
+      else if (this.frames.length) this.paintFrames()
       this.gridKey = gridKey
     }
     const ctx = this.bctx
@@ -904,6 +901,7 @@ export class Board implements ToolHost {
   }
 
   addPage(items: Item[] = [], view?: View, at = this.pageIndex + 1, frame: Frame = { ...DEFAULT_FRAME }): void {
+    if (!this.paged && !items.length) return this.addFrame() // a canvas has no pages: the next frame instead
     if (!this.leavePage()) return
     const start = view ?? (this.paged ? frameView(frame, this.w, this.h) : { x: -80, y: -80, zoom: 1 })
     this.pages.splice(at, 0, { items, view: start, history: { undo: [], redo: [] }, paper: S.grid.value, frame })
@@ -940,9 +938,159 @@ export class Board implements ToolHost {
     this.onChange?.()
   }
 
-  // ── page mode ──────────────────────────────────────────────────────────────
-  /** Page mode: the view stays on the page's sheet. */
-  get paged(): boolean { return S.pageMode.value === 'pages' }
+  // ── board kind ───────────────────────────────────────────────────────────────
+  get kind(): BoardKind { return this.boardKind }
+  /** Nothing drawn on any page. */
+  get isEmpty(): boolean { return this.doc.items.length === 0 && this.pages.every((pg, i) => i === this.pageIndex || !pg.items.length) }
+  /** A notebook: the view is fixed to the page's sheet. */
+  get paged(): boolean { return this.boardKind === 'notebook' }
+
+  private setKind(kind: BoardKind): void {
+    this.boardKind = kind
+    S.kind.value = kind
+    this.framesChanged()
+  }
+
+  /**
+   * Turn the board into the other kind without losing anything: a notebook's sheets are laid out
+   * side by side on the canvas as frames; a canvas's frames become pages, and drawing outside
+   * every frame gets pages of its own.
+   */
+  convertTo(kind: BoardKind): boolean {
+    if (kind === this.boardKind || !this.leavePage()) return false
+    const paper = S.grid.value
+    const empty = !this.pages.some(pg => pg.items.length)
+    const fresh = { undo: [], redo: [] }
+    if (empty) {
+      this.pages = [{ items: [], view: this.view, history: fresh, paper }]
+      this.frames = []
+    } else if (kind === 'canvas') {
+      const { items, frames } = notebookToCanvas(this.pages)
+      this.pages = [{ items, view: this.view, history: fresh, paper }]
+      this.frames = frames
+    } else {
+      this.pages = canvasToNotebook(this.pages.flatMap(pg => pg.items), this.frames)
+        .map(s => ({ items: s.items, view: this.view, history: { undo: [], redo: [] }, paper, frame: s.frame }))
+      this.frames = []
+    }
+    this.setKind(kind)
+    this.showPage(0)
+    if (kind === 'canvas') {
+      if (this.frames.length) this.goToFrame(0, false)
+      else this.setView({ x: -80, y: -80, zoom: 1 })
+    }
+    this.onChange?.()
+    return true
+  }
+
+  // ── canvas frames ──────────────────────────────────────────────────────────
+  get frameList(): readonly Frame[] { return this.frames }
+
+  private framesChanged(): void {
+    this.framesRev++
+    this.gridKey = ''
+    S.frameCount.value = this.frames.length
+    this.syncFrame()
+    this.dirtyBlit = true
+    this.schedule()
+  }
+
+  /** The frame under the middle of the screen (-1 between frames). */
+  private syncFrame(): void {
+    const [cx, cy] = this.viewCentre()
+    const i = this.frames.findIndex(f => { const r = frameRect(f); return cx >= r[0] && cx <= r[2] && cy >= r[1] && cy <= r[3] })
+    if (S.frameIndex.value !== i) S.frameIndex.value = i
+  }
+
+  /** The first screen of a frame, filling the view. */
+  private frameFit(f: Frame): View {
+    return fitRect([f.x, f.y, f.x + PAGE_W, f.y + PAGE_H], this.w, this.h, 12, MAX_ZOOM)
+  }
+
+  goToFrame(i: number, animate = true): boolean {
+    const f = this.frames[i]
+    if (!f) return false
+    if (animate) this.animateTo(this.frameFit(f), 360)
+    else this.setView(this.frameFit(f))
+    return true
+  }
+
+  turnFrame(dir: 1 | -1): boolean {
+    if (!this.frames.length) return false
+    const cur = S.frameIndex.value
+    return this.goToFrame(cur < 0 ? (dir > 0 ? 0 : this.frames.length - 1) : cur + dir)
+  }
+
+  /** A new frame: after the last one (like a new page), or around what is on screen now. */
+  addFrame(where: 'next' | 'here' = 'next'): void {
+    if (this.paged) return
+    const [cx, cy] = this.viewCentre()
+    const slot = where === 'here' ? { x: Math.round(cx - PAGE_W / 2), y: Math.round(cy - PAGE_H / 2) } : nextFrameSlot(this.frames, this.doc.items)
+    this.frames.push({ ...slot, extent: 1 })
+    this.framesChanged()
+    this.goToFrame(this.frames.length - 1)
+    this.onChange?.()
+  }
+
+  /** Remove a frame; what is drawn inside it stays on the canvas. */
+  deleteFrame(i: number): void {
+    if (!this.frames[i]) return
+    this.frames.splice(i, 1)
+    this.framesChanged()
+    this.onChange?.()
+  }
+
+  moveFrame(from: number, to: number): void {
+    if (from === to || !this.frames[from] || !this.frames[to]) return
+    const [f] = this.frames.splice(from, 1)
+    this.frames.splice(to, 0, f)
+    this.framesChanged()
+    this.onChange?.()
+  }
+
+  /** A sheet of content (a PDF page, say): its own page in a notebook, the next frame on a canvas. */
+  addSheet(items: Item[], frame: Frame, reuseEmptyPage: boolean): void {
+    if (this.paged) {
+      if (reuseEmptyPage && !this.doc.items.length) { this.addPageContent(items); this.setPageFrame(frame) }
+      else this.addPage(items, undefined, undefined, frame)
+      return
+    }
+    const slot = nextFrameSlot(this.frames, this.doc.items)
+    this.addPageContent(items.map(it => translateItem(it, slot.x - frame.x, slot.y - frame.y)))
+    this.frames.push({ x: slot.x, y: slot.y, extent: frame.extent })
+    this.framesChanged()
+    this.goToFrame(this.frames.length - 1, false)
+    this.onChange?.()
+  }
+
+  /** Canvas: frame outlines with their numbers, quiet enough to draw over. */
+  private paintFrames(): void {
+    const ctx = this.gctx, { view, dpr } = this
+    const dark = isDarkBg.value
+    ctx.save()
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    ctx.font = '600 12px "Segoe UI", system-ui, sans-serif'
+    ctx.textBaseline = 'middle'
+    this.frames.forEach((f, i) => {
+      const [x0, y0, x1, y1] = frameRect(f)
+      const r = [(x0 - view.x) * view.zoom, (y0 - view.y) * view.zoom, (x1 - view.x) * view.zoom, (y1 - view.y) * view.zoom]
+      if (r[2] < 0 || r[3] < 0 || r[0] > this.w || r[1] > this.h) return
+      const current = i === S.frameIndex.value
+      ctx.strokeStyle = dark ? `rgba(160,185,255,${current ? .6 : .32})` : `rgba(47,107,255,${current ? .55 : .28})`
+      ctx.lineWidth = current ? 2 : 1.25
+      ctx.setLineDash(current ? [] : [8, 6])
+      ctx.strokeRect(r[0], r[1], r[2] - r[0], r[3] - r[1])
+      ctx.setLineDash([])
+      const label = String(i + 1), w = ctx.measureText(label).width + 14
+      ctx.fillStyle = dark ? 'rgba(160,185,255,.85)' : 'rgba(47,107,255,.85)'
+      ctx.beginPath(); ctx.roundRect(r[0], r[1] - 22, w, 18, 5); ctx.fill()
+      ctx.fillStyle = dark ? '#10131c' : '#fff'
+      ctx.fillText(label, r[0] + 7, r[1] - 13)
+    })
+    ctx.restore()
+  }
+
+  // ── notebook pages ─────────────────────────────────────────────────────────
   get pageFrame(): Frame { return this.sheet }
   /** True when the whole width of the sheet is on screen (not zoomed in). */
   get atFit(): boolean { return this.view.zoom <= fitZoom(this.w, this.h) * 1.002 }
@@ -987,9 +1135,10 @@ export class Board implements ToolHost {
    * frozen into one picture that slides off while the new page is already live underneath.
    */
   turnPage(dir: 1 | -1): boolean {
+    if (!this.paged) return this.turnFrame(dir)
     const target = this.pageIndex + dir
     if (target < 0 || target >= this.pages.length) return false
-    const snap = this.paged && !window.matchMedia('(prefers-reduced-motion: reduce)').matches ? this.snapshot() : null
+    const snap = !window.matchMedia('(prefers-reduced-motion: reduce)').matches ? this.snapshot() : null
     if (!this.goToPage(target)) return false
     if (snap) {
       this.stage.append(snap)
@@ -1033,15 +1182,13 @@ export class Board implements ToolHost {
     ctx.restore()
   }
 
-  /** Picture of page i: its sheet in page mode, its last view on the canvas; paper included. */
+  /** Picture of notebook page i, or of canvas frame i; paper included. */
   paintPageThumb(i: number, cv: HTMLCanvasElement, bg: string): void {
-    const pg = this.pageData()[i]
+    const pg = this.paged ? this.pageData()[i] : this.pageData()[0]
     const ctx = cv.getContext('2d')
-    if (!pg || !ctx) return
-    const f = pg.frame ?? DEFAULT_FRAME
-    const view = this.paged
-      ? { x: f.x, y: f.y, zoom: cv.width / PAGE_W }
-      : { x: pg.view.x, y: pg.view.y, zoom: pg.view.zoom * cv.width / (this.w || 1) }
+    const f = this.paged ? pg?.frame ?? DEFAULT_FRAME : this.frames[i]
+    if (!pg || !ctx || !f) return
+    const view = { x: f.x, y: f.y, zoom: cv.width / PAGE_W }
     paintGrid(ctx, view, cv.width, cv.height, 1, pg.paper ?? 'none', isDarkBg.value)
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.globalCompositeOperation = 'destination-over'
@@ -1085,20 +1232,23 @@ export class Board implements ToolHost {
   }
 
   /** Portable JSON with pictures embedded. */
-  serialize(): string { return serializePages(this.pageData(), this.pageIndex, true).json }
+  serialize(): string { return serializePages(this.pageData(), this.pageIndex, true, { kind: this.boardKind, frames: this.frames }).json }
 
   /** Autosave JSON; pictures are returned separately so each is written to disk once. */
-  serializeForStore(): { json: string; assets: Record<string, string> } { return serializePages(this.pageData(), this.pageIndex, false) }
+  serializeForStore(): { json: string; assets: Record<string, string> } { return serializePages(this.pageData(), this.pageIndex, false, { kind: this.boardKind, frames: this.frames }) }
 
   load(json: string, opts: { undoable: boolean }): ParsedBoard | null {
     const parsed = parseBoard(json)
     if (!parsed) return null
     if (S.editing.value) this.cancelText()
     this.labs.clear(); this.labDraft.clear(); activeLabId.value = null
-    if (!opts.undoable || (parsed.pages && parsed.pages.length > 1)) {
-      // Multi-page files replace the page set; that is not an undoable edit.
+    const kind = parsed.kind ?? 'canvas'
+    if (!opts.undoable || (parsed.pages && parsed.pages.length > 1) || kind !== this.boardKind || parsed.frames?.length) {
+      // Notebooks, framed canvases and a change of board kind replace the board; not an undoable edit.
       const fallback = parsed.view ?? this.view
       this.pages = (parsed.pages ?? [{ items: parsed.items, view: parsed.view }]).map(pg => ({ items: pg.items, view: pg.view ?? fallback, history: { undo: [], redo: [] }, paper: pg.paper, frame: pg.frame }))
+      this.frames = kind === 'canvas' ? (parsed.frames ?? []).map(f => ({ ...f })) : []
+      this.setKind(kind)
       this.history.take()
       this.showPage(parsed.page ?? 0)
       return parsed
@@ -1171,6 +1321,17 @@ export class Board implements ToolHost {
   async exportPages(bg: string): Promise<ArrayBuffer[]> {
     const out: ArrayBuffer[] = []
     const pages = this.pageData()
+    if (!this.paged && this.frames.length) {
+      // A framed canvas exports one PDF page per frame, in frame order.
+      const items = pages[0].items
+      if (!items.length) return out
+      await preloadImages(items)
+      for (const f of this.frames) {
+        const png = await this.renderSheet(items.filter(it => rectsHit(itemBounds(it), frameRect(f))), f, pages[0].paper ?? 'none', bg)
+        if (png) out.push(png)
+      }
+      return out
+    }
     if (this.paged) {
       // A notebook keeps every sheet, blank ones included, with its paper.
       if (!pages.some(pg => pg.items.length)) return out

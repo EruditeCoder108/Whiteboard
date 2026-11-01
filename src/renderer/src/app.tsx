@@ -105,6 +105,7 @@ export function App(): JSX.Element {
         if (!active) return
         applySettings(rawSettings)
         if (saved.json) board.load(saved.json, { undoable: false })
+        else if (S.layoutChosen.value && boardMode.value) board.convertTo('notebook')
         saveBoardOnClose = saved.json !== null || !saved.message
         settings = startPersisting((d) => window.api.store.saveSettings(d))
         S.ready.value = true
@@ -214,7 +215,7 @@ export function App(): JSX.Element {
 
       {!hidden && (
         <>
-          {onBoard ? <><BoardBar /><EdgeTabs /><BoardSaveChip /></> : <><TopBar /><Dock /><HistoryBar /><ZoomBar /><PageBar /></>}
+          {onBoard ? <><BoardBar /><EdgeTabs /><BoardSaveChip /></> : <><TopBar /><Dock /><HistoryBar />{S.kind.value === 'canvas' && <ZoomBar />}<PageBar /></>}
           <Popovers />
           <AgentPanel agent={agentForPanel} />
           <ReplayPanel />

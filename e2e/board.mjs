@@ -49,13 +49,13 @@ try {
   await fw(page, w => { w.S.bgAlpha.value = 100; w.S.barSide.value = 'center' })
 
   // Palm erase: a finger-sized touch draws, a palm-sized one wipes and then hands the pen back.
-  await fw(page, w => { w.board.goToPage(0); w.board.setTool('pen') })
+  const start = await fw(page, w => { w.board.goToPage(0); w.board.setTool('pen'); return w.board.doc.items.length })
   // The board learns this screen's fingertip size from the first few touches.
   for (const y of [300, 360, 420]) await gesture(page, wave(300, y, 50, 20), { type: 'touch', pressure: 0, size: 12 })
   const drawn = await fw(page, w => w.board.doc.items.length)
   await gesture(page, Array.from({ length: 30 }, (_, i) => [280 + i * 10, 300 + (i % 4) * 40]), { type: 'touch', pressure: 0, size: 90 })
   const palm = await fw(page, w => ({ items: w.board.doc.items.length, tool: w.S.tool.value, override: w.S.override.value, palm: w.S.palm.value }))
-  check('a finger-sized touch draws', drawn >= 4, String(drawn))
+  check('finger-sized touches draw', drawn - start === 3, JSON.stringify({ start, drawn }))
   check('a palm wipes the ink away and the pen comes back', palm.items < drawn && palm.tool === 'pen' && palm.override === null && palm.palm === 0, JSON.stringify({ drawn, ...palm }))
 
   // Paper belongs to its page.
@@ -82,11 +82,16 @@ try {
   await page.screenshot({ path: join(shotDir, 'board-chalk.png') })
   await fw(page, w => { w.S.bgColor.value = '#ffffff'; w.S.grid.value = 'none' })
 
-  // Page mode: the sheet fills the screen, cannot be lost, turns with a swipe and grows downward.
+  // Notebook: each page is a fixed sheet: no zoom either way, no panning, turns with a swipe.
   await page.keyboard.press('Escape')
-  const fit = await fw(page, w => { w.board.goToPage(0); w.board.zoomAt(.2, 500, 500); w.board.panBy(-3000, 2000); return { mode: w.S.pageMode.value, v: w.board.view, size: w.board.size } })
-  check('smart board opens in page mode and the page cannot be zoomed out or pushed off screen',
-    fit.mode === 'pages' && Math.abs(fit.v.zoom - fit.size.w / 1600) < .01 && Math.abs(fit.v.x) < .5 && Math.abs(fit.v.y) < .5, JSON.stringify(fit))
+  const fit = await fw(page, w => {
+    w.board.goToPage(0); w.board.zoomAt(.2, 500, 500); const out = w.board.view.zoom
+    w.board.zoomAt(4, 500, 500); const into = w.board.view.zoom; w.board.panBy(-3000, 2000)
+    return { kind: w.board.kind, out, into, v: w.board.view, size: w.board.size }
+  })
+  const fixed = fit.size.w / 1600
+  check('smart board starts a notebook whose pages have one fixed size: no zoom in or out, no panning off',
+    fit.kind === 'notebook' && Math.abs(fit.out - fixed) < .01 && Math.abs(fit.into - fixed) < .01 && Math.abs(fit.v.x) < .5 && Math.abs(fit.v.y) < .5, JSON.stringify(fit))
   const swipe = async (dx) => page.evaluate(async (dx) => {
     const el = document.querySelector('.stage'), r = el.getBoundingClientRect(), sleep = (ms) => new Promise(res => setTimeout(res, ms))
     const ev = (type, id, x, y) => el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: id, pointerType: 'touch', isPrimary: id === 11, clientX: r.left + x, clientY: r.top + y, buttons: type === 'pointerup' ? 0 : 1, pressure: .5 }))
@@ -111,11 +116,25 @@ try {
   check('PDF export keeps every sheet, blank ones too', pdf === await fw(page, w => w.board.pageCount), String(pdf))
   await page.getByRole('button', { name: 'Remove the empty space at the bottom' }).click()
   check('empty space at the bottom can be removed again', await fw(page, w => w.board.pageFrame.extent) === 1)
+  // Canvas: a different kind of board. Converting keeps every stroke; pages become numbered frames.
+  const before = await fw(page, w => ({ pages: w.board.pageCount, ink: w.board.pageData().reduce((n, p) => n + p.items.length, 0) }))
   await page.getByRole('button', { name: 'More', exact: true }).click()
-  await page.getByRole('button', { name: 'Endless canvas' }).click()
-  const free = await fw(page, w => { w.board.zoomAt(.25, 500, 500); return { mode: w.S.pageMode.value, zoom: w.board.view.zoom } })
-  check('endless canvas mode frees the view again', free.mode === 'canvas' && free.zoom < .5, JSON.stringify(free))
-  await fw(page, w => { w.S.pageMode.value = 'pages' })
+  await page.getByRole('button', { name: 'Turn into canvas' }).click()
+  await page.waitForTimeout(200)
+  const canvas = await fw(page, w => ({ kind: w.board.kind, pages: w.board.pageCount, frames: w.board.frameList.length, ink: w.board.doc.items.length }))
+  check('turning a notebook into a canvas lays its pages out as frames and keeps all the ink',
+    canvas.kind === 'canvas' && canvas.pages === 1 && canvas.frames === before.pages && canvas.ink === before.ink, JSON.stringify({ before, canvas }))
+  await fw(page, w => w.board.zoomAt(.3, 500, 500))
+  await page.waitForTimeout(300)
+  check('a canvas zooms out freely', await fw(page, w => w.board.view.zoom) < .6)
+  await page.screenshot({ path: join(shotDir, 'board-canvas-frames.png') })
+  await page.getByRole('button', { name: 'Next' }).click()
+  await page.waitForTimeout(500)
+  check('Back/Next on a canvas fly between its frames', await fw(page, w => w.S.frameIndex.value) >= 0)
+  await page.getByRole('button', { name: 'More', exact: true }).click()
+  await page.getByRole('button', { name: 'Turn into notebook' }).click()
+  const round = await fw(page, w => ({ kind: w.board.kind, pages: w.board.pageCount, ink: w.board.pageData().reduce((n, p) => n + p.items.length, 0) }))
+  check('and back into a notebook: the same pages, the same ink', round.kind === 'notebook' && round.pages === before.pages && round.ink === before.ink, JSON.stringify({ before, round }))
 
   check('no renderer errors', logs.filter(l => /pageerror|\[error\]/.test(l)).length === 0, logs.join(' | '))
 } finally { await app.close().catch(() => {}) }

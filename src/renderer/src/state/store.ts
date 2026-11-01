@@ -12,8 +12,7 @@ export type GridMode = Paper
 /** board: big classroom touch panel (bottom toolbar, pages); laptop: compact side dock */
 export type Layout = 'board' | 'laptop'
 export type BarSide = 'left' | 'center' | 'right'
-/** pages: fixed 16:9 sheets that fill the screen; canvas: the endless board */
-export type PageMode = 'pages' | 'canvas'
+export type { BoardKind } from '@/engine/pages'
 export type PopoverName = 'props' | 'shapes' | 'menu' | 'settings' | 'help' | 'recovery' | 'agent' | 'replay' | 'science' | 'insert' | 'equation' | 'graph' | 'maths' | 'present' | 'board-menu' | 'pages' | 'paper' | 'subjects' | null
 
 export const SHAPE_TOOLS: ShapeKind[] = ['line', 'arrow', 'rect', 'ellipse', 'diamond', 'triangle']
@@ -64,7 +63,6 @@ export const S = {
   /** false until the first-launch "smart board or laptop?" question is answered */
   layoutChosen: signal(false),
   barSide: signal<BarSide>('center'),
-  pageMode: signal<PageMode>('canvas'),
   /** a touch at least this wide (CSS px) is a palm and erases */
   palmErase: signal(true),
   palmSize: signal(60),
@@ -72,6 +70,11 @@ export const S = {
   // ── transient ───────────────────────────────────────────────────────────────
   /** set while the pen's eraser end / barrel button is active */
   override: signal<ToolName | null>(null),
+  /** the board's kind (it lives in the board file, not in settings) */
+  kind: signal<'notebook' | 'canvas'>('canvas'),
+  /** canvas frames: how many, and which one is on screen (-1: between frames) */
+  frameCount: signal(0),
+  frameIndex: signal(-1),
   /** contact width (px) of the palm currently erasing; 0 when none */
   palm: signal(0),
   uiHidden: signal(false),
@@ -143,7 +146,7 @@ export function showToast(text: string, ms = 2200): void {
 const PERSISTED = [
   'tool', 'lastShape', 'penColor', 'penSize', 'markerColor', 'markerSize', 'eraserSize',
   'eraserMode', 'grid', 'bgColor', 'bgAlpha', 'smoothing', 'pressure', 'fingerDraw', 'onTop',
-  'radialEnabled', 'radialDelay', 'layout', 'layoutChosen', 'barSide', 'palmErase', 'palmSize', 'pageMode'
+  'radialEnabled', 'radialDelay', 'layout', 'layoutChosen', 'barSide', 'palmErase', 'palmSize'
 ] as const
 
 export function snapshotSettings(): Record<string, unknown> {
@@ -163,7 +166,7 @@ export function applySettings(raw: unknown): void {
     const enums: Partial<Record<typeof PERSISTED[number], readonly string[]>> = {
       tool: ['select', 'lasso', 'text', 'sticky', 'hand', 'pen', 'marker', 'eraser', 'laser', ...SHAPE_TOOLS],
       lastShape: SHAPE_TOOLS, eraserMode: ['stroke', 'pixel'], grid: PAPERS,
-      layout: ['board', 'laptop'], barSide: ['left', 'center', 'right'], pageMode: ['pages', 'canvas']
+      layout: ['board', 'laptop'], barSide: ['left', 'center', 'right']
     }
     if (enums[k] && !enums[k]!.includes(value as string)) continue
     if (['penColor', 'markerColor', 'bgColor'].includes(k) && !/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value as string)) continue

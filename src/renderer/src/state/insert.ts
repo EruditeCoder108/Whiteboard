@@ -69,21 +69,17 @@ export async function importPdf(file: File): Promise<void> {
       page.cleanup()
       const src = rasterize(cv, cv.width, cv.height, .85)
       // World size: PDF points × 1.5, so an A4 page is about 900 units wide.
-      let w = base.width * 1.5, h = base.height * 1.5, x = 0, y = 0
-      let frame: Frame | undefined
-      if (board.paged) {
-        // On sheets: slides fill the page; portrait worksheets sit centred at a readable width and
-        // the page grows down to hold them, with room either side for working.
-        const k = w >= h ? Math.min((PAGE_W - 40) / w, (PAGE_H - 40) / h) : 1100 / w
-        w *= k; h *= k; x = (PAGE_W - w) / 2; y = w >= h ? (PAGE_H - h) / 2 : 30
-        frame = { x: 0, y: 0, extent: Math.min(MAX_EXTENT, Math.ceil((y + h + 30) / PAGE_H)) }
-      }
+      // On a sheet: slides fill it; portrait worksheets sit centred at a readable width and the sheet
+      // grows down to hold them, with room either side for working. A notebook gets a page per PDF
+      // page, a canvas a frame per PDF page, laid out side by side.
+      let w = base.width * 1.5, h = base.height * 1.5
+      const k = w >= h ? Math.min((PAGE_W - 40) / w, (PAGE_H - 40) / h) : 1100 / w
+      w *= k; h *= k
+      const x = (PAGE_W - w) / 2, y = w >= h ? (PAGE_H - h) / 2 : 30
+      const frame: Frame = { x: 0, y: 0, extent: Math.min(MAX_EXTENT, Math.ceil((y + h + 30) / PAGE_H)) }
       const item: ImageItem = { t: 'i', id: crypto.randomUUID(), c: '#111827', w: 1, p: [x, y, x + w, y + h], src, aspect: w / h, locked: true }
-      if (first) {
-        board.addPageContent([item]); first = false
-        if (frame) board.setPageFrame(frame)
-      } else board.addPage([item], board.paged ? undefined : { x: -40, y: -40, zoom: 1 }, undefined, frame)
-      board.fitPage()
+      board.addSheet([item], frame, first)
+      first = false
     }
     await pdf.destroy()
     showToast(`${file.name}: ${count} page${count === 1 ? '' : 's'} added · the PDF is locked, write on it freely${pdf.numPages > count ? ' · first 300 pages only' : ''}`, 5000)

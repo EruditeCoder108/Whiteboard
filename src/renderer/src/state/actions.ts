@@ -3,7 +3,7 @@ import { radial } from '@/engine/radial'
 import type { RadialPick } from '@/engine/radial'
 import { clipboardImage } from './insert'
 import { S, luminance, isDarkBg, showToast, styleKey, SIZE_RANGE } from './store'
-import type { Layout, PageMode, ToolName } from './store'
+import type { BoardKind, Layout, ToolName } from './store'
 import { clamp } from '@/engine/geometry'
 
 /** Below this board opacity (percent) the board counts as "writing over the screen". */
@@ -103,18 +103,21 @@ export const actions = {
     S.popover.value = null
     S.layout.value = layout
     S.layoutChosen.value = true
-    S.pageMode.value = layout === 'board' ? 'pages' : 'canvas'
+    // An empty board takes the kind that suits the screen; a board with work on it keeps its kind.
+    if (board.isEmpty) board.convertTo(layout === 'board' ? 'notebook' : 'canvas')
     if (layout === 'board') {
       if (S.bgAlpha.value < 100) S.bgAlpha.value = 100
       window.api.win.setFullscreen(true)
     } else window.api.win.setFullscreen(false)
   },
 
-  /** Fixed pages (a notebook that fills the screen) or the endless canvas. */
-  setPageMode(mode: PageMode): void {
-    if (S.pageMode.value === mode) return
-    S.pageMode.value = mode
-    showToast(mode === 'pages' ? 'Fixed pages · swipe with two fingers to turn the page' : 'Endless canvas · drag with two fingers to move around')
+  /** Turn this board into a notebook (fixed pages) or a canvas (endless, with frames). Nothing is lost. */
+  convertBoard(kind: BoardKind): void {
+    S.popover.value = null
+    if (!board.convertTo(kind)) return
+    showToast(kind === 'notebook'
+      ? `Now a notebook · ${board.pageCount} page${board.pageCount === 1 ? '' : 's'} · swipe with two fingers to turn`
+      : `Now a canvas${board.frameList.length ? ` · your pages are frames 1–${board.frameList.length}` : ''} · drag with two fingers to move around`, 4200)
   },
 
   /** Write over the screen: the board turns see-through (and back to solid). */

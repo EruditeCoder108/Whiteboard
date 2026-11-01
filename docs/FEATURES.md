@@ -61,10 +61,12 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Feature | Status |
 |---|---|
 | Pages: add, delete, PgUp/PgDn and presentation clickers | ✅ |
-| **Fixed pages or endless canvas**, switchable any time: a fixed page is a 16:9 sheet that fills the screen and can't be zoomed out or lost | ✅ |
+| **Two kinds of board: Notebook or Canvas.** A notebook is a stack of fixed 16:9 pages, each at one fixed size (no zoom, no panning); a canvas is one endless board, free to zoom and pan, with no pages | ✅ |
+| **Frames on a canvas:** mark sheet-sized areas, numbered, and step through them with Back/Next like slides; the infinite canvas and pagination together | ✅ |
+| Turn a notebook into a canvas (pages become frames side by side) and back again; nothing is lost | ✅ |
 | **More space below:** a page grows a screen at a time (up to 8), and empty space can be removed again | ✅ |
-| **Turning pages:** two-finger swipe, toolbar Back/Next, PgUp/PgDn or a presentation clicker, with a quick slide | ✅ |
-| PDF worksheets on fixed pages: slides fill the page, portrait sheets sit at a readable width and the page grows to fit | ✅ |
+| **Turning pages:** two-finger swipe, toolbar Back/Next, PgUp/PgDn or a presentation clicker, with a quick slide (on a canvas the same controls fly between frames) | ✅ |
+| PDF worksheets: a page each in a notebook, a frame each on a canvas; slides fill the sheet, portrait sheets sit at a readable width and the sheet grows to fit | ✅ |
 | **Page sorter:** thumbnails, reorder, duplicate, delete | ✅ |
 | **Page map** for a long page (drag to scroll) | ✅ |
 | **Background library, per page:** white, black and green chalkboard, ruled, four-line English, Hindi writing lines, mm graph paper, squares, dots, music staff | ✅ |
@@ -81,7 +83,7 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | PDF worksheets and textbook pages: one page each, write on them | ✅ |
 | PowerPoint: present it under the overlay now; import it as pages later | ✅ / ⏳ |
 | OpenBoard lesson import (`.ubz`) | ⏳ |
-| Export all pages as PDF (fixed pages export whole sheets with their paper, blank ones included) | ✅ |
+| Export as PDF: a notebook exports whole sheets with their paper (blank ones included), a framed canvas one page per frame | ✅ |
 | Export a page as a picture | ⏳ |
 | Record the board, replay it step by step, export the replay as a video | ✅ |
 | **QR code share over the school's Wi-Fi** (students scan, PDF downloads; no cloud) | ⏳ |
