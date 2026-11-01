@@ -13,6 +13,7 @@ import { paintText } from './text'
 import { paintLab } from './science/scene'
 import { paintImage } from './media'
 import { paintGraph } from './graph'
+import { paintScale } from './scale'
 
 export function rotatePoint(x: number, y: number, cx: number, cy: number, angle: number): [number, number] {
   const c = Math.cos(angle), s = Math.sin(angle)
@@ -219,6 +220,7 @@ export function paintItem(ctx: CanvasRenderingContext2D, it: Item, alpha = 1, la
   if (it.t === 'l') { ctx.globalAlpha = alpha; paintLab(ctx, it, labTime); ctx.restore(); return }
   if (it.t === 'i') { ctx.globalAlpha = alpha; paintImage(ctx, it); ctx.restore(); return }
   if (it.t === 'g') { ctx.globalAlpha = alpha; paintGraph(ctx, it); ctx.restore(); return }
+  if (it.t === 'n') { ctx.globalAlpha = alpha; paintScale(ctx, it); ctx.restore(); return }
   const path = itemPath(it)
   if (it.t === 's') {
     ctx.globalAlpha = alpha * (it.m ? MARKER_ALPHA : 1)

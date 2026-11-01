@@ -3,17 +3,20 @@ import { board } from '@/engine/instance'
 import { imageFromBlob, rasterize } from '@/engine/media'
 import { MAX_EXTENT, PAGE_H, PAGE_W } from '@/engine/pages'
 import type { Frame } from '@/engine/pages'
-import type { GraphItem, ImageItem } from '@/engine/types'
+import type { GraphItem, ScaleItem, ImageItem } from '@/engine/types'
 import { S, showToast } from './store'
 import { exportName } from './lesson'
 
 /** Equation or graph currently open in its editor (null: inserting a new one). */
 export const equationTarget = signal<ImageItem | null>(null)
 export const graphTarget = signal<GraphItem | null>(null)
+export const scaleTarget = signal<ScaleItem | null>(null)
+export const scaleKind = signal<'line' | 'axes'>('line')
 export const importing = signal('')
 
 export function editEquation(it: ImageItem | null): void { equationTarget.value = it; S.popover.value = 'equation' }
 export function editGraph(it: GraphItem | null): void { graphTarget.value = it; S.popover.value = 'graph' }
+export function editScale(it: ScaleItem | null, kind: 'line' | 'axes' = 'line'): void { scaleTarget.value = it; scaleKind.value = kind; S.popover.value = 'scale' }
 
 /** Native file picker without a main-process round trip. */
 export function pickFiles(accept: string, multiple = true): Promise<File[]> {

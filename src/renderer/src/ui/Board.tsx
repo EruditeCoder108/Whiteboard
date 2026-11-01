@@ -1,6 +1,6 @@
 import {
-  Archive, Blinds, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileText, FlaskConical, GripVertical, FilePlus2, Library, Pencil, SaveAll, Share2,
-  Highlighter, Image as ImageIcon, Laptop, LayoutGrid, LineChart, LogOut, Minus, MousePointer2, MousePointerClick, Pen, Plus,
+  Archive, Axis3d, Blinds, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileText, FlaskConical, GripVertical, FilePlus2, Library, Pencil, SaveAll, Share2,
+  Highlighter, MoveHorizontal, Image as ImageIcon, Laptop, LayoutGrid, LineChart, LogOut, Minus, MousePointer2, MousePointerClick, Pen, Plus,
   Presentation, GraduationCap, Redo2, ArrowDownToLine, ArrowUpToLine, Infinity as InfinityIcon, BookOpen, Frame, Focus, Ruler, Shapes, SlidersHorizontal, Sigma, Sparkles, Spotlight, Timer, Trash2, Type, Undo2, MonitorUp, Layers
 } from 'lucide-preact'
 import type { JSX } from 'preact'
@@ -12,7 +12,7 @@ import { instrumentsShown } from '@/engine/instruments'
 import { OVERLAY_ALPHA, actions } from '@/state/actions'
 import { S, activeTool, currentColor, currentSize, isDarkBg, isShapeTool, styleKey } from '@/state/store'
 import type { BarSide, ToolName } from '@/state/store'
-import { editEquation, editGraph, insertFiles, pickFiles } from '@/state/insert'
+import { editEquation, editGraph, editScale, insertFiles, pickFiles } from '@/state/insert'
 import { fileState, lessonDirty, lessonName, lessonPath, lessonSubject, lesson } from '@/state/lesson'
 import { ExportSheet } from './Lessons'
 import { capture } from '@/state/capture'
@@ -168,6 +168,8 @@ function BoardMenu(): JSX.Element {
         <Tile icon={FileText} label="PDF / worksheet" onClick={close(() => pickFiles('application/pdf,.pdf', false).then(files => insertFiles(files)))} />
         <Tile icon={Sigma} label="Equation" onClick={() => editEquation(null)} />
         <Tile icon={LineChart} label="Graph" onClick={() => editGraph(null)} />
+        <Tile icon={MoveHorizontal} label="Number line" onClick={() => editScale(null, 'line')} />
+        <Tile icon={Axis3d} label="Axes" onClick={() => editScale(null, 'axes')} />
         <Tile icon={Ruler} label="Ruler & compass" on={instrumentsShown.value.length > 0} onClick={() => (S.popover.value = 'maths')} />
         <Tile icon={FlaskConical} label="Science labs" onClick={() => (S.popover.value = 'science')} />
       </Section>

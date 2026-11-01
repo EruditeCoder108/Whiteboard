@@ -1,7 +1,7 @@
 import { signal } from '@preact/signals'
 import {
-  Atom, BookOpen, Calculator, Dna, DraftingCompass, FlaskConical, Gauge, Image as ImageIcon, LineChart, NotebookPen,
-  Ruler, Sigma, TestTubes, TriangleRight, Type
+  Atom, Axis3d, BookOpen, Calculator, Dna, DraftingCompass, FlaskConical, Gauge, Image as ImageIcon, LineChart, NotebookPen,
+  MoveHorizontal, Ruler, Sigma, TestTubes, TriangleRight, Type
 } from 'lucide-preact'
 import type { JSX } from 'preact'
 import { board } from '@/engine/instance'
@@ -9,7 +9,7 @@ import type { Paper } from '@/engine/grid'
 import { instrumentsShown, type InstrumentKind } from '@/engine/instruments'
 import { S } from '@/state/store'
 import { actions } from '@/state/actions'
-import { editEquation, editGraph, insertFiles, pickFiles } from '@/state/insert'
+import { editEquation, editGraph, editScale, insertFiles, pickFiles } from '@/state/insert'
 
 type Icon = typeof Ruler
 type Subject = 'maths' | 'physics' | 'chemistry' | 'biology' | 'english' | 'hindi'
@@ -29,14 +29,16 @@ const paper = (p: Paper, icon: Icon, label: string): Entry =>
   ({ icon, label, on: () => S.grid.value === p, run: () => actions.setPaper(S.grid.value === p ? 'none' : p), stay: true })
 const equation: Entry = { icon: Sigma, label: 'Equation', run: () => editEquation(null), stay: true }
 const graph: Entry = { icon: LineChart, label: 'Graph of a function', run: () => editGraph(null), stay: true }
+const numberLine: Entry = { icon: MoveHorizontal, label: 'Number line', run: () => editScale(null, 'line'), stay: true }
+const axes: Entry = { icon: Axis3d, label: 'Coordinate axes', run: () => editScale(null, 'axes'), stay: true }
 const labs: Entry = { icon: FlaskConical, label: 'Science labs', run: () => (S.popover.value = 'science'), stay: true }
 const picture: Entry = { icon: ImageIcon, label: 'Picture / diagram', run: () => { close(); void pickFiles('image/*').then(files => insertFiles(files)) } }
 const text: Entry = { icon: Type, label: 'Typed text', run: () => { close(); board.setTool('text') } }
 
 const TOOLS: Record<Subject, Entry[]> = {
   maths: [instrument('ruler', Ruler, 'Ruler'), instrument('setsquare', TriangleRight, 'Set square'), instrument('protractor', Gauge, 'Protractor'),
-    instrument('compass', DraftingCompass, 'Compass'), equation, graph, paper('lines', Calculator, 'Squared paper'), paper('graph', LineChart, 'Graph paper')],
-  physics: [equation, graph, paper('graph', LineChart, 'Graph paper'), instrument('ruler', Ruler, 'Ruler'), instrument('protractor', Gauge, 'Protractor'), labs],
+    instrument('compass', DraftingCompass, 'Compass'), numberLine, axes, equation, graph, paper('lines', Calculator, 'Squared paper'), paper('graph', LineChart, 'Graph paper')],
+  physics: [axes, equation, graph, paper('graph', LineChart, 'Graph paper'), instrument('ruler', Ruler, 'Ruler'), instrument('protractor', Gauge, 'Protractor'), labs],
   chemistry: [{ ...equation, label: 'Chemical equation' }, labs, picture, paper('lines', Calculator, 'Squared paper')],
   biology: [labs, picture, text],
   english: [paper('fourline', BookOpen, 'Four-line paper'), paper('ruled', NotebookPen, 'Ruled paper'), text, picture],

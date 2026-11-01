@@ -149,7 +149,7 @@ function TextStyles({ items }: { items: EditableItem[] }): JSX.Element {
 
 function ObjectStyles({ items }: { items: Item[] }): JSX.Element {
   const unlocked = items.filter(it => !it.locked), text = unlocked.filter(editable), fill = unlocked.filter(filled)
-  const bordered = unlocked.filter(it => !isBox(it)), shapes = unlocked.filter(it => it.t === 'h')
+  const bordered = unlocked.filter(it => !isBox(it) || it.t === 'n'), shapes = unlocked.filter(it => it.t === 'h')
   const rounded = shapes.filter(it => it.t === 'h' && it.k === 'rect')
   const connectors = unlocked.filter(isConnector)
   return <div class="object-style-content">
@@ -204,13 +204,16 @@ export function SelectionToolbar(): JSX.Element | null {
   const locked = items.some(it => it.locked), allLocked = items.every(it => it.locked)
   const single = items.length === 1 && editable(items[0]) ? items[0] : null
   const grouped = items.some(it => it.group)
+  const only = items.length === 1 ? items[0] : null
+  const media = only && (only.t === 'n' || only.t === 'g' || (only.t === 'i' && only.latex !== undefined)) ? only : null
   const run = (fn: () => void): void => { setPanel(null); fn() }
   return <div class="selection-tools ui nodrag" ref={ref} data-testid="selection-toolbar" data-popover-keep="" style={{ left, top: toolbarTop, width }}>
     <div class="selection-actions panel" role="toolbar" aria-label="Selection actions">
-      <span class="selection-caption" title={locked ? 'Selection includes locked objects' : `${items.length} selected`}>{allLocked ? <LockKeyhole size={13} /> : items.length === 1 ? items[0].t === 'l' ? 'Lab' : items[0].t === 's' ? 'Stroke' : items[0].t === 't' ? items[0].note ? 'Note' : 'Text' : items[0].t === 'i' ? items[0].latex !== undefined ? 'Equation' : 'Picture' : items[0].t === 'g' ? 'Graph' : isConnector(items[0]) ? items[0].k === 'arrow' ? 'Arrow' : 'Line' : 'Shape' : `${items.length} selected`}</span>
+      <span class="selection-caption" title={locked ? 'Selection includes locked objects' : `${items.length} selected`}>{allLocked ? <LockKeyhole size={13} /> : items.length === 1 ? items[0].t === 'l' ? 'Lab' : items[0].t === 's' ? 'Stroke' : items[0].t === 't' ? items[0].note ? 'Note' : 'Text' : items[0].t === 'i' ? items[0].latex !== undefined ? 'Equation' : 'Picture' : items[0].t === 'g' ? 'Graph' : items[0].t === 'n' ? items[0].y ? 'Axes' : 'Number line' : isConnector(items[0]) ? items[0].k === 'arrow' ? 'Arrow' : 'Line' : 'Shape' : `${items.length} selected`}</span>
       <div class="grow" />
       <Btn icon={Palette} title="Object style" active={panel === 'style'} disabled={allLocked} onClick={() => setPanel(panel === 'style' ? null : 'style')} />
       {single && <Btn icon={Pencil} title={single.text ? 'Edit text  (Enter)' : 'Add text  (Enter)'} disabled={locked} onClick={() => board.editText(single)} />}
+      {media && <Btn icon={Pencil} title={media.t === 'n' ? 'Change the scale' : media.t === 'g' ? 'Edit graph' : 'Edit equation'} disabled={locked} onClick={() => board.onEditMedia?.(media)} />}
       {items.length > 1 && <Btn icon={grouped ? Ungroup : Group} title={grouped ? 'Ungroup  (Ctrl+Shift+G)' : 'Group  (Ctrl+G)'} disabled={locked} onClick={() => grouped ? board.ungroupSelection() : board.groupSelection()} />}
       <Btn icon={Copy} title="Duplicate selection  (Ctrl+D)" onClick={() => board.duplicateSelection()} />
       <Btn icon={Archive} title="Save to My shelf" onClick={() => shelf.startSelection()} />

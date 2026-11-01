@@ -1,10 +1,10 @@
-import { Archive, ArrowDownToLine, ChevronLeft, ChevronRight, Focus, FilePlus2, FileText, Image as ImageIcon, LineChart, Plus, Sigma, Trash2, FileDown } from 'lucide-preact'
+import { Archive, Axis3d, MoveHorizontal, ArrowDownToLine, ChevronLeft, ChevronRight, Focus, FilePlus2, FileText, Image as ImageIcon, LineChart, Plus, Sigma, Trash2, FileDown } from 'lucide-preact'
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { board } from '@/engine/instance'
 import { compile, GRAPH_COLORS } from '@/engine/graph'
 import { S, currentColor } from '@/state/store'
-import { editEquation, editGraph, equationTarget, graphTarget, importing, insertFiles, loadTypesetter, pickFiles, svgDataUrl } from '@/state/insert'
+import { editEquation, editGraph, editScale, equationTarget, graphTarget, importing, insertFiles, loadTypesetter, pickFiles, svgDataUrl } from '@/state/insert'
 import { Btn, MenuItem, Sep } from './kit'
 import { capture } from '@/state/capture'
 
@@ -18,6 +18,8 @@ export function InsertPopover(): JSX.Element {
       <MenuItem icon={FileText} label="PDF worksheet…" hint="one page each" onClick={close(() => void pickFiles('application/pdf,.pdf', false).then(files => insertFiles(files)))} />
       <MenuItem icon={Sigma} label="Equation" hint="maths & chemistry" onClick={() => editEquation(null)} />
       <MenuItem icon={LineChart} label="Graph of a function" onClick={() => editGraph(null)} />
+      <MenuItem icon={MoveHorizontal} label="Number line" onClick={() => editScale(null, 'line')} />
+      <MenuItem icon={Axis3d} label="Coordinate axes" onClick={() => editScale(null, 'axes')} />
       <Sep />
       <MenuItem icon={FilePlus2} label="New page" hint="PgDn to move" onClick={close(() => board.addPage())} />
       <MenuItem icon={FileDown} label="Export picture or PDF…" onClick={() => { S.popover.value = 'export' }} />

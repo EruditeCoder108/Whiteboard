@@ -6,7 +6,7 @@ import { newId } from './types'
  * Arrows and lines that stay attached. A connector's ends may each hold on to another object, by id:
  *  - to a box, a shape, text or an equation it points at the edge facing the other end, wherever the
  *    objects go (mind maps, flowcharts);
- *  - to a picture, a graph or a lab it stays on one spot of it (`at`), the way a label points at part
+ *  - to a picture, a graph, a number line or a lab it stays on one spot of it (`at`), the way a label points at part
  *    of a diagram.
  * `p` always holds the real position, so everything else (painting, export, replay) just draws a line.
  */
@@ -18,7 +18,7 @@ const attachedTo = (c: ShapeItem, ids: Set<string>): boolean => (!!c.from && ids
 
 /** Ink is left out: one stroke of a hand-drawn word is not the thing being pointed at. */
 const attachable = (it: Item): boolean => !it.locked && it.t !== 's' && !isConnector(it)
-const pinned = (it: Item): boolean => (it.t === 'i' && it.latex === undefined) || it.t === 'g' || it.t === 'l'
+const pinned = (it: Item): boolean => (it.t === 'i' && it.latex === undefined) || it.t === 'g' || it.t === 'l' || it.t === 'n'
 
 const centreOf = (it: Exclude<Item, { t: 's' }>): Pt => [(it.p[0] + it.p[2]) / 2, (it.p[1] + it.p[3]) / 2]
 const angleOf = (it: Exclude<Item, { t: 's' }>): number => it.angle ?? 0
