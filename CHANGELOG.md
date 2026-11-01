@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.6.0-beta.10 — Tables, reveals, light and dark mode, export preview, classroom tools — 2026-11-01
+
+- **Tables** (More menu, laptop Insert menu): choose rows and columns, then tap a cell and type.
+  - Enter makes a new line, Tab moves to the next cell, and each finished cell is one Undo step.
+  - Rows grow to fit their text, so nothing clips, and Hindi types and shows properly.
+  - Add or remove rows and columns, switch a heading row on or off, and drag the line between two columns or rows.
+  - They move, resize, rotate, copy, save, export, go on My shelf and take attached arrows like any other object.
+- **Prepared reveals:** select something and tap the hide button to keep it hidden in class until its step.
+  - Steps can be named (Question, Hint, Answer, Explanation). While preparing, hidden objects show faded with their step number.
+  - In class one large **Next** button shows them in order, and a clicker's Page Down goes through a page's steps before turning it.
+  - A step can show a card to tap instead, which opens with a finger or any tool in hand.
+  - What has been shown is saved with the lesson; **Hide again** resets it for the next class.
+  - Pictures, PDFs and phones keep hidden answers hidden unless you ask for them.
+- **Light and dark mode for the whole app** (Settings › Appearance): Auto follows the board, or choose Light or Dark, on both layouts. Every toolbar, menu and sheet is checked to stay readable.
+- **Export preview:** Save PDF now shows the real sheets first. Tap a sheet to leave it out.
+- **Print-friendly PDFs of dark boards:** white paper and readable ink, to save toner. The lesson itself does not change.
+- **Calculator:** large, movable, angles in degrees, and it can write its answer on the board.
+- **Periodic table:** all 118 elements by family; tap one to see it large; put one or the whole table on the board. Works offline.
+- **Writing strips** (Subjects › English, Hindi): a four-line or Hindi band as an object, for a short exercise without changing the whole page.
+- The "Start recording" button had white text on a near-white background; it now reads properly. The laptop settings panel is wider, so its contents fit.
+
 ## 1.6.0-beta.9 — Number line and coordinate axes — 2026-11-01
 
 - **Number line and coordinate axes as real objects** (More menu, Subjects › Maths and Physics, laptop Insert menu).
@@ -33,7 +54,7 @@
   - Tap an item to put a fresh, editable copy in the lesson. Groups stay together, pictures come along, and one Undo takes it away.
   - A selection lands in the middle of the board, selected and ready to move, made smaller only if it would not fit.
   - A saved page brings its paper, colour, background picture, name and length: a new page in a notebook (taking the place of a blank one) or the next frame on a canvas.
-  - Ink and equations follow the board: white chalk saved from a blackboard comes in as dark ink on a white page, and colours keep their hue.
+  - Ink and equations follow the board: white chalk saved from a blackboard comes in as dark ink on a white page, and colours keep their hue. (Since beta.10 this also catches colours that were only faint, such as blue on a chalkboard.)
   - Rename, change subject, or delete (to the Recycle Bin). Lessons that used an item keep their copy.
   - **Save shelf to a file** and **Add from a file** carry the whole shelf to another classroom PC; adding the same file twice does not double anything.
 - Messages now show above full-screen sheets, so what a sheet just did can be read.

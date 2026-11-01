@@ -1,6 +1,6 @@
 import { signal } from '@preact/signals'
 import {
-  Atom, Axis3d, BookOpen, Calculator, Dna, DraftingCompass, FlaskConical, Gauge, Image as ImageIcon, LineChart, NotebookPen,
+  Atom, Axis3d, BookOpen, Calculator, Rows3, Dna, DraftingCompass, FlaskConical, Gauge, Image as ImageIcon, LineChart, NotebookPen,
   MoveHorizontal, Ruler, Sigma, TestTubes, TriangleRight, Type
 } from 'lucide-preact'
 import type { JSX } from 'preact'
@@ -10,6 +10,10 @@ import { instrumentsShown, type InstrumentKind } from '@/engine/instruments'
 import { S } from '@/state/store'
 import { actions } from '@/state/actions'
 import { editEquation, editGraph, editScale, insertFiles, pickFiles } from '@/state/insert'
+import { placeInView } from '@/engine/shelf'
+import { writingStrip } from '@/engine/strips'
+import { isDarkBg, showToast } from '@/state/store'
+import { calculatorOn } from './Tools'
 
 type Icon = typeof Ruler
 type Subject = 'maths' | 'physics' | 'chemistry' | 'biology' | 'english' | 'hindi'
@@ -31,18 +35,28 @@ const equation: Entry = { icon: Sigma, label: 'Equation', run: () => editEquatio
 const graph: Entry = { icon: LineChart, label: 'Graph of a function', run: () => editGraph(null), stay: true }
 const numberLine: Entry = { icon: MoveHorizontal, label: 'Number line', run: () => editScale(null, 'line'), stay: true }
 const axes: Entry = { icon: Axis3d, label: 'Coordinate axes', run: () => editScale(null, 'axes'), stay: true }
+const calculator: Entry = { icon: Calculator, label: 'Calculator', on: () => calculatorOn.value, run: () => { calculatorOn.value = !calculatorOn.value } }
+const periodic: Entry = { icon: Atom, label: 'Periodic table', run: () => (S.popover.value = 'periodic'), stay: true }
+const strip = (kind: 'fourline' | 'hindi', label: string): Entry => ({
+  icon: Rows3, label,
+  run: () => {
+    close()
+    board.insertSaved(placeInView(writingStrip(kind, isDarkBg.value), board.visibleRect()))
+    showToast('Move it into place, then lock it so the eraser leaves it alone', 4000)
+  }
+})
 const labs: Entry = { icon: FlaskConical, label: 'Science labs', run: () => (S.popover.value = 'science'), stay: true }
 const picture: Entry = { icon: ImageIcon, label: 'Picture / diagram', run: () => { close(); void pickFiles('image/*').then(files => insertFiles(files)) } }
 const text: Entry = { icon: Type, label: 'Typed text', run: () => { close(); board.setTool('text') } }
 
 const TOOLS: Record<Subject, Entry[]> = {
-  maths: [instrument('ruler', Ruler, 'Ruler'), instrument('setsquare', TriangleRight, 'Set square'), instrument('protractor', Gauge, 'Protractor'),
+  maths: [calculator, instrument('ruler', Ruler, 'Ruler'), instrument('setsquare', TriangleRight, 'Set square'), instrument('protractor', Gauge, 'Protractor'),
     instrument('compass', DraftingCompass, 'Compass'), numberLine, axes, equation, graph, paper('lines', Calculator, 'Squared paper'), paper('graph', LineChart, 'Graph paper')],
-  physics: [axes, equation, graph, paper('graph', LineChart, 'Graph paper'), instrument('ruler', Ruler, 'Ruler'), instrument('protractor', Gauge, 'Protractor'), labs],
-  chemistry: [{ ...equation, label: 'Chemical equation' }, labs, picture, paper('lines', Calculator, 'Squared paper')],
+  physics: [calculator, axes, equation, graph, paper('graph', LineChart, 'Graph paper'), instrument('ruler', Ruler, 'Ruler'), instrument('protractor', Gauge, 'Protractor'), labs],
+  chemistry: [periodic, { ...equation, label: 'Chemical equation' }, calculator, labs, picture, paper('lines', Calculator, 'Squared paper')],
   biology: [labs, picture, text],
-  english: [paper('fourline', BookOpen, 'Four-line paper'), paper('ruled', NotebookPen, 'Ruled paper'), text, picture],
-  hindi: [paper('hindi', NotebookPen, 'Hindi lines'), paper('ruled', BookOpen, 'Ruled paper'), text, picture]
+  english: [strip('fourline', 'Four-line strip'), paper('fourline', BookOpen, 'Four-line paper'), paper('ruled', NotebookPen, 'Ruled paper'), text, picture],
+  hindi: [strip('hindi', 'Hindi strip'), paper('hindi', NotebookPen, 'Hindi lines'), paper('ruled', BookOpen, 'Ruled paper'), text, picture]
 }
 
 /** Tools by subject, the way teachers think about a lesson. */

@@ -118,14 +118,15 @@ export async function pasteClipboardImage(): Promise<boolean> {
 }
 
 /** PDF of the whole lesson. A page lengthened with "more space below" gets one sheet per screen unless `split` is false. */
-export async function exportPdf(opts: { split?: boolean } = {}): Promise<void> {
+export async function exportPdf({ skip, ...opts }: { split?: boolean; hidden?: 'keep' | 'show'; print?: boolean; skip?: Set<number> } = {}): Promise<void> {
   try {
     importing.value = 'Preparing PDF…'
-    const pages = await board.exportPages(opts)
+    // Sheets left out in the preview, by their place in the whole export.
+    const pages = (await board.exportPages(opts)).filter((_, i) => !skip?.has(i))
     importing.value = ''
     if (!pages.length) return showToast('Nothing to export yet — the lesson is empty')
     const path = await window.api.files.savePdf(pages, exportName('pdf'))
-    if (path) showToast('PDF saved  ' + path.split(/[\\/]/).pop())
+    if (path) showToast(`PDF saved · ${pages.length} ${pages.length === 1 ? 'sheet' : 'sheets'} · ${path.split(/[\\/]/).pop()}`, 4000)
   } catch {
     showToast('Could not export the PDF. Please try another location.', 5000)
   } finally { importing.value = '' }

@@ -171,6 +171,12 @@ export function SettingsPopover(): JSX.Element {
         value={S.layout.value}
         onChange={(v) => actions.chooseLayout(v)}
       />
+      <div class="pop-sub">Appearance <i>(Auto follows the board)</i></div>
+      <Segmented
+        options={[{ value: 'auto', label: 'Auto' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]}
+        value={S.uiTheme.value}
+        onChange={(v) => { S.uiTheme.value = v as typeof S.uiTheme.value }}
+      />
       <div class="pop-sub">This board <i>(converts, nothing is lost)</i></div>
       <Segmented
         options={[{ value: 'notebook', label: 'Notebook' }, { value: 'canvas', label: 'Canvas' }]}

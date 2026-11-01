@@ -1,12 +1,14 @@
 import { clamp, rectsHit, unionRect } from './geometry'
 import { anchorFor, attachAt, followersOf, isConnector, letGo, routeConnector } from './connectors'
-import { hitCircle, hitObject, itemBounds, paintItem, splitErase, translateItem } from './items'
+import { concealed, hitCircle, hitObject, itemBounds, paintItem, rotatePoint, splitErase, translateItem } from './items'
 import { expandGroups, transformItem } from './transforms'
 import { handleCursor, HANDLE_ORDER, insideSelection, itemInLasso, pickSelectionHandle, resizeSelection, selectionHandles } from './selection'
 import type { SelectionHandle } from './selection'
 import { Smoother, smoothingToCutoff } from './smoother'
+import { dividerAt, moveDivider } from './table'
+import type { Divider } from './table'
 import { isBox, newId } from './types'
-import type { Item, Rect, ShapeItem, ShapeKind, StrokeItem, LabItem } from './types'
+import type { Item, Rect, ShapeItem, ShapeKind, StrokeItem, LabItem, TableItem } from './types'
 import type { Ptr, Tool, ToolHost } from './tool-types'
 import { recognize } from './recognize'
 import { S, isDarkBg, showToast } from '@/state/store'
@@ -498,7 +500,10 @@ const soloConnector = (sel: Item[]): ShapeItem | null => {
 export class SelectTool implements Tool {
   readonly allowsRadial = true
   readonly animating = false
-  private mode: 'none' | 'move' | 'resize' | 'rotate' | 'marquee' | 'lasso' | 'launch' | 'magnet' | 'end' = 'none'
+  private mode: 'none' | 'move' | 'resize' | 'rotate' | 'marquee' | 'lasso' | 'launch' | 'magnet' | 'end' | 'divider' = 'none'
+  /** the line of a selected table being dragged; and a table whose cell this press may turn out to tap */
+  private divider: Divider | null = null
+  private tappedTable: TableItem | null = null
   /** a selected arrow's end being dragged, and the object it would attach to */
   private end: 0 | 1 = 0
   private endOn: Item | null = null
@@ -584,8 +589,15 @@ export class SelectTool implements Tool {
       this.host.requestOverlay()
       return
     }
+    const soloTable = sel.length === 1 && sel[0].t === 'b' && !sel[0].locked ? sel[0] : null
+    if (soloTable) {
+      // A generous grab zone: a finger on the line, not beside it.
+      const line = dividerAt(soloTable, p.wx, p.wy, (p.type === 'touch' ? 22 : 7) / this.host.view.zoom)
+      if (line) { this.divider = line; this.mode = 'divider'; this.host.requestOverlay(); return }
+    }
     const tol = (p.type === 'touch' ? 12 : 7) / this.host.view.zoom
     const hit = this.hitTop(p.wx, p.wy, tol)
+    this.tappedTable = soloTable && hit === soloTable && !p.shift ? soloTable : null
     if (hit && p.shift) {
       const group = expandGroups(this.host.doc.items, [hit])
       this.host.setSelection(sel.includes(hit) ? sel.filter(it => !group.includes(it)) : expandGroups(this.host.doc.items, [...sel, hit]))
@@ -627,7 +639,19 @@ export class SelectTool implements Tool {
       this.preview = [{ ...lab, params: { ...lab.params, speed, angle }, frozenTime: 0 }]
       this.host.requestOverlay(); return
     }
-    if (this.mode === 'end') {
+    if (this.mode === 'divider') {
+      if (!this.started) {
+        if (Math.hypot(p.x - this.originScreen[0], p.y - this.originScreen[1]) < 3) return
+        this.started = true
+        this.floating = this.host.selection.slice()
+        this.host.setExcluded(this.floating)
+        this.host.refresh(this.host.doc.bounds(this.floating))
+      }
+      const d = this.divider!, t = this.floating[0] as TableItem
+      const along = rotatePoint(p.wx - this.origin[0], p.wy - this.origin[1], 0, 0, -(t.angle ?? 0))
+      this.preview = [this.host.fitItem(moveDivider(t, d, d.axis === 'col' ? along[0] : along[1]))]
+      this.host.requestOverlay()
+    } else if (this.mode === 'end') {
       if (!this.started) {
         if (Math.hypot(p.x - this.originScreen[0], p.y - this.originScreen[1]) < 3) return
         this.started = true
@@ -705,6 +729,7 @@ export class SelectTool implements Tool {
   up(p: Ptr): void {
     // Include the final pointer position even if the browser coalesced the last move.
     this.move(p)
+    if (this.tappedTable && !this.started) this.host.editTableCell?.(this.tappedTable, p.wx, p.wy)
     if (this.mode === 'magnet' && this.started && this.preview[0]?.t === 'l') {
       const it = this.preview[0], [x] = worldToLab(it, p.wx, p.wy), finalX = magnetPosition(x - this.magnetOffset)
       let last = this.magnetTrace[this.magnetTrace.length - 1]
@@ -724,7 +749,7 @@ export class SelectTool implements Tool {
       host.setExcluded([])
       const changed = moving.some((it, i) => {
         const next = this.preview[i]
-        return (it.t === 'h' && next.t === 'h' && (it.from?.id !== next.from?.id || it.to?.id !== next.to?.id)) || it.w !== next.w || it.p.some((v, j) => Math.abs(v - next.p[j]) > 1e-6) || (it.t !== 's' && next.t !== 's' && (it.angle ?? 0) !== (next.angle ?? 0)) || (it.t === 'l' && next.t === 'l' && (JSON.stringify(it.params) !== JSON.stringify(next.params) || JSON.stringify(it.gesture) !== JSON.stringify(next.gesture) || it.frozenTime !== next.frozenTime))
+        return (it.t === 'b' && next.t === 'b' && (it.cols !== next.cols || it.rows !== next.rows)) || (it.t === 'h' && next.t === 'h' && (it.from?.id !== next.from?.id || it.to?.id !== next.to?.id)) || it.w !== next.w || it.p.some((v, j) => Math.abs(v - next.p[j]) > 1e-6) || (it.t !== 's' && next.t !== 's' && (it.angle ?? 0) !== (next.angle ?? 0)) || (it.t === 'l' && next.t === 'l' && (JSON.stringify(it.params) !== JSON.stringify(next.params) || JSON.stringify(it.gesture) !== JSON.stringify(next.gesture) || it.frozenTime !== next.frozenTime))
       })
       if (changed) {
         const before = host.doc.snapshot()
@@ -741,7 +766,7 @@ export class SelectTool implements Tool {
     } else if (this.mode === 'marquee' && this.marq) {
       const [a, b, c, d] = this.marq
       const box: Rect = [Math.min(a, c), Math.min(b, d), Math.max(a, c), Math.max(b, d)]
-      const hit = Math.hypot(c - a, d - b) * host.view.zoom < 3 ? [] : host.doc.items.filter((it) => rectsHit(itemBounds(it), box))
+      const hit = Math.hypot(c - a, d - b) * host.view.zoom < 3 ? [] : host.doc.items.filter((it) => !concealed(it) && rectsHit(itemBounds(it), box))
       host.setSelection(expandGroups(host.doc.items, this.additive ? [...this.baseSelection, ...hit] : hit))
     } else if (this.mode === 'lasso') {
       const hit = host.doc.items.filter(it => itemInLasso(it, this.polygon))
@@ -772,6 +797,8 @@ export class SelectTool implements Tool {
     this.preview = []
     this.launch = null
     this.magnetTrace = []
+    this.divider = null
+    this.tappedTable = null
     this.endOn = null
     this.followers = []
     this.following = []

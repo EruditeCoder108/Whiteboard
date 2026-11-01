@@ -4,7 +4,7 @@ import { effect } from '@preact/signals'
 import { Doc, History, opBounds, restyleItems } from './doc'
 import type { EditOp, HistoryState } from './doc'
 import { clamp, inflate, lerp, rectsHit, unionRect } from './geometry'
-import { cloneItem, itemBounds, paintItem, hitObject, translateItem } from './items'
+import { cloneItem, concealed, isHidden, itemBounds, paintItem, hitObject, setHiddenMode, translateItem } from './items'
 import { fitTextHeight, textAlign, textColor } from './text'
 import { transformItem } from './transforms'
 import { parseBoard, serializePages, MAX_TEXT_LENGTH, itemFromJson } from './serialize'
@@ -12,7 +12,8 @@ import type { BoardMeta, PageData, ParsedBoard } from './serialize'
 import { EraserTool, HandTool, LaserTool, PenTool, SelectTool, ShapeTool, TextTool } from './tools'
 import type { Tool, ToolHost } from './tool-types'
 import { newId } from './types'
-import type { Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, LabItem, ImageItem, GraphItem, ScaleItem } from './types'
+import type { Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, LabItem, ImageItem, GraphItem, ScaleItem, TableItem } from './types'
+import { MAX_COLS, MAX_ROWS, addCol, addRow, cellAt, fitTable, newTable, removeCol, removeRow, setCell, tableFont } from './table'
 import { onImageReady, preloadImages } from './media'
 import { Instruments } from './instruments'
 import { MAX_ZOOM, MIN_ZOOM, fitRect, panBy as panView, toWorld, zoomAboutCentre, zoomAt } from './view'
@@ -20,7 +21,7 @@ import { S, SHAPE_TOOLS, activeTool, isDarkBg, keepInkReadable, showToast } from
 import type { Here, ToolName } from '@/state/store'
 import { defaultStyle } from '@/state/store'
 import type { InkTiming } from './replay'
-import { DEFAULT_BOARD_COLOR, sameColor } from './colour'
+import { DEFAULT_BOARD_COLOR, sameColor, isDarkColor } from './colour'
 import type { Paper, PaperStyle } from './grid'
 import { backdropOf, paintBackdrop, styleOf } from './scene'
 import type { Backdrop } from './scene'
@@ -28,8 +29,10 @@ import type { Texture } from './texture'
 import { ART_DEFAULTS, DEFAULT_FRAME, MAX_EXTENT, MAX_TITLE, PAGE_H, PAGE_W, STYLE_KEYS, clampToFrame, fitZoom, frameForContent, frameRect, frameView, scrollOf } from './pages'
 import type { Artwork, BoardKind, Frame, LookFrame, PageLook } from './pages'
 import { canvasToNotebook, nextFrameSlot, notebookToCanvas } from './convert'
-import { pageAt } from './shelf'
+import { pageAt, readableOn } from './shelf'
 import { followConnectors, isConnector, remapAnchors, withNewIds } from './connectors'
+import { assignStep, clearStep, hideAgain, showStep, stepsOf } from './reveals'
+import type { StepInfo } from './reveals'
 import { LabRuntime, supportedLab } from './science/runtime'
 import { activeLabId, scienceInspector } from '@/state/science'
 
@@ -646,7 +649,7 @@ export class Board implements ToolHost {
   selectAll(): void {
     if (!this.doc.items.length) return
     this.setTool('select')
-    this.setSelection(this.doc.items.slice())
+    this.setSelection(this.doc.items.filter(it => !concealed(it)))
   }
 
   deleteSelection(): void {
@@ -822,7 +825,12 @@ export class Board implements ToolHost {
 
   pasteStyle(): void { if (this.copiedStyle) this.patchSelection(this.copiedStyle) }
 
-  fitItem(it: Item): Item { return it.t === 't' ? fitTextHeight(it, this.cctx) : it }
+  fitItem(it: Item): Item {
+    if (it.t === 't') return fitTextHeight(it, this.cctx)
+    if (it.t !== 'b') return it
+    const ctx = this.cctx
+    return fitTable(it, (text, head) => { ctx.save(); ctx.font = tableFont(it, head); const width = ctx.measureText(text).width; ctx.restore(); return width })
+  }
 
   createText(wx: number, wy: number, note = false): void {
     const item: TextItem = { t: 't', id: newId(), c: note ? '#172033' : S.penColor.value, w: 1, p: [wx, wy, wx + (note ? 230 : 300), wy + (note ? 230 : 62)], text: '', fontSize: note ? 24 : 28, note, fill: note ? '#fff2a8' : 'none' }
@@ -1599,6 +1607,91 @@ export class Board implements ToolHost {
     for (const it of pg.items) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
   }
 
+  // ── prepared reveals ────────────────────────────────────────────────────────
+  /** Preparing: hidden objects show faded so they can be arranged. Otherwise they are hidden as in class. */
+  setPreparing(on: boolean): void {
+    if (S.preparing.value === on) return
+    S.preparing.value = on
+    setHiddenMode(on ? 'ghost' : 'hide')
+    if (!on) this.setSelection(this.selection.filter(it => !concealed(it)))
+    this.refresh(null)
+    this.requestOverlay()
+  }
+
+  /** What the steps apply to: this page, or on a canvas the frame in view (else the whole canvas). */
+  private revealScope(): Item[] {
+    const f = this.paged ? null : this.frames[S.frameIndex.value]
+    if (!f) return this.doc.items
+    const r = frameRect(f)
+    return this.doc.items.filter(it => { const b = itemBounds(it), x = (b[0] + b[2]) / 2, y = (b[1] + b[3]) / 2; return x >= r[0] && x <= r[2] && y >= r[1] && y <= r[3] })
+  }
+
+  revealSteps(): StepInfo[] { return stepsOf(this.revealScope()) }
+
+  /** Replace objects as one undoable edit. */
+  private editItems(change: (items: Item[]) => Item[], label: string): boolean {
+    const before = this.doc.snapshot()
+    this.doc.replaceAll(change(this.doc.items))
+    const op = this.doc.diff(before)
+    if (!op) return false
+    this.commit(op, label)
+    this.refresh(null)
+    return true
+  }
+
+  private showSteps(n: number): boolean {
+    const scope = new Set(this.revealScope().map(it => it.id))
+    return this.editItems(items => {
+      const shown = showStep(items.filter(it => scope.has(it.id)), n)
+      const byId = new Map(shown.map(it => [it.id, it]))
+      return items.map(it => byId.get(it.id) ?? it)
+    }, 'Show the next step')
+  }
+
+  /** The next hidden step of what is on screen; false when there is none (a clicker then turns the page). */
+  nextReveal(): boolean {
+    const next = this.revealSteps().find(s => s.hidden)
+    return !!next && this.showSteps(next.n)
+  }
+
+  /** A tap on a card standing in for a hidden object shows its step. */
+  revealAt(wx: number, wy: number): boolean {
+    if (S.preparing.value || S.replaying.value) return false
+    for (let i = this.doc.items.length - 1; i >= 0; i--) {
+      const it = this.doc.items[i]
+      if (!isHidden(it) || !it.step!.cover) continue
+      const b = itemBounds(it)
+      if (wx >= b[0] && wx <= b[2] && wy >= b[1] && wy <= b[3]) return this.showSteps(it.step!.n)
+    }
+    return false
+  }
+
+  hideReveals(): void {
+    const scope = new Set(this.revealScope().map(it => it.id))
+    this.editItems(items => {
+      const hidden = hideAgain(items.filter(it => scope.has(it.id)))
+      const byId = new Map(hidden.map(it => [it.id, it]))
+      return items.map(it => byId.get(it.id) ?? it)
+    }, 'Hide the steps again')
+    this.setSelection(this.selection.filter(it => !concealed(it)))
+  }
+
+  /** The selection waits for step `n`. The teacher keeps seeing it, faded, until they finish preparing. */
+  assignReveal(n: number, name: string | undefined, cover: boolean): void {
+    this.setPreparing(true)
+    const chosen = new Set(this.selection)
+    const ids = this.selection.map(it => it.id)
+    this.editItems(items => assignStep(items, chosen, n, name, cover), 'Hide for class')
+    this.setSelection(this.doc.items.filter(it => ids.includes(it.id)))
+  }
+
+  clearReveal(): void {
+    const chosen = new Set(this.selection)
+    const ids = this.selection.map(it => it.id)
+    this.editItems(items => clearStep(items, chosen), 'Do not hide')
+    this.setSelection(this.doc.items.filter(it => ids.includes(it.id)))
+  }
+
   // ── my shelf ────────────────────────────────────────────────────────────────
   /** The part of the board the teacher can see (on a page, never beyond its edges). */
   visibleRect(): Rect {
@@ -1797,6 +1890,74 @@ export class Board implements ToolHost {
     return it
   }
 
+  /** A line of typed writing in the middle of the board, selected: an answer from the calculator, say. */
+  insertWriting(text: string): void {
+    this.commitText()
+    const [cx, cy] = this.viewCentre(), size = 44, w = Math.max(160, text.length * size * .58 + 24)
+    const it = this.fitItem({ t: 't', id: newId(), c: S.penColor.value, w: 1, p: [cx - w / 2, cy - size, cx + w / 2, cy + size * .6], text, fontSize: size, note: false, fill: 'none' })
+    this.setTool('select')
+    this.commitAdd(it)
+    this.setSelection([it])
+  }
+
+  // ── tables ──────────────────────────────────────────────────────────────────
+  /** The cell the table's commands act on, the one last tapped; otherwise they act at the end. */
+  lastCell: { id: string; r: number; c: number } | null = null
+  /** opens the text field on a cell (wired by the UI) */
+  onEditCell: ((cell: { id: string; r: number; c: number }) => void) | null = null
+
+  insertTable(rows: number, cols: number, head: boolean): TableItem {
+    this.commitText()
+    const r = this.visibleRect()
+    const it: TableItem = { t: 'b', id: newId(), c: S.penColor.value, w: 2.5, ...newTable(rows, cols, (r[0] + r[2]) / 2, (r[1] + r[3]) / 2 - (r[3] - r[1]) * .04, (r[2] - r[0]) * .86, (r[3] - r[1]) * .76), ...(head ? { head: true } : {}) }
+    this.lastCell = null
+    this.setTool('select')
+    this.commitAdd(it)
+    this.setSelection([it])
+    return it
+  }
+
+  editTableCell(it: TableItem, wx: number, wy: number): void {
+    const cell = cellAt(it, wx, wy)
+    if (cell) this.openCell(it, cell.r, cell.c)
+  }
+
+  openCell(it: TableItem, r: number, c: number): void {
+    this.lastCell = { id: it.id, r, c }
+    this.onEditCell?.(this.lastCell)
+  }
+
+  /** A finished cell: one undo step, and its row grows if the text needs it. */
+  setTableCell(id: string, r: number, c: number, text: string): void {
+    this.lastCell = { id, r, c }
+    this.changeTable(id, it => setCell(it, r, c, text), 'Type in a table')
+  }
+
+  private changeTable(id: string, change: (it: TableItem) => TableItem, label: string): void {
+    const current = this.doc.items.find(x => x.id === id)
+    if (!current || current.t !== 'b') return
+    const next = change(current)
+    if (next === current) return
+    this.editSelectionItems([current], () => this.fitItem(next), label)
+  }
+
+  /** Add or remove a row or column of the selected table, at the cell last tapped; a heading row on or off. */
+  shapeTable(what: 'add-row' | 'add-col' | 'remove-row' | 'remove-col' | 'head'): void {
+    const it = this.selection[0]
+    if (this.selection.length !== 1 || !it || it.t !== 'b' || it.locked) return
+    const at = this.lastCell?.id === it.id ? this.lastCell : null
+    this.changeTable(it.id, t => {
+      switch (what) {
+        case 'add-row': return t.rows.length < MAX_ROWS ? addRow(t, at?.r) : t
+        case 'add-col': return t.cols.length < MAX_COLS ? addCol(t, at?.c) : t
+        case 'remove-row': return removeRow(t, at?.r)
+        case 'remove-col': return removeCol(t, at?.c)
+        case 'head': { const { head, ...rest } = t; return head ? rest : { ...rest, head: true } }
+      }
+    }, 'Change a table')
+    if (at && (what === 'remove-row' || what === 'remove-col')) this.lastCell = null
+  }
+
   /** A number line or axes on this page, selected and ready to move. */
   insertScale(fields: Omit<ScaleItem, 't' | 'id' | 'w'>): ScaleItem {
     this.commitText()
@@ -1839,6 +2000,9 @@ export class Board implements ToolHost {
   }
 
   // ── output ──────────────────────────────────────────────────────────────────
+  /** Whether the export being made shows hidden objects. */
+  private exportHidden: 'keep' | 'show' = 'keep'
+
   /** What "this page" means when saving a picture: a notebook's page, a canvas's whole drawing. */
   get defaultScope(): PictureScope { return this.paged ? 'page' : 'content' }
 
@@ -1848,17 +2012,26 @@ export class Board implements ToolHost {
    * screens with nothing on them are left out. `split: false` keeps a long page whole.
    * Blank pages are kept, and a notebook whose pages only have paper still prints that paper.
    */
-  async exportPages(opts: { split?: boolean } = {}): Promise<ArrayBuffer[]> {
+  async exportPages(opts: { split?: boolean; hidden?: 'keep' | 'show'; print?: boolean; scale?: number; cancelled?: () => boolean; onSheet?: (png: ArrayBuffer) => Promise<void> | void } = {}): Promise<ArrayBuffer[]> {
     const split = opts.split ?? true
+    const scale = opts.scale ?? 1.5
     const out: ArrayBuffer[] = []
     const pages = this.pageData()
-    const sheet = async (items: Item[], f: Frame, back: Backdrop): Promise<void> => {
+    const render = async (items: Item[], rect: Rect, at: number, back: Backdrop): Promise<void> => {
+      if (opts.cancelled?.()) return
+      this.exportHidden = opts.hidden ?? 'keep'
+      const png = await this.renderRect(items, rect, at, back)
+      if (!png) return
+      out.push(png)
+      await opts.onSheet?.(png)
+    }
+    const sheet = async (shown: Item[], f: Frame, seen: Backdrop): Promise<void> => {
+      const { items, back } = opts.print ? this.printable(shown, seen) : { items: shown, back: seen }
       await preloadImages(items, back.art ? [back.art.src] : [])
       const screens = split ? this.usedScreens(items, f) : 1
       for (let k = 0; k < screens; k++) {
         const rect: Rect = split ? [f.x, f.y + k * PAGE_H, f.x + PAGE_W, f.y + (k + 1) * PAGE_H] : frameRect(f)
-        const png = await this.renderRect(items, rect, 1.5, back)
-        if (png) out.push(png)
+        await render(items, rect, scale, back)
       }
     }
     if (!this.paged && this.frames.length) {
@@ -1876,11 +2049,27 @@ export class Board implements ToolHost {
     const items = pages[0].items
     const b = this.doc.bounds(items)
     if (!b) return out
-    const back = this.surfaceBackdrop()
-    await preloadImages(items, back.art ? [back.art.src] : [])
-    const png = await this.renderRect(items, padRect(b, 48), 2, back)
-    if (png) out.push(png)
+    const open = opts.print ? this.printable(items, this.surfaceBackdrop()) : { items, back: this.surfaceBackdrop() }
+    await preloadImages(open.items, open.back.art ? [open.back.art.src] : [])
+    await render(open.items, padRect(b, 48), opts.scale ?? 2, open.back)
     return out
+  }
+
+  /**
+   * A dark board on white paper, to save toner: the board turns white and ink turns readable on it.
+   * The lesson itself is not touched. Light boards print as they are.
+   */
+  private printable(items: Item[], back: Backdrop): { items: Item[]; back: Backdrop } {
+    if (!isDarkColor(back.color)) return { items, back }
+    const { texture: _texture, textureAlpha: _alpha, ...plain } = back
+    const { lines: _lines, ...style } = back.style // chalk-coloured lines would vanish; the paper's own lines suit white
+    return { items: readableOn(items, back.color, '#ffffff', 3), back: { ...plain, color: '#ffffff', style } }
+  }
+
+  /** Whether any sheet of this lesson has a dark board, so print-friendly would change something. */
+  hasDarkSheets(): boolean {
+    if (!this.paged) return this.frames.length ? this.frames.some(f => isDarkColor(this.frameBackdrop(f).color)) : isDarkColor(this.surfaceBackdrop().color)
+    return this.pageData().some(pg => isDarkColor(this.pageBackdrop(pg, pg.frame).color))
   }
 
   /** How many screens of a sheet to print: down to the last one that has something on it. */
@@ -1897,8 +2086,9 @@ export class Board implements ToolHost {
    *  - content: everything drawn, cropped to it
    *  - selection: the selected objects, cropped to them
    */
-  async exportPng(opts: { scope?: PictureScope; paper?: boolean; maxScale?: number } = {}): Promise<ArrayBuffer | null> {
+  async exportPng(opts: { scope?: PictureScope; paper?: boolean; maxScale?: number; hidden?: 'keep' | 'show' } = {}): Promise<ArrayBuffer | null> {
     const scope = opts.scope ?? this.defaultScope
+    this.exportHidden = opts.hidden ?? 'keep'
     const items = scope === 'selection' ? this.selection : this.doc.items
     let rect: Rect, back: Backdrop
     if (scope === 'page') {
@@ -1926,7 +2116,10 @@ export class Board implements ToolHost {
     const ctx = cv.getContext('2d')!
     if (back) paintBackdrop(ctx, { x: r[0], y: r[1], zoom: scale }, cv.width, cv.height, 1, back, true)
     ctx.setTransform(scale, 0, 0, scale, -r[0] * scale, -r[1] * scale)
+    // Only for this one synchronous paint, so the classroom screen can never flash a hidden answer.
+    setHiddenMode(this.exportHidden === 'show' ? 'show' : 'hide')
     for (const it of items) if (rectsHit(itemBounds(it), r)) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
+    setHiddenMode(S.preparing.value ? 'ghost' : 'hide')
     const blob = await new Promise<Blob | null>((res) => cv.toBlob(res, 'image/png'))
     return blob ? await blob.arrayBuffer() : null
   }

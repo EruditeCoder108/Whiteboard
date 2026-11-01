@@ -24,15 +24,15 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 ## Step 2: reusable teaching content
 
 - ✅ My shelf: save a drawing, diagram or whole page once, reuse it in any lesson, carry it to another PC
-- ⬜ Tables *(brief ready for the second agent)*
+- ✅ Tables (type in cells, Hindi too; rows grow to fit; add, remove and drag rows and columns)
 - ✅ Arrows that stay attached when boxes move (mind maps, flowcharts, labels on diagrams)
 - ✅ Number line and coordinate axes as real tools (fractions, units, marked points)
-- ⬜ Prepared reveals (hide an answer, tap to show)
+- ✅ Prepared reveals (hide an answer, tap to show, one big Next button)
 
 **End of Step 2 (moved here from Step 1):**
-- ⬜ Light and dark mode for the whole app (toolbars, menus, sheets), plus print-friendly PDFs of dark boards
-- 🔄 Study of the whole Note 3 app, with a report and screenshots; then build its best ideas *(second agent is studying it now)*
-- ⬜ Export preview: see the pages before saving the PDF
+- ✅ Light and dark mode for the whole app (toolbars, menus, sheets), plus print-friendly PDFs of dark boards
+- 🔄 Study of the whole Note 3 app; then build its best ideas. *Built from its report so far: calculator, periodic table, writing strips. The report itself is not finished (second agent).*
+- ✅ Export preview: see the pages before saving the PDF, and leave some out
 
 ## Step 3: tested on a real smart board
 
@@ -47,4 +47,4 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - ⬜ AI lecture notes from the teacher's voice and board (faithful by default)
 
 ---
-*Updated 2026-11-01 · version 1.6.0-beta.9.*
+*Updated 2026-11-01 · version 1.6.0-beta.10.*

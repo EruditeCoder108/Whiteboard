@@ -1,4 +1,4 @@
-import { Archive, Axis3d, MoveHorizontal, ArrowDownToLine, ChevronLeft, ChevronRight, Focus, FilePlus2, FileText, Image as ImageIcon, LineChart, Plus, Sigma, Trash2, FileDown } from 'lucide-preact'
+import { Archive, Atom, Axis3d, MoveHorizontal, Table2, ArrowDownToLine, ChevronLeft, ChevronRight, Focus, FilePlus2, FileText, Image as ImageIcon, LineChart, Plus, Sigma, Trash2, FileDown } from 'lucide-preact'
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { board } from '@/engine/instance'
@@ -16,10 +16,12 @@ export function InsertPopover(): JSX.Element {
       <MenuItem icon={ImageIcon} label="Capture screen…" hint="Ctrl+Shift+C" onClick={() => { void capture.open() }} />
       <MenuItem icon={Archive} label="My shelf…" hint="your saved diagrams" onClick={() => { S.popover.value = 'shelf' }} />
       <MenuItem icon={FileText} label="PDF worksheet…" hint="one page each" onClick={close(() => void pickFiles('application/pdf,.pdf', false).then(files => insertFiles(files)))} />
+      <MenuItem icon={Table2} label="Table" onClick={() => { S.popover.value = 'table' }} />
       <MenuItem icon={Sigma} label="Equation" hint="maths & chemistry" onClick={() => editEquation(null)} />
       <MenuItem icon={LineChart} label="Graph of a function" onClick={() => editGraph(null)} />
       <MenuItem icon={MoveHorizontal} label="Number line" onClick={() => editScale(null, 'line')} />
       <MenuItem icon={Axis3d} label="Coordinate axes" onClick={() => editScale(null, 'axes')} />
+      <MenuItem icon={Atom} label="Periodic table" onClick={() => { S.popover.value = 'periodic' }} />
       <Sep />
       <MenuItem icon={FilePlus2} label="New page" hint="PgDn to move" onClick={close(() => board.addPage())} />
       <MenuItem icon={FileDown} label="Export picture or PDF…" onClick={() => { S.popover.value = 'export' }} />

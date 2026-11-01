@@ -6,7 +6,6 @@ import { board } from '@/engine/instance'
 import type { PictureScope } from '@/engine/board'
 import type { BoardKind } from '@/engine/pages'
 import { actions } from '@/state/actions'
-import { exportPdf } from '@/state/insert'
 import { dateName, lesson, lessonPath, lessonSubject, library } from '@/state/lesson'
 import { S } from '@/state/store'
 import { sharing } from '@/state/share'
@@ -177,13 +176,16 @@ export function ExportSheet(): JSX.Element {
   const notebook = S.kind.value === 'notebook'
   const [scope, setScope] = useState<PictureScope>(board.defaultScope)
   const [paper, setPaper] = useState(true)
-  const [whole, setWhole] = useState(false)
+  const [answers, setAnswers] = useState(false)
+  const hidden = answers ? 'show' as const : 'keep' as const
+  const anyHidden = board.pageData().some(pg => pg.items.some(it => it.step && !it.step.shown))
   const selection = S.selectionCount.value > 0
   const pageLabel = notebook ? 'This page' : S.frameIndex.value >= 0 ? 'This frame' : 'On screen'
-  const picture = { scope: scope === 'selection' && !selection ? 'page' as const : scope, paper }
+  const picture = { scope: scope === 'selection' && !selection ? 'page' as const : scope, paper, hidden }
   const close = (fn: () => unknown) => (): void => { S.popover.value = null; void fn() }
   return (
     <div class="popover panel ui board-sheet lesson-sheet export-sheet" data-popover-keep="">
+      {anyHidden && <Row label="Include hidden answers" hint="Off: the picture shows only what the class has seen"><span class="grow" /><Switch on={answers} onChange={setAnswers} /></Row>}
       <div class="sheet-head">Picture (PNG)</div>
       <Segmented<PictureScope>
         options={[{ value: 'page', label: pageLabel }, { value: 'content', label: 'Everything' }, ...(selection ? [{ value: 'selection' as const, label: 'Selection' }] : [])]}
@@ -194,12 +196,8 @@ export function ExportSheet(): JSX.Element {
         <Tile icon={Copy} label="Copy picture" onClick={close(() => actions.copyImage(picture))} />
       </div>
       <div class="sheet-head">PDF of the whole lesson</div>
-      <Segmented<'screens' | 'whole'>
-        options={[{ value: 'screens', label: 'One screen per sheet' }, { value: 'whole', label: 'Long pages whole' }]}
-        value={whole ? 'whole' : 'screens'} onChange={v => setWhole(v === 'whole')} />
-      <p class="pop-hint">A page you lengthened with “more space below” is split by screen, so each sheet stays readable.</p>
       <div class="tiles two">
-        <Tile icon={FileDown} label="Save PDF" onClick={close(() => exportPdf({ split: !whole }))} />
+        <Tile icon={FileDown} label="Save PDF" onClick={() => (S.popover.value = 'export-preview')} />
         <Tile icon={QrCode} label="Share to phones" onClick={close(sharing.open)} />
       </div>
     </div>

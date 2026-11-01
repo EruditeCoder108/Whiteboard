@@ -36,8 +36,8 @@ export function placeInView(items: Item[], view: Rect, room = .8): Item[] {
 }
 
 /** Below this contrast, ink cannot be read from the classroom. */
-const VANISHES = 2
-const READABLE = 2.6
+const VANISHES = 3
+const READABLE = 3.4
 
 const rgbOf = (hex: string): number[] => {
   const h = hex.replace('#', '')
@@ -46,13 +46,13 @@ const rgbOf = (hex: string): number[] => {
 }
 
 /** Nearest readable version of a colour on `bg`: black and white swap, colours keep their hue and go darker or lighter. */
-function readableVersion(color: string, bg: string): string {
+function readableVersion(color: string, bg: string, goal = READABLE): string {
   const ink = isDarkColor(bg) ? '#ffffff' : '#111827'
   const from = rgbOf(color), to = rgbOf(ink)
   if (Math.max(...from) - Math.min(...from) >= 40) {
     for (const t of [.25, .4, .55, .7, .85]) {
       const mixed = '#' + from.map((v, i) => Math.round(v + (to[i] - v) * t).toString(16).padStart(2, '0')).join('')
-      if (contrastRatio(mixed, bg) >= READABLE) return mixed
+      if (contrastRatio(mixed, bg) >= goal) return mixed
     }
   }
   return ink
@@ -64,11 +64,16 @@ function readableVersion(color: string, bg: string): string {
  * Ink that was already invisible there stays as it is (a teacher's white mask on a white board),
  * highlighter is see-through by design, and text on a filled note or shape is read against that fill.
  */
-export function readableOn(items: Item[], from: string, bg: string): Item[] {
-  const fix = (c: string): string => contrastRatio(c, bg) < VANISHES && contrastRatio(c, from) >= VANISHES ? readableVersion(c, bg) : c
+export function readableOn(items: Item[], from: string, bg: string, least = VANISHES): Item[] {
+  const goal = Math.max(READABLE, least + .3)
+  const fix = (c: string): string => contrastRatio(c, bg) < least && contrastRatio(c, from) >= VANISHES ? readableVersion(c, bg, goal) : c
   return items.map(it => {
     if (it.t === 's') return it.m || fix(it.c) === it.c ? it : { ...it, c: fix(it.c) }
     if ((it.t === 'i' && it.latex !== undefined) || it.t === 'n') return fix(it.c) === it.c ? it : { ...it, c: fix(it.c) } // drawn in the object's own colour
+    if (it.t === 'b') {
+      const c = fix(it.c), textColor = it.textColor ? fix(it.textColor) : undefined
+      return c === it.c && textColor === it.textColor ? it : { ...it, c, ...(textColor ? { textColor } : {}) }
+    }
     if (it.t !== 'h' && it.t !== 't') return it
     const filled = !!it.fill && it.fill !== 'none'
     if (it.t === 't' && (filled || it.note)) return it

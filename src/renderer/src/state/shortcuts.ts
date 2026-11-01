@@ -139,11 +139,12 @@ export function installShortcuts(cancelRadial: () => void): () => void {
       case 'Enter': {
         const selected = board.selection[0]
         if (board.selection.length === 1 && (selected.t === 't' || selected.t === 'h')) { e.preventDefault(); return board.editText(selected) }
+        if (board.selection.length === 1 && selected.t === 'b' && !selected.locked) { e.preventDefault(); return board.openCell(selected, board.lastCell?.id === selected.id ? board.lastCell.r : 0, board.lastCell?.id === selected.id ? board.lastCell.c : 0) }
         break
       }
       // With a selection these reorder objects; otherwise they turn pages (presentation clickers send them).
       case 'PageUp': e.preventDefault(); return board.selection.length ? board.arrangeSelection('front') : void board.turnPage(-1)
-      case 'PageDown': e.preventDefault(); return board.selection.length ? board.arrangeSelection('back') : void board.turnPage(1)
+      case 'PageDown': e.preventDefault(); return board.selection.length ? board.arrangeSelection('back') : board.nextReveal() ? undefined : void board.turnPage(1) // a clicker goes through a page's steps first
       case 'Delete':
       case 'Backspace':
         return board.deleteSelection()

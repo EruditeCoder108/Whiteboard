@@ -1,4 +1,5 @@
-import { Blinds, DraftingCompass, Gauge, LineChart, Pause, Play, RotateCcw, Ruler, Sigma, Spotlight, Timer, TriangleRight, X } from 'lucide-preact'
+import { Blinds, Calculator, EyeOff, DraftingCompass, Gauge, LineChart, Pause, Play, RotateCcw, Ruler, Sigma, Spotlight, Timer, TriangleRight, X } from 'lucide-preact'
+import { calculatorOn } from './Tools'
 import { signal } from '@preact/signals'
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
@@ -44,6 +45,8 @@ export function PresentPopover(): JSX.Element {
   return (
     <div class="popover panel ui present" data-popover-keep="">
       <ToggleRow icon={Spotlight} label="Spotlight" hint="dims all but the pointer" on={spotlightOn.value} onClick={() => { spotlightOn.value = !spotlightOn.value; S.popover.value = null }} />
+      <ToggleRow icon={Calculator} label="Calculator" on={calculatorOn.value} onClick={() => { calculatorOn.value = !calculatorOn.value; S.popover.value = null }} />
+      <ToggleRow icon={EyeOff} label="Prepare reveals" hint="hide answers" on={S.preparing.value} onClick={() => { board.setPreparing(!S.preparing.value); S.popover.value = null }} />
       <ToggleRow icon={Blinds} label="Curtain" hint="drag to reveal" on={curtainOn.value} onClick={() => { curtainOn.value = !curtainOn.value; S.popover.value = null }} />
       <ToggleRow icon={Timer} label="Timer" on={timerOn.value} onClick={() => { timerOn.value = !timerOn.value; S.popover.value = null }} />
       <div class="pop-hint">Esc closes the spotlight and curtain. PgUp/PgDn (or a presentation clicker) turns pages.</div>

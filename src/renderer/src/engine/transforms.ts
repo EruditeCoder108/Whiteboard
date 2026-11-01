@@ -25,7 +25,7 @@ export function transformItem(it: Item, anchor: [number, number], sx = 1, sy = 1
   const p: Rect = [center[0] - hw, center[1] - hh, center[0] + hw, center[1] + hh]
   // Side handles change wrapping; uniform scaling also scales the lettering.
   const fontScale = Math.abs(sx - sy) < 1e-8 ? scale : 1
-  return { ...it, p, angle: ((it.angle ?? 0) + angle) % (Math.PI * 2), w: width, ...((it.t === 't' || it.t === 'h') && it.fontSize !== undefined ? { fontSize: fontScale === 1 ? it.fontSize : Math.max(1, Math.min(1000, it.fontSize * fontScale)) } : {}) }
+  return { ...it, p, angle: ((it.angle ?? 0) + angle) % (Math.PI * 2), w: width, ...((it.t === 't' || it.t === 'h' || it.t === 'b') && it.fontSize !== undefined ? { fontSize: fontScale === 1 ? it.fontSize : Math.max(1, Math.min(1000, it.fontSize * fontScale)) } : {}) }
 }
 
 export function expandGroups(items: Item[], selected: Item[]): Item[] {

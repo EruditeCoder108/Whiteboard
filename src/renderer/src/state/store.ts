@@ -18,7 +18,7 @@ export type GridMode = Paper
 export type Layout = 'board' | 'laptop'
 export type BarSide = 'left' | 'center' | 'right'
 export type { BoardKind } from '@/engine/pages'
-export type PopoverName = 'props' | 'shapes' | 'menu' | 'settings' | 'help' | 'recovery' | 'agent' | 'replay' | 'science' | 'insert' | 'equation' | 'graph' | 'maths' | 'present' | 'board-menu' | 'pages' | 'paper' | 'subjects' | 'lessons' | 'new-lesson' | 'export' | 'shelf' | 'shelf-save' | 'scale' | null
+export type PopoverName = 'props' | 'shapes' | 'menu' | 'settings' | 'help' | 'recovery' | 'agent' | 'replay' | 'science' | 'insert' | 'equation' | 'graph' | 'maths' | 'present' | 'board-menu' | 'pages' | 'paper' | 'subjects' | 'lessons' | 'new-lesson' | 'export' | 'shelf' | 'shelf-save' | 'scale' | 'export-preview' | 'periodic' | 'table' | null
 
 export const SHAPE_TOOLS: ShapeKind[] = ['line', 'arrow', 'rect', 'ellipse', 'diamond', 'triangle']
 export const isShapeTool = (t: ToolName): t is ShapeKind => (SHAPE_TOOLS as string[]).includes(t)
@@ -129,7 +129,11 @@ export const S = {
   replaying: signal(false),
   selectionColor: signal<string | null>(null),
   selectionWidth: signal<number | null>(null),
+  /** the app's own look: light, dark, or following the board */
+  uiTheme: signal<'auto' | 'light' | 'dark'>('auto'),
   popover: signal<PopoverName>(null),
+  /** prepared reveals: hidden objects show faded so they can be arranged (never saved: class mode is the default) */
+  preparing: signal(false),
   ready: signal(false),
   closing: signal(false),
   saveStatus: signal<SaveStatus>('saved'),
@@ -157,6 +161,8 @@ export const currentSize = computed(() =>
 )
 
 export const isDarkBg = computed(() => isDarkColor(S.bgColor.value))
+/** Whether the app's toolbars, menus and sheets are dark. On Auto they follow the board, so they never glare on a chalkboard. */
+export const darkUi = computed(() => S.uiTheme.value === 'dark' || (S.uiTheme.value === 'auto' && isDarkBg.value))
 
 /** New ink must stay readable on the board: white chalk on a dark board, dark ink on a light one. */
 export function keepInkReadable(): void {
@@ -181,7 +187,7 @@ export function showToast(text: string, ms = 2200, action?: ToastAction): void {
 const PERSISTED = [
   'tool', 'lastShape', 'penColor', 'penSize', 'markerColor', 'markerSize', 'eraserSize',
   'eraserMode', 'defaultPaper', 'defaultColor', 'defaultTexture', 'defaultSpacing', 'defaultStrength', 'defaultLines', 'bgAlpha', 'smoothing', 'pressure', 'fingerDraw', 'onTop',
-  'radialEnabled', 'radialDelay', 'layout', 'layoutChosen', 'barSide', 'palmErase', 'palmSize'
+  'radialEnabled', 'radialDelay', 'layout', 'layoutChosen', 'barSide', 'palmErase', 'palmSize', 'uiTheme'
 ] as const
 
 export function snapshotSettings(): Record<string, unknown> {
@@ -204,7 +210,7 @@ export function applySettings(raw: unknown): void {
     const enums: Partial<Record<typeof PERSISTED[number], readonly string[]>> = {
       tool: ['select', 'lasso', 'text', 'sticky', 'hand', 'pen', 'marker', 'eraser', 'laser', ...SHAPE_TOOLS],
       lastShape: SHAPE_TOOLS, eraserMode: ['stroke', 'pixel'], defaultPaper: PAPERS, defaultTexture: TEXTURES,
-      layout: ['board', 'laptop'], barSide: ['left', 'center', 'right']
+      layout: ['board', 'laptop'], barSide: ['left', 'center', 'right'], uiTheme: ['auto', 'light', 'dark']
     }
     if (enums[k] && !enums[k]!.includes(value as string)) continue
     if (['penColor', 'markerColor', 'defaultColor'].includes(k) && !isBoardColor(value)) continue

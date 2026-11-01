@@ -1,4 +1,7 @@
+import { validStep } from './reveals'
 import { MAX_POINTS, validAxis } from './scale'
+import { validTable } from './table'
+import type { TableItem } from './types'
 import type { Anchor, GraphItem, ImageItem, Item, ObjectMeta, ScaleAxis, ScaleItem, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
 import { assetKey } from './media'
 import { artJson, hasLook, isBoardKind, lookJson, validArt, validLook, validLookFrame } from './pages'
@@ -38,9 +41,10 @@ export interface BoardFile {
 }
 
 export function itemToJson(it: Item): unknown {
-  const meta: ObjectMeta = { group: it.group, locked: it.locked, opacity: it.opacity }
+  const meta: ObjectMeta = { group: it.group, locked: it.locked, opacity: it.opacity, step: it.step }
   if (it.t === 'l') return { ...it, p: [...it.p], params: { ...it.params }, reveal: { ...it.reveal }, ...(it.gesture ? { gesture: it.gesture.map(p => ({ ...p })) } : {}) }
   if (it.t === 'i') return { t: 'i', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, src: it.src, aspect: it.aspect, latex: it.latex, ...meta }
+  if (it.t === 'b') return { t: 'b', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, cols: [...it.cols], rows: [...it.rows], cells: it.cells.map(row => [...row]), fontSize: it.fontSize, textColor: it.textColor, head: it.head, ...meta }
   if (it.t === 'n') return { t: 'n', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, x: { ...it.x }, y: it.y && { ...it.y }, grid: it.grid, equal: it.equal, points: it.points?.map(q => [...q]), coords: it.coords, ...meta }
   if (it.t === 'g') return { t: 'g', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, fns: [...it.fns], xr: [...it.xr], yr: [...it.yr], ...meta }
   if (it.t === 's') {
@@ -79,6 +83,9 @@ function objectMeta(o: Record<string, unknown>): ObjectMeta | null {
   if (o.group !== undefined) meta.group = o.group as string
   if (o.locked !== undefined) meta.locked = o.locked as boolean
   if (o.opacity !== undefined) meta.opacity = o.opacity as number
+  // A bad step only loses the step, never the object: better a visible answer than a lost one.
+  const step = validStep(o.step)
+  if (step) meta.step = step
   return meta
 }
 
@@ -138,6 +145,18 @@ export function itemFromJson(raw: unknown): Item | null {
     if (o.gesture !== undefined) it.gesture = (o.gesture as LabItem['gesture'])!.map(p => ({ ...p }))
     if (getModel(it.model) && it.modelVersion === 1 && it.labVersion === 1 && it.frozenTime > labDuration(it) + 1e-8) return null
     return it
+  }
+  if (o.t === 'b') {
+    const p = o.p as number[]
+    if (p.length !== 4 || !p.every(isCoord) || p[2] <= p[0] || p[3] <= p[1]) return null
+    if (o.angle !== undefined && (!isNum(o.angle) || Math.abs(o.angle) > 1e6)) return null
+    if (o.textColor !== undefined && !isColor(o.textColor)) return null
+    if (!validTable(o)) return null
+    const table: TableItem = { t: 'b', id, c: o.c, w: o.w, p: [p[0], p[1], p[2], p[3]], ...meta, cols: [...(o.cols as number[])], rows: [...(o.rows as number[])], cells: (o.cells as string[][]).map(row => [...row]), fontSize: o.fontSize as number }
+    if (o.angle !== undefined) table.angle = o.angle as number
+    if (o.textColor !== undefined) table.textColor = o.textColor as string
+    if (o.head === true) table.head = true
+    return table
   }
   if (o.t === 'n') {
     const p = o.p as number[]

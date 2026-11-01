@@ -4,7 +4,7 @@ import { board } from '@/engine/instance'
 import { InputRouter } from '@/engine/input'
 import { actions } from '@/state/actions'
 import { installShortcuts } from '@/state/shortcuts'
-import { S, applySettings, boardMode, isDarkBg, showToast, startPersisting } from '@/state/store'
+import { S, applySettings, boardMode, darkUi, showToast, startPersisting } from '@/state/store'
 import { BoardBar, BoardSaveChip, EdgeTabs, LayoutChooser } from '@/ui/Board'
 import { PalmCalibration } from '@/ui/Calibrate'
 import { Autosave } from '@/state/autosave'
@@ -28,6 +28,10 @@ import { PageBar, ImportStatus } from '@/ui/Insert'
 import { CurtainLayer, SpotlightLayer, TimerWidget } from '@/ui/Present'
 import { editEquation, editGraph, editScale, insertFiles, scaleTarget } from '@/state/insert'
 import { ScaleEditor } from '@/ui/Scale'
+import { RevealBar } from '@/ui/Reveal'
+import { TableCellEditor, TableChooser, editingCell } from '@/ui/Table'
+import { CalculatorWidget, PeriodicSheet } from '@/ui/Tools'
+import { ExportPreview } from '@/ui/ExportPreview'
 
 const agentForPanel = new BoardAgent(board, replay)
 
@@ -91,6 +95,7 @@ export function App(): JSX.Element {
       autosave.markDirty()
     }
     board.onEdit = (label, timing) => replay.capture(label, timing)
+    board.onEditCell = cell => { editingCell.value = cell }
     board.onEditMedia = it => it.t === 'g' ? editGraph(it) : it.t === 'n' ? editScale(it) : editEquation(it)
     const onDragOver = (e: DragEvent): void => { if (e.dataTransfer?.types.includes('Files')) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' } }
     const onDrop = (e: DragEvent): void => {
@@ -208,7 +213,7 @@ export function App(): JSX.Element {
   // pass-through hides the chrome too: nothing on the board is clickable in that mode
   const hidden = S.uiHidden.value || S.passthrough.value
   const onBoard = boardMode.value && S.layoutChosen.value
-  const cls = ['window', onBoard ? `board bar-${S.barSide.value}` : '', S.fullscreen.value || S.zoomed.value ? 'flat' : '', isDarkBg.value ? 'dark' : '', hidden ? 'ui-hidden' : '', !S.ready.value ? 'loading' : '', S.replaying.value ? 'replaying' : '']
+  const cls = ['window', onBoard ? `board bar-${S.barSide.value}` : '', S.fullscreen.value || S.zoomed.value ? 'flat' : '', darkUi.value ? 'dark' : '', hidden ? 'ui-hidden' : '', !S.ready.value ? 'loading' : '', S.replaying.value ? 'replaying' : '']
     .filter(Boolean)
     .join(' ')
 
@@ -230,20 +235,26 @@ export function App(): JSX.Element {
           <AgentPanel agent={agentForPanel} />
           <ReplayPanel />
           <SelectionToolbar />
+          <RevealBar />
           <ScienceUI />
         </>
       )}
       {hidden && !S.passthrough.value && <MiniBar />}
       {!S.passthrough.value && <><ReplayControls /><RecordingControls /></>}
       {!S.passthrough.value && <Editor />}
+      {!S.passthrough.value && <TableCellEditor />}
       <Radial />
       <TimerWidget />
+      <CalculatorWidget />
       <ImportStatus />
       <Toast />
       <PalmCalibration />
       {S.popover.value === 'lessons' && <LessonLibrary />}
       {S.popover.value === 'new-lesson' && <NewLessonSheet />}
       {S.popover.value === 'scale' && <ScaleEditor key={scaleTarget.value?.id ?? 'new'} />}
+      {S.popover.value === 'export-preview' && <ExportPreview />}
+      {S.popover.value === 'periodic' && <PeriodicSheet />}
+      {S.popover.value === 'table' && <TableChooser />}
       {S.popover.value === 'shelf' && <ShelfSheet />}
       {S.popover.value === 'shelf-save' && <ShelfSaveSheet />}
       <Dialog />
