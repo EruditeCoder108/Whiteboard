@@ -33,7 +33,7 @@ The gesture ring is a separate college project and is **not** part of the produc
 | Release history | `CHANGELOG.md` |
 | GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#3 merged, lesson integrity on branch `feature/lesson-integrity` |
 | Installed app (owner's laptop) | `%LOCALAPPDATA%\Programs\Floating Whiteboard` (per-user NSIS install, Start menu + desktop shortcut) |
-| Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.5.exe` (ignored by git) |
+| Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.6.exe` (ignored by git) |
 | Older unrelated projects in the parent folder | `..\android-library`, `..\*.pyw` (the original Python board). Leave them alone. |
 
 ## 3. State right now
@@ -41,9 +41,9 @@ The gesture ring is a separate college project and is **not** part of the produc
 - **`docs/CHECKLIST.md` is the owner's plain-language progress list.** Tick items (✅ / 🔄 / ⬜) whenever a milestone
   finishes or starts; keep it short and jargon-free. `FEATURES.md` stays the detailed feature list.
 
-- `main` holds 1.6.0-beta.5: Lesson integrity (PR #4), **Background & paper** (§6, PR #5), **Share to phones**
-  (local Wi-Fi + QR, built by the second agent, PR #6), **board surfaces** (PR #7, `engine/texture.ts`) and
-  **My lessons + autosave + page sections**. See `CHANGELOG.md`.
+- `main` holds 1.6.0-beta.6: Lesson integrity (PR #4), **Background & paper** (§6, PR #5), **Share to phones**
+  (local Wi-Fi + QR, built by the second agent, PR #6), **board surfaces** (PR #7, `engine/texture.ts`),
+  **My lessons + autosave + page sections** (PR #8) and **Capture to lesson** (second agent). See `CHANGELOG.md`.
 - **Owner's direction (2026-11-01):** a professional smart-board app: every lesson autosaves to its own file;
   lessons are organised (name, subject, dates) in My lessons. **Next: light/dark mode for the whole app**, done
   "intelligently" (interface theme Light / Dark / Auto that follows the board; print-friendly PDF of dark boards as
@@ -55,9 +55,12 @@ The gesture ring is a separate college project and is **not** part of the produc
 - **A second agent (ChatGPT) works in parallel** from written briefs in `docs/agent-tasks/`. It works in its own
   worktree (`D:\Projects 2\whiteboard\app-<task>`), pushes its branch, never merges. The lead reviews (security,
   the file list it was given, tests), merges through a PR, and writes the changelog/FEATURES/handoff entries.
-  Done: `qr-share.md` (`src/main/share.ts`, `pdf.ts`, `ui/Share.tsx`). **In progress: `capture.md`**, "Capture to
-  lesson", branch `feature/capture`, worktree `D:\Projects 2\whiteboard\app-capture`. While it runs, stay out of
-  its files (main capture IPC, `ui/Capture.tsx`, `state/capture.ts`, the end of `styles.css`).
+  Done: `qr-share.md` (`src/main/share.ts`, `pdf.ts`, `ui/Share.tsx`) and `capture.md` (`src/main/capture.ts`,
+  `state/capture.ts`, `ui/Capture.tsx`; merged as 1.6.0-beta.6). **In progress: `note3-study.md`**, a research study
+  of the whole Note 3 app with screenshots, written to `D:\Projects 2\whiteboard\note3-study\REPORT.md` (no code).
+  When it reports, read the report and turn its "Top 10" into checklist items. The owner trusts the agent more now:
+  review its branches lightly (safety-critical parts and the merge), then polish small things.
+  Known polish for capture: grabbing one window asks for full-size thumbnails of every window (slow with many open).
 - **Deep dive progress:** §7 **F1–F6 and F9 done**. **§6 done:** spacing/strength/line colour with scope and restore,
   isometric papers, lesson layouts, graph renderer fixed (§6.5), writing papers adapt to zoom on the canvas, custom
   background picture with full lifecycle (§6.4), one backdrop description everywhere (§6.8). **Not done:** F7, F8,

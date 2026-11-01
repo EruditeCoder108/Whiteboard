@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0-beta.6 — Capture to lesson — 2026-11-01
+
+- **Capture** (More menu, laptop Insert menu, or Ctrl+Shift+C):
+  - Freeze a whole screen, one window, or an area of the screen you drag out with large corner handles.
+  - It lands in the lesson as a locked picture, ready to write on: on this page if it is empty, otherwise on a new page (or the next frame on a canvas).
+  - The board hides itself during the capture and comes back exactly as it was.
+  - Protected windows that capture black (some video players) get a clear message instead of a black picture.
+  - Built by the second agent from a written brief, reviewed and merged.
+
 ## 1.6.0-beta.5 — My lessons, autosave, page sections — 2026-11-01
 
 - **Every lesson saves itself.**

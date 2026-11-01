@@ -113,7 +113,7 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Spotlight, curtain (screen cover), timer and stopwatch | ✅ |
 | Magnifier | 🛠 |
 | Random name picker, dice, team scoreboard | ⏳ |
-| Screen capture → new page (freeze a video or slide and write on it) | 🛠 |
+| Screen capture → new page (freeze a screen, window or area and write on it; Ctrl+Shift+C) | ✅ |
 | Video and audio clips on a page | ⏳ |
 
 ## 5. Write over anything (overlay mode)

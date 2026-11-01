@@ -19,9 +19,9 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - ✅ New lesson with a name and a subject or class
 - ✅ My lessons: all lessons filed by subject, with a picture, date and pages; open, rename, copy, delete
 - ✅ Page sections (Warm-up / Example / Practice headings in the page sorter)
-- 🔄 Capture to lesson: freeze a screen, window or area and write on it *(second agent is building it)*
+- ✅ Capture to lesson: freeze a screen, window or area and write on it *(built by the second agent)*
 - ⬜ Light and dark mode for the whole app (toolbars, menus, sheets), plus print-friendly PDFs of dark boards
-- ⬜ Study of the whole Note 3 app, with a report and screenshots *(second agent, after Capture)*
+- 🔄 Study of the whole Note 3 app, with a report and screenshots *(second agent is doing it now)*
 - ⬜ Export preview *(later: polish)*
 
 ## Step 2: reusable teaching content
@@ -45,4 +45,4 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - ⬜ AI lecture notes from the teacher's voice and board (faithful by default)
 
 ---
-*Updated 2026-11-01 · version 1.6.0-beta.5.*
+*Updated 2026-11-01 · version 1.6.0-beta.6.*

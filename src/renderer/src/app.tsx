@@ -20,6 +20,7 @@ import { ReplayPanel, ReplayCanvas, ReplayControls, RecordingControls } from '@/
 import { Dialog } from '@/ui/Dialog'
 import { SharePanel } from '@/ui/Share'
 import { LessonLibrary, NewLessonSheet } from '@/ui/Lessons'
+import { CapturePanel } from '@/ui/Capture'
 import { lesson } from '@/state/lesson'
 import { ScienceUI } from '@/ui/science/Science'
 import { PageBar, ImportStatus } from '@/ui/Insert'
@@ -242,6 +243,7 @@ export function App(): JSX.Element {
       {S.popover.value === 'new-lesson' && <NewLessonSheet />}
       <Dialog />
       <SharePanel />
+      <CapturePanel />
       {S.ready.value && !S.layoutChosen.value && <LayoutChooser />}
       {(!S.ready.value || S.closing.value) && <div class="loading-cover" role="status">
         <span>{S.closing.value ? 'Saving before closing…' : S.saveError.value ? 'Could not load your board' : 'Loading your board…'}</span>

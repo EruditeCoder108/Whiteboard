@@ -6,6 +6,7 @@ import { S } from './store'
 import { dialog } from './dialog'
 import { replay } from './replay'
 import { clipboardImage, pasteClipboardImage, refreshClipboardImage } from './insert'
+import { capture } from './capture'
 
 /** Registers all keyboard shortcuts; returns an unsubscribe function. */
 export function installShortcuts(cancelRadial: () => void): () => void {
@@ -82,7 +83,7 @@ export function installShortcuts(cancelRadial: () => void): () => void {
         case 'c':
           if (shift) {
             e.preventDefault()
-            return void actions.copyImage()
+            return void capture.open()
           }
           e.preventDefault()
           if (board.selection.length) { clipboardImage.value = false; void navigator.clipboard.writeText('').catch(() => {}) }
