@@ -1,0 +1,45 @@
+# Checklist 1 (finished)
+
+Kept for the record. The current list is `CHECKLIST.md`.
+
+Plain-language progress. ✅ done · 🔄 being built now · ⬜ not started.
+The full feature list is in `FEATURES.md`; the details of each release are in `CHANGELOG.md`.
+
+## Step 1: make a lesson dependable (Note 3 deep dive)
+
+- ✅ A lesson remembers its board colour, paper and page names (opens the same on any PC)
+- ✅ Notebook ⇄ canvas keeps every page's paper
+- ✅ Pictures and PDFs look like the board (paper and colour included, long pages split by screen)
+- ✅ Undo for page changes (delete, move, copy, convert); page names
+- ✅ Papers: spacing, strength, line colour, "All pages", restore as designed
+- ✅ Writing papers no longer stretch or crowd when you zoom a canvas
+- ✅ New papers: isometric dots and grid; lesson layouts (two/three columns, worked example, exit ticket)
+- ✅ Your own picture behind the writing (worksheets, diagrams), kept safe when you erase
+- ✅ Realistic boards: chalkboard, green board, slate, navy, paper, brown paper
+- ✅ Share to phones: QR code over school Wi-Fi *(built by the second agent)*
+- ✅ Every lesson saves itself to its own file; no more "save first?" questions
+- ✅ New lesson with a name and a subject or class
+- ✅ My lessons: all lessons filed by subject, with a picture, date and pages; open, rename, copy, delete
+- ✅ Page sections (Warm-up / Example / Practice headings in the page sorter)
+- ✅ Capture to lesson: freeze a screen, window or area and write on it *(built by the second agent)*
+
+## Step 2: reusable teaching content
+
+- ✅ My shelf: save a drawing, diagram or whole page once, reuse it in any lesson, carry it to another PC
+- ✅ Tables (type in cells, Hindi too; rows grow to fit; add, remove and drag rows and columns)
+- ✅ Arrows that stay attached when boxes move (mind maps, flowcharts, labels on diagrams)
+- ✅ Number line and coordinate axes as real tools (fractions, units, marked points)
+- ✅ Prepared reveals (hide an answer, tap to show, one big Next button)
+
+**End of Step 2 (moved here from Step 1):**
+- ✅ Light and dark mode for the whole app (toolbars, menus, sheets), plus print-friendly PDFs of dark boards
+- ✅ Study of the whole Note 3 app (`note3-study\Note-3-Final-Report.pdf`). Built from it: calculator, periodic table, writing strips. The rest of its ideas moved to Checklist 2.
+- ✅ Export preview: see the pages before saving the PDF, and leave some out
+
+## Moved to Checklist 2
+
+- Testing on a real smart board (it was Step 3)
+- The big tracks: Lesson Kit, lecture recording, AI lecture notes
+
+---
+*Closed 2026-11-01 · version 1.6.0-beta.10.*

@@ -1,20 +1,21 @@
 # Next chat handoff
 
-**Updated 1 November 2026 (Step 2 built; only the Note 3 study left; 1.6.0-beta.10).** Read this first in every new chat, then update it before the chat ends
+**Updated 1 November 2026 (Checklist 1 closed; Checklist 2 started; 1.6.0-beta.10).** Read this first in every new chat, then update it before the chat ends
 (see the last section). Paths are relative to the repository root
 `D:\Projects 2\whiteboard\app` unless they start with a drive letter.
 
-## Start here: the one task waiting
+## Start here: Checklist 2
 
-**The only thing left from the current plan is the Note 3 study.** The owner has completed it. The result is one PDF:
+**Checklist 1 is closed. The plan is now `docs/CHECKLIST.md` (Checklist 2).** The owner's order:
 
-`D:\Projects 2\whiteboard\note3-study\study-export.pdf`
+1. **Step 1: make the board on par with, and better than, every other whiteboard app**, with Note 3 as the baseline, improving it in every way. The look must feel **natural and organic**: a settings button is a gear people recognise, a paintbrush looks like a paintbrush.
+2. **Step 2: the animation library. Step 3: lectures and AI.**
+3. **Step 4, last: the large collection of scientific tools.** Not before.
 
-- **Read that PDF. Do not open, list or view the images in the `note3-study` folder.** There are hundreds, and they will bloat the chat. The older `REPORT.md` there is an unfinished draft from the second agent: the PDF replaces it.
-- **The PDF is large (about 71 MB).** Pull out its text first and read it in small page ranges. Look at a page as a picture only when the text does not say enough.
-- Then act on it as the owner directs in the chat, and close the Note 3 line in `docs/CHECKLIST.md` when that is done.
-- **Everything after that is the owner's call.** They will say what comes next. Do not start Step 3, the big tracks or second-agent tasks on your own. The rest of this file is how we work and how the code is built, not a list of orders.
-- **Branch:** this file is on `feature/note3-study`, which is where the study work goes. Do not merge it for one small change; see §6 for when PRs and installs happen.
+- **The Note 3 study is finished:** `D:\Projects 2\whiteboard\note3-study\Note-3-Final-Report.pdf` (4 pages). **Do not open or list the images in that folder.** `study-export.pdf` there is only a one-page test export. The owner says the report is **not fully right and the lead decides**: treat it as input, not orders. Its ratings of our app come from the docs, not the code. The lead's main changes are in the checklist: it adds a tool per input, student zones, PowerPoint import and a phone poll, and it puts writing feel ahead of new features.
+- **Icons belong to the second agent,** on `feature/organic-icons`, from `docs/agent-tasks/organic-icons.md`. It generates transparent pictures for the buttons and adds `ui/icons.tsx`, which exports the same names as `lucide-preact`. **Do not do icon work here.** Hold section A's look pass until that branch is merged; new UI code imports icons from `./icons` after that.
+- **Next for the lead:** sections B onward of Step 1, in order, once the owner says go.
+- **Branch:** start one from `main` for Step 1. See §6 for when PRs and installs happen.
 
 ---
 
@@ -43,7 +44,7 @@ The gesture ring is a separate college project and is **not** part of the produc
 | **The owner's Note3 deep dive: the working guide for the next chats** | `docs/NOTE3-COMPETITIVE-DEEP-DIVE-2026-11-01.md`, written by the owner. **Read it fully.** Commit it on the first branch. |
 | 3D/asset licence research | `docs/EDUCATIONAL-3D-ASSETS-RESEARCH.md` |
 | Release history | `CHANGELOG.md` |
-| **The owner's progress checklist (plain language)** | `docs/CHECKLIST.md`. **Work through it in order; tick it after every milestone.** |
+| **The owner's progress checklist (plain language)** | `docs/CHECKLIST.md` (Checklist 2). **Work through it in order; tick it after every milestone.** The finished first list: `docs/CHECKLIST-1-done.md`. |
 | GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#14 merged, `main` = 1.6.0-beta.10 |
 | Installed app (owner's laptop) | `%LOCALAPPDATA%\Programs\Floating Whiteboard` (per-user NSIS install, Start menu + desktop shortcut) |
 | Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.10.exe` (ignored by git). **Rebuilt per whole checklist step: see §6.** |
@@ -51,24 +52,23 @@ The gesture ring is a separate college project and is **not** part of the produc
 
 ## 3. State right now
 
-- **`docs/CHECKLIST.md` is the owner's plain-language progress list and the plan.** Step 1 is done (apart from
-  three items moved to the end of Step 2). Tick items (✅ / 🔄 / ⬜) whenever a milestone starts or finishes; keep it
+- **`docs/CHECKLIST.md` is the owner's plain-language progress list and the plan.** Checklist 1 is finished and archived. Tick items (✅ / 🔄 / ⬜) whenever a milestone starts or finishes; keep it
   short and jargon-free. `FEATURES.md` stays the detailed feature list.
-- `main` = **1.6.0-beta.10**, installed on the owner's laptop. **All of Step 2 is built and merged** (PRs #11–#14): My shelf, attached arrows, number line and axes, tables, reveals, light/dark mode, print-friendly PDFs, export preview, calculator, periodic table, writing strips. Only the Note 3 line stays open (see "Start here"). Built before it (see `CHANGELOG.md`):
+- `main` = **1.6.0-beta.10**, installed on the owner's laptop. **All of Step 2 is built and merged** (PRs #11–#14): My shelf, attached arrows, number line and axes, tables, reveals, light/dark mode, print-friendly PDFs, export preview, calculator, periodic table, writing strips. Built before it (see `CHANGELOG.md`):
   - lesson integrity (F1–F6, F9; PR #4);
   - Background & paper (§6; PR #5);
   - Share to phones (second agent; PR #6);
   - textured board surfaces (PR #7);
   - My lessons + autosave + page sections (PR #8);
   - Capture to lesson (second agent; PR #9).
-- **Owner's direction (2026-11-01):** a *professional* smart-board app, finished properly and not rushed. On the checklist, Step 3 is real-panel testing and a new checklist for the big tracks (Lesson Kit library, lecture recording, AI notes) comes after it. **The owner decides what follows the Note 3 study.** Board textures are "almost enough"; tune them only if asked.
+- **Owner's direction (2026-11-01):** a *professional* smart-board app, finished properly and not rushed. Checklist 2 holds the order (see "Start here"); real-panel testing is now section I of its Step 1. Board textures are "almost enough"; tune them only if asked.
 - **A second agent (ChatGPT) works in parallel** from written briefs in `docs/agent-tasks/` (the owner pastes them).
   - It works in its own worktree (`D:\Projects 2\whiteboard\app-<task>`), pushes its branch and never merges.
   - The lead reviews, merges through a PR, and writes the CHANGELOG/FEATURES/CHECKLIST entries. The owner now trusts
     it: review lightly (safety-critical parts plus the merge), then polish.
-  - Done: `qr-share.md` and `capture.md`.
+  - Done: `qr-share.md` and `capture.md`. **Waiting on it:** `organic-icons.md`.
   - Its Note 3 study is superseded by the owner's own PDF (see "Start here"). The lead built Tables at the owner's request.
-  - **No brief is waiting.** Write one only when the owner asks. A good independent task if they do: logarithmic, polar and map papers (mostly new files).
+  - Write further briefs only when the owner asks. A good independent task if they do: logarithmic, polar and map papers (mostly new files).
 - **Note 3 is installed on this PC** (Start menu name "Note"; its window belongs to `note.exe` / `easirunner.exe`). Do not drive it unless the owner asks: the study is done.
 - **Deep dive progress:**
   - **Done:** §7 F1–F6 and F9 (titles + sections); §6 (all of 6.2–6.8); §9 Capture, local QR share, organised lessons
@@ -90,13 +90,12 @@ The gesture ring is a separate college project and is **not** part of the produc
 
 ## 4. What to do next
 
-**First the Note 3 study ("Start here" above). After that the owner says what to do.** The notes below are background for when they do.
+**Checklist 2, in order ("Start here" above).** The notes below are background.
 
 The owner's deep dive (`docs/NOTE3-COMPETITIVE-DEEP-DIVE-2026-11-01.md`) has been the working guide: use its priorities and its "required outcome" for each item. Where it and `MASTER-PLAN.md` disagree on order, its "make a whole lesson dependable first" wins.
 
 **A. On the checklist:**
-- **Step 3:** real-panel acceptance with the owner (pen/palm, two writers F7, scaling, a slow PC). It needs a panel.
-- Then a new checklist for the big tracks (B below), made with the owner.
+- **Step 1, section I:** real-panel acceptance with the owner (pen/palm, two writers F7, scaling, a slow PC). It needs a panel.
 
 The look of a page is `PageLook` (`engine/pages.ts`): paper, color, title, origin, spacing, strength, lines, art.
 `engine/scene.ts` turns it into a `Backdrop` painted everywhere; `engine/grid.ts` plans each paper as `PaperPass`es
@@ -192,7 +191,7 @@ Electron 44 + electron-vite, Preact + `@preact/signals`, Canvas2D, TypeScript.
 - **AI notes are faithful by default** (see above). AI reads the board pages and diagrams.
 - **Smart board first:** big targets, everything reachable at the bottom and sides, no hover-only UI,
   internals hidden.
-- Free and open-source assets only (CC0/PD/CC BY/CC BY-SA; never NC/ND). No AI-slop visuals.
+- Free and open-source assets only (CC0/PD/CC BY/CC BY-SA; never NC/ND). No AI-slop visuals. **Exception chosen by the owner (1 Nov 2026):** interface icons and pictures are AI-generated by the second agent, with a strict shared style and each one checked by eye; `assets/art/SOURCES.md` records them.
 - **One PR and one laptop install per whole checklist step, not per item, and do not stop to ask between items** (owner, 1 Nov 2026): spend tokens and usage on building the app. Mid-task, just continue.
 - **Keep context small:** never view whole folders of images or large files when the text or a small part will do (the owner has asked for this by name).
 - **When a chat gets long and the next task is new, not a continuation:** update this file and give
