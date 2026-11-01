@@ -12,7 +12,7 @@ import type { BoardMeta, PageData, ParsedBoard } from './serialize'
 import { EraserTool, HandTool, LaserTool, PenTool, SelectTool, ShapeTool, TextTool } from './tools'
 import type { Tool, ToolHost } from './tool-types'
 import { newId } from './types'
-import type { Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, LabItem, ImageItem, GraphItem } from './types'
+import type { Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, LabItem, ImageItem, GraphItem, ScaleItem } from './types'
 import { onImageReady, preloadImages } from './media'
 import { Instruments } from './instruments'
 import { MAX_ZOOM, MIN_ZOOM, fitRect, panBy as panView, toWorld, zoomAboutCentre, zoomAt } from './view'
@@ -840,10 +840,10 @@ export class Board implements ToolHost {
   editTextAt(wx: number, wy: number): void {
     const it = [...this.doc.items].reverse().find(it => hitObject(it, wx, wy, 6 / this.view.zoom))
     if (it && (it.t === 't' || it.t === 'h')) this.editText(it)
-    else if (it && !it.locked && ((it.t === 'i' && it.latex !== undefined) || it.t === 'g')) this.onEditMedia?.(it)
+    else if (it && !it.locked && ((it.t === 'i' && it.latex !== undefined) || it.t === 'g' || it.t === 'n')) this.onEditMedia?.(it)
   }
   /** opens the equation or graph editor (wired by the UI) */
-  onEditMedia: ((it: ImageItem | GraphItem) => void) | null = null
+  onEditMedia: ((it: ImageItem | GraphItem | ScaleItem) => void) | null = null
 
   updateTextDraft(text: string): void {
     const draft = S.editing.value
@@ -1795,6 +1795,27 @@ export class Board implements ToolHost {
     this.commitAdd(it)
     this.setSelection([it])
     return it
+  }
+
+  /** A number line or axes on this page, selected and ready to move. */
+  insertScale(fields: Omit<ScaleItem, 't' | 'id' | 'w'>): ScaleItem {
+    this.commitText()
+    const it: ScaleItem = { t: 'n', id: newId(), w: 2.5, ...fields }
+    this.setTool('select')
+    this.commitAdd(it)
+    this.setSelection([it])
+    return it
+  }
+
+  updateScale(it: ScaleItem, patch: Partial<Omit<ScaleItem, 't' | 'id'>>): void {
+    const current = this.doc.items.find(x => x.id === it.id)
+    if (!current || current.t !== 'n') return
+    this.editSelectionItems([current], () => {
+      const next = { ...current, ...patch }
+      // A setting taken away leaves nothing behind in the file.
+      for (const key of ['y', 'equal', 'grid', 'points'] as const) if (next[key] === undefined) delete next[key]
+      return next
+    }, 'Edit scale')
   }
 
   updateGraph(it: GraphItem, patch: Partial<Pick<GraphItem, 'fns' | 'xr' | 'yr'>>): void {

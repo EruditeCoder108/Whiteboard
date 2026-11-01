@@ -68,7 +68,7 @@ export function readableOn(items: Item[], from: string, bg: string): Item[] {
   const fix = (c: string): string => contrastRatio(c, bg) < VANISHES && contrastRatio(c, from) >= VANISHES ? readableVersion(c, bg) : c
   return items.map(it => {
     if (it.t === 's') return it.m || fix(it.c) === it.c ? it : { ...it, c: fix(it.c) }
-    if (it.t === 'i' && it.latex !== undefined) return fix(it.c) === it.c ? it : { ...it, c: fix(it.c) } // an equation is drawn in its object's colour
+    if ((it.t === 'i' && it.latex !== undefined) || it.t === 'n') return fix(it.c) === it.c ? it : { ...it, c: fix(it.c) } // drawn in the object's own colour
     if (it.t !== 'h' && it.t !== 't') return it
     const filled = !!it.fill && it.fill !== 'none'
     if (it.t === 't' && (filled || it.note)) return it

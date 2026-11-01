@@ -134,11 +134,39 @@ export interface GraphItem extends ObjectMeta {
   yr: [number, number]
 }
 
-export type Item = StrokeItem | ShapeItem | TextItem | LabItem | ImageItem | GraphItem
-export type BoxItem = TextItem | LabItem | ImageItem | GraphItem
+/** One axis of a number line or coordinate axes: its range, tick step, optional name and unit (see scale.ts). */
+export interface ScaleAxis {
+  min: number
+  max: number
+  step: number
+  /** label the ticks as fractions over this */
+  den?: number
+  name?: string
+}
+
+/** A number line (no `y`) or coordinate axes, drawn as vectors, with points marked by value. */
+export interface ScaleItem extends ObjectMeta {
+  t: 'n'
+  id: string
+  c: string
+  w: number
+  p: Rect
+  angle?: number
+  x: ScaleAxis
+  y?: ScaleAxis
+  grid?: boolean
+  /** one unit is the same length both ways */
+  equal?: boolean
+  points?: [number, number][]
+  /** write each point's value next to it */
+  coords?: boolean
+}
+
+export type Item = StrokeItem | ShapeItem | TextItem | LabItem | ImageItem | GraphItem | ScaleItem
+export type BoxItem = TextItem | LabItem | ImageItem | GraphItem | ScaleItem
 
 /** Objects whose geometry is just their rectangle. */
-export const isBox = (it: Item): it is BoxItem => it.t === 't' || it.t === 'l' || it.t === 'i' || it.t === 'g'
+export const isBox = (it: Item): it is BoxItem => it.t === 't' || it.t === 'l' || it.t === 'i' || it.t === 'g' || it.t === 'n'
 
 export const MARKER_ALPHA = 0.4
 

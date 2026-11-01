@@ -1072,3 +1072,41 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .shelf-foot span { flex: 1; min-width: 220px; color: var(--muted); font-size: 13px; }
 .shelf-foot .dialog-btn { min-height: 48px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
 .shelf-foot .dialog-btn:disabled { opacity: .5; }
+
+/* ── number line and axes ───────────────────────────────────────────────── */
+.scale-sheet { z-index: 125; }
+.scale-card { width: min(1120px, 100%); max-height: 100%; overflow-y: auto; text-align: left; display: flex; flex-direction: column; gap: 14px; }
+.scale-card h1 { margin: 0; }
+.scale-body { display: flex; gap: 20px; flex-wrap: wrap; }
+.scale-left { flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.scale-left small { color: var(--muted); font-size: 13px; }
+.scale-preview { width: 100%; aspect-ratio: 520 / 330; border-radius: 12px; box-shadow: 0 0 0 1px var(--line); touch-action: none; cursor: crosshair; }
+.scale-switches { display: flex; flex-wrap: wrap; gap: 10px 20px; }
+.scale-switches label { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; font-weight: 600; }
+.scale-right { flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.scale-right .seg { height: 48px; }
+.scale-right .seg button { height: 100%; font-size: 15px; font-weight: 600; touch-action: manipulation; }
+.scale-presets { margin-top: 0; }
+.scale-presets .chip { min-height: 44px; padding: 0 14px; }
+.scale-axis { border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.scale-axis legend { padding: 0 6px; font-size: 13px; font-weight: 700; }
+.scale-bounds { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.scale-bound { display: flex; align-items: center; gap: 4px; flex: 1 1 190px; }
+.scale-bound > span { width: 40px; font-size: 13px; font-weight: 700; }
+.scale-bound input, .scale-steps input { width: 64px; min-width: 0; flex: 1; height: 44px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--panel); color: var(--text); font: 600 16px/1 inherit; text-align: center; padding: 0 4px; }
+.scale-bump { width: 44px; height: 44px; flex: none; border-radius: 10px; background: var(--hover); display: grid; place-items: center; touch-action: manipulation; }
+.scale-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.scale-steps > span { width: 40px; font-size: 13px; font-weight: 700; }
+.scale-steps .chip { min-width: 44px; min-height: 44px; }
+.scale-steps input { flex: 0 1 72px; }
+.scale-name { height: 44px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--panel); color: var(--text); font: 500 15px/1 inherit; padding: 0 12px; min-width: 0; }
+.scale-axis input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.scale-problem { margin: 0; color: var(--danger); font-size: 14px; font-weight: 600; }
+.scale-actions { flex-direction: row; }
+.scale-actions .dialog-btn { flex: 1; }
+.scale-actions .dialog-btn:disabled { opacity: .5; }
+.window.board.dark .scale-card {
+  --panel: rgba(30, 35, 46, .98); --text: #e8ebf2; --muted: #9aa3b5; --line: rgba(255, 255, 255, .12);
+  --hover: rgba(255, 255, 255, .08); --accent: #6c8cff; --accent-soft: rgba(108, 140, 255, .2);
+  background: var(--panel); color: var(--text);
+}

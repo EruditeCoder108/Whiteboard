@@ -26,7 +26,8 @@ import { lesson } from '@/state/lesson'
 import { ScienceUI } from '@/ui/science/Science'
 import { PageBar, ImportStatus } from '@/ui/Insert'
 import { CurtainLayer, SpotlightLayer, TimerWidget } from '@/ui/Present'
-import { editEquation, editGraph, insertFiles } from '@/state/insert'
+import { editEquation, editGraph, editScale, insertFiles, scaleTarget } from '@/state/insert'
+import { ScaleEditor } from '@/ui/Scale'
 
 const agentForPanel = new BoardAgent(board, replay)
 
@@ -90,7 +91,7 @@ export function App(): JSX.Element {
       autosave.markDirty()
     }
     board.onEdit = (label, timing) => replay.capture(label, timing)
-    board.onEditMedia = it => it.t === 'g' ? editGraph(it) : editEquation(it)
+    board.onEditMedia = it => it.t === 'g' ? editGraph(it) : it.t === 'n' ? editScale(it) : editEquation(it)
     const onDragOver = (e: DragEvent): void => { if (e.dataTransfer?.types.includes('Files')) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' } }
     const onDrop = (e: DragEvent): void => {
       const files = [...e.dataTransfer?.files ?? []]
@@ -242,6 +243,7 @@ export function App(): JSX.Element {
       <PalmCalibration />
       {S.popover.value === 'lessons' && <LessonLibrary />}
       {S.popover.value === 'new-lesson' && <NewLessonSheet />}
+      {S.popover.value === 'scale' && <ScaleEditor key={scaleTarget.value?.id ?? 'new'} />}
       {S.popover.value === 'shelf' && <ShelfSheet />}
       {S.popover.value === 'shelf-save' && <ShelfSaveSheet />}
       <Dialog />

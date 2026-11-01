@@ -1,4 +1,5 @@
-import type { Anchor, GraphItem, ImageItem, Item, ObjectMeta, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
+import { MAX_POINTS, validAxis } from './scale'
+import type { Anchor, GraphItem, ImageItem, Item, ObjectMeta, ScaleAxis, ScaleItem, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
 import { assetKey } from './media'
 import { artJson, hasLook, isBoardKind, lookJson, validArt, validLook, validLookFrame } from './pages'
 import type { Artwork, BoardKind, Frame, LookFrame, PageLook } from './pages'
@@ -40,6 +41,7 @@ export function itemToJson(it: Item): unknown {
   const meta: ObjectMeta = { group: it.group, locked: it.locked, opacity: it.opacity }
   if (it.t === 'l') return { ...it, p: [...it.p], params: { ...it.params }, reveal: { ...it.reveal }, ...(it.gesture ? { gesture: it.gesture.map(p => ({ ...p })) } : {}) }
   if (it.t === 'i') return { t: 'i', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, src: it.src, aspect: it.aspect, latex: it.latex, ...meta }
+  if (it.t === 'n') return { t: 'n', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, x: { ...it.x }, y: it.y && { ...it.y }, grid: it.grid, equal: it.equal, points: it.points?.map(q => [...q]), coords: it.coords, ...meta }
   if (it.t === 'g') return { t: 'g', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, fns: [...it.fns], xr: [...it.xr], yr: [...it.yr], ...meta }
   if (it.t === 's') {
     const p: number[] = new Array(it.p.length)
@@ -136,6 +138,21 @@ export function itemFromJson(raw: unknown): Item | null {
     if (o.gesture !== undefined) it.gesture = (o.gesture as LabItem['gesture'])!.map(p => ({ ...p }))
     if (getModel(it.model) && it.modelVersion === 1 && it.labVersion === 1 && it.frozenTime > labDuration(it) + 1e-8) return null
     return it
+  }
+  if (o.t === 'n') {
+    const p = o.p as number[]
+    if (p.length !== 4 || !p.every(isCoord) || p[2] <= p[0] || p[3] <= p[1]) return null
+    if (o.angle !== undefined && (!isNum(o.angle) || Math.abs(o.angle) > 1e6)) return null
+    if (!validAxis(o.x) || (o.y !== undefined && !validAxis(o.y))) return null
+    if (o.points !== undefined && (!Array.isArray(o.points) || o.points.length > MAX_POINTS || !o.points.every(q => Array.isArray(q) && q.length === 2 && q.every(isNum)))) return null
+    const scale: ScaleItem = { t: 'n', id, c: o.c, w: o.w, p: [p[0], p[1], p[2], p[3]], ...meta, x: { ...(o.x as ScaleAxis) } }
+    if (o.angle !== undefined) scale.angle = o.angle as number
+    if (o.y !== undefined) scale.y = { ...(o.y as ScaleAxis) }
+    if (o.grid === true) scale.grid = true
+    if (o.equal === true) scale.equal = true
+    if (o.coords === true) scale.coords = true
+    if (o.points !== undefined) scale.points = (o.points as [number, number][]).map(q => [q[0], q[1]])
+    return scale
   }
   if (o.t === 'i' || o.t === 'g') {
     const p = o.p as number[]
