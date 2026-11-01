@@ -22,6 +22,8 @@ trailer << /Root 1 0 R >>
 let { app, page, logs, userData } = await launch()
 try {
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setBounds({ x: 4000, y: 100, width: 1100, height: 750 }))
+  // Pages, PDF worksheets and page export are notebook features (a laptop starts on a canvas).
+  await fw(page, w => w.board.convertTo('notebook'))
   await page.waitForTimeout(200)
 
   // Picture from a generated PNG file, as if dropped or picked.

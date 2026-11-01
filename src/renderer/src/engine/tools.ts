@@ -113,11 +113,19 @@ export class PenTool implements Tool {
   }
 
   predict(pts: Ptr[]): void {
-    // At most ~30 ms ahead, and only along the current direction of travel.
+    // At most ~30 ms ahead, only roughly along the current direction of travel and never further
+    // than the last real step or two: a wild guess flickering ahead of the pen looks worse than lag.
     this.ahead = []
-    if (!this.live || this.snapped || !pts.length) return
-    const last = pts.filter(p => p.t - pts[0].t < .03).at(-1)!
-    this.ahead.push(last.wx, last.wy, this.pressure)
+    if (!this.live || this.snapped || !pts.length || this.pts.length < 6) return
+    const guess = pts.filter(p => p.t - pts[0].t < .03).at(-1)!
+    const n = this.pts.length, lx = this.pts[n - 3], ly = this.pts[n - 2], px = this.pts[n - 6], py = this.pts[n - 5]
+    const step = Math.hypot(lx - px, ly - py)
+    let dx = guess.wx - lx, dy = guess.wy - ly
+    const len = Math.hypot(dx, dy)
+    if (!len || !step || (dx * (lx - px) + dy * (ly - py)) < .5 * len * step) return
+    const cap = Math.min(len, step * 2, 24 / this.host.view.zoom)
+    dx *= cap / len; dy *= cap / len
+    this.ahead.push(lx + dx, ly + dy, this.pressure)
   }
 
   private armHold(p: Ptr): void {
@@ -304,7 +312,7 @@ export class EraserTool implements Tool {
 
   /** eraser radius in world units (the eraser keeps a constant on-screen size) */
   private radius(): number {
-    return S.eraserSize.value / 2 / this.host.view.zoom
+    return Math.max(S.eraserSize.value, S.palm.value) / 2 / this.host.view.zoom
   }
 
   down(p: Ptr): void {
@@ -356,7 +364,7 @@ export class EraserTool implements Tool {
     const r = this.radius()
     const box: Rect = [Math.min(x0, x1) - r, Math.min(y0, y1) - r, Math.max(x0, x1) + r, Math.max(y0, y1) + r]
     const cands: Item[] = []
-    const pixel = S.eraserMode.value === 'pixel'
+    const pixel = S.eraserMode.value === 'pixel' || S.palm.value > 0 // a palm wipes like a real duster
     for (const it of doc.items) {
       if (it.locked || isBox(it) || (pixel && it.t === 'h' && (it.text || (it.fill && it.fill !== 'none')))) continue
       if (rectsHit(itemBounds(it), box)) cands.push(it)
@@ -404,7 +412,7 @@ export class EraserTool implements Tool {
   paintOverlay(ctx: CanvasRenderingContext2D): void {
     if (!this.at) return
     const rad = S.eraserSize.value / 2
-    const pixel = S.eraserMode.value === 'pixel'
+    const pixel = S.eraserMode.value === 'pixel' || S.palm.value > 0 // a palm wipes like a real duster
     const dark = isDarkBg.value
     const edge = dark ? 'rgba(255,255,255,0.85)' : 'rgba(30,34,50,0.8)'
     ctx.save()

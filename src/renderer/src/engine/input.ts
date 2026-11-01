@@ -6,6 +6,14 @@ import { S, activeTool } from '@/state/store'
 
 const LONG_PRESS_SLOP = 9
 const PEN_PALM_MS = 700
+/** A landing palm starts small and spreads; it can still turn into the eraser this long after touching down. */
+const PALM_GROW_MS = 160
+
+/** Contact diameter of a touch in CSS px, or 0 when the screen does not report it. */
+export const contactSize = (e: PointerEvent): number => {
+  const s = Math.max(e.width || 0, e.height || 0)
+  return s > 1.5 ? s : 0
+}
 
 type Mode = 'idle' | 'tool' | 'pan' | 'pinch' | 'radial' | 'window'
 
@@ -17,6 +25,8 @@ type Mode = 'idle' | 'tool' | 'pan' | 'pinch' | 'radial' | 'window'
  *  - mouse:  left draws · middle/right pans · wheel pans · Ctrl+wheel zooms
  *  - press-and-hold (any device) opens the radial menu
  *  - touch is ignored while a pen is near (palm rejection)
+ *  - on touch panels a palm-sized contact erases (palm erase), sized to the hand
+ *  - page mode: a two-finger sideways swipe turns the page (when not zoomed in)
  */
 export class InputRouter {
   private mode: Mode = 'idle'
@@ -24,9 +34,15 @@ export class InputRouter {
   private tool: Tool | null = null
   private touches = new Map<number, { x: number; y: number }>()
   private penUntil = 0
+  /** a palm is erasing; extra contacts from the same hand are ignored */
+  private palm = false
+  private toolSince = 0
   private space = false
   private lastPan: [number, number] = [0, 0]
   private pinch: { cx: number; cy: number; d: number } | null = null
+  /** where a two-finger gesture began, and what it turned out to be */
+  private pinchStart = new Map<number, { x: number; y: number }>()
+  private pinchIntent: 'undecided' | 'turn' | 'move' = 'move'
   private longTimer = 0
   private pressAt = { x: 0, y: 0, cx: 0, cy: 0, t: 0 }
   private winDrag: { sx: number; sy: number; b: { x: number; y: number } | null } | null = null
@@ -142,11 +158,44 @@ export class InputRouter {
       this.beginPan(e)
       return
     }
+    this.toolSince = performance.now()
     const instruments = this.board.instruments
     this.tool = instruments.active ? instruments.intercept(p) ?? instruments.snapTool(this.board.currentTool(), p) : this.board.currentTool()
     this.mode = 'tool'
     this.tool.down(p)
     if (this.tool.allowsRadial) this.armLongPress(e, p)
+  }
+
+  /** Contact sizes of recent touches: what a fingertip looks like on this particular screen. */
+  private touchSizes: number[] = []
+
+  /**
+   * A palm is much bigger than this screen's usual touch. Pixel sizes alone can't decide it:
+   * a fingertip covers ~15 px on an 86" panel but 60+ px on a laptop touchscreen. So a contact
+   * must pass the calibrated size AND be well above the median of the last few touches.
+   */
+  private isPalm(e: PointerEvent): boolean {
+    const size = contactSize(e)
+    if (!S.palmErase.value || !size || size < S.palmSize.value || this.touchSizes.length < 3) return false
+    const sorted = [...this.touchSizes].sort((a, b) => a - b)
+    return size >= sorted[sorted.length >> 1] * 1.8
+  }
+
+  private noteTouch(e: PointerEvent): void {
+    const size = contactSize(e)
+    if (!size) return
+    this.touchSizes.push(size)
+    if (this.touchSizes.length > 15) this.touchSizes.shift()
+  }
+
+  /** Erase with the palm for as long as it touches, then go back to the chosen tool. */
+  private beginPalm(e: PointerEvent): void {
+    this.palm = true
+    S.palm.value = contactSize(e) * 1.15
+    S.override.value = 'eraser'
+    this.beginTool(e)
+    window.clearTimeout(this.longTimer)
+    this.longTimer = 0
   }
 
   private beginPan(e: PointerEvent): void {
@@ -180,6 +229,7 @@ export class InputRouter {
 
   private endGesture(p: Ptr | null): void {
     window.clearTimeout(this.longTimer)
+    const palm = this.palm
     const mode = this.mode
     this.mode = 'idle'
     this.primary = null
@@ -193,7 +243,15 @@ export class InputRouter {
       this.winDrag = null
     }
     this.tool = null
+    if (palm) this.endPalm()
     this.el.style.cursor = this.space ? 'grab' : this.board.currentTool().cursor()
+  }
+
+  private endPalm(): void {
+    this.palm = false
+    S.palm.value = 0
+    if (S.override.value === 'eraser') S.override.value = null
+    this.board.currentTool().leave?.()
   }
 
   /** Throw away whatever is in progress (focus loss, 2nd finger, Esc …). */
@@ -207,6 +265,8 @@ export class InputRouter {
     this.tool = null
     this.pinch = null
     this.touches.clear()
+    this.palm = false
+    S.palm.value = 0
     S.override.value = null
     this.board.currentTool().leave?.()
     this.el.style.cursor = this.board.currentTool().cursor()
@@ -231,10 +291,21 @@ export class InputRouter {
       if (this.penRecent()) return // palm
       const r = this.el.getBoundingClientRect()
       this.touches.set(e.pointerId, { x: e.clientX - r.left, y: e.clientY - r.top })
+      if (this.palm) return // the rest of the hand
+      const palm = this.isPalm(e)
+      this.noteTouch(e)
       if (this.touches.size === 1 && this.mode === 'idle') {
-        if (S.fingerDraw.value || activeTool.value === 'laser') this.beginTool(e)
+        if (palm) this.beginPalm(e)
+        else if (S.fingerDraw.value || activeTool.value === 'laser') this.beginTool(e)
         else this.beginPan(e)
       } else if (this.touches.size >= 2) {
+        if (palm && !(this.mode === 'tool' && this.tool?.underway())) {
+          // a palm landing next to a finger: erase with the palm, drop the finger
+          if (this.mode === 'tool') this.tool?.cancel()
+          this.mode = 'idle'
+          this.beginPalm(e)
+          return
+        }
         const busy = this.mode === 'tool' && this.tool?.underway()
         if (busy) return // keep following the first finger
         window.clearTimeout(this.longTimer)
@@ -291,6 +362,15 @@ export class InputRouter {
       const r = this.el.getBoundingClientRect()
       if (this.touches.has(e.pointerId)) this.touches.set(e.pointerId, { x: e.clientX - r.left, y: e.clientY - r.top })
       if (this.mode === 'pinch') return this.updatePinch()
+      if (this.palm && e.pointerId === this.primary) S.palm.value = Math.max(S.palm.value, contactSize(e) * 1.15)
+      else if (this.mode === 'tool' && e.pointerId === this.primary && this.isPalm(e) && performance.now() - this.toolSince < PALM_GROW_MS) {
+        // the "finger" was the edge of a landing palm: drop its few points and erase instead
+        this.tool?.cancel()
+        this.tool = null
+        this.mode = 'idle'
+        this.beginPalm(e)
+        return
+      }
     }
 
     switch (this.mode) {
@@ -322,7 +402,7 @@ export class InputRouter {
           this.tool.move(p)
         }
         // Drawing a frame ahead of the hardware hides most of the display latency.
-        if (this.tool.predict) this.tool.predict((e.getPredictedEvents?.() ?? []).map(pe => this.toPtr(pe)))
+        if (this.tool.predict && e.pointerType !== 'mouse') this.tool.predict((e.getPredictedEvents?.() ?? []).map(pe => this.toPtr(pe)))
         if (this.longTimer) {
           const p = this.toPtr(e)
           if (Math.hypot(p.x - this.pressAt.x, p.y - this.pressAt.y) > LONG_PRESS_SLOP) {
@@ -380,6 +460,26 @@ export class InputRouter {
       cy: (pts[0].y + pts[1].y) / 2,
       d: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y)
     }
+    this.pinchStart = new Map([...this.touches].slice(0, 2).map(([id, p]) => [id, { ...p }]))
+    // On a whole page, wait to see whether two fingers swipe (turn the page) or pinch/scroll.
+    this.pinchIntent = this.board.paged && this.board.atFit ? 'undecided' : 'move'
+  }
+
+  /**
+   * Page mode: both fingers sliding the same way sideways turn the page; fingers moving apart,
+   * together or up and down zoom or scroll. Each finger is judged on its own because a panel
+   * reports them one after the other, so mid-swipe their spacing briefly looks like a pinch.
+   */
+  private decideSwipe(): void {
+    const moves = [...this.pinchStart].map(([id, s]) => { const p = this.touches.get(id); return p ? [p.x - s.x, p.y - s.y] : [0, 0] })
+    if (moves.length < 2) return
+    const [[ax, ay], [bx, by]] = moves
+    const opposite = Math.sign(ax) !== Math.sign(bx) && Math.min(Math.abs(ax), Math.abs(bx)) > 24
+    if (opposite || Math.max(Math.abs(ay), Math.abs(by)) > 50) { this.pinchIntent = 'move'; return }
+    if (Math.min(Math.abs(ax), Math.abs(bx)) > 80 && Math.sign(ax) === Math.sign(bx)) {
+      this.pinchIntent = 'turn'
+      this.board.turnPage(ax < 0 ? 1 : -1)
+    }
   }
 
   private updatePinch(): void {
@@ -388,6 +488,8 @@ export class InputRouter {
     const cx = (pts[0].x + pts[1].x) / 2
     const cy = (pts[0].y + pts[1].y) / 2
     const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y)
+    if (this.pinchIntent === 'undecided') this.decideSwipe()
+    if (this.pinchIntent !== 'move') { this.pinch = { cx, cy, d }; return }
     if (this.pinch.d > 12 && d > 12) this.board.zoomAt(d / this.pinch.d, this.pinch.cx, this.pinch.cy)
     this.board.panBy(cx - this.pinch.cx, cy - this.pinch.cy)
     this.pinch = { cx, cy, d }

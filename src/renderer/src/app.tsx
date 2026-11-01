@@ -6,6 +6,7 @@ import { actions } from '@/state/actions'
 import { installShortcuts } from '@/state/shortcuts'
 import { S, applySettings, boardMode, isDarkBg, showToast, startPersisting } from '@/state/store'
 import { BoardBar, BoardSaveChip, EdgeTabs, LayoutChooser } from '@/ui/Board'
+import { PalmCalibration } from '@/ui/Calibrate'
 import { Autosave } from '@/state/autosave'
 import { Radial } from '@/ui/Radial'
 import { ResizeHandles, Toast } from '@/ui/Chrome'
@@ -104,6 +105,7 @@ export function App(): JSX.Element {
         if (!active) return
         applySettings(rawSettings)
         if (saved.json) board.load(saved.json, { undoable: false })
+        else if (S.layoutChosen.value && boardMode.value) board.convertTo('notebook')
         saveBoardOnClose = saved.json !== null || !saved.message
         settings = startPersisting((d) => window.api.store.saveSettings(d))
         S.ready.value = true
@@ -213,7 +215,7 @@ export function App(): JSX.Element {
 
       {!hidden && (
         <>
-          {onBoard ? <><BoardBar /><EdgeTabs /><BoardSaveChip /></> : <><TopBar /><Dock /><HistoryBar /><ZoomBar /><PageBar /></>}
+          {onBoard ? <><BoardBar /><EdgeTabs /><BoardSaveChip /></> : <><TopBar /><Dock /><HistoryBar />{S.kind.value === 'canvas' && <ZoomBar />}<PageBar /></>}
           <Popovers />
           <AgentPanel agent={agentForPanel} />
           <ReplayPanel />
@@ -228,6 +230,7 @@ export function App(): JSX.Element {
       <TimerWidget />
       <ImportStatus />
       <Toast />
+      <PalmCalibration />
       {S.ready.value && !S.layoutChosen.value && <LayoutChooser />}
       {(!S.ready.value || S.closing.value) && <div class="loading-cover" role="status">
         <span>{S.closing.value ? 'Saving before closing…' : S.saveError.value ? 'Could not load your board' : 'Loading your board…'}</span>

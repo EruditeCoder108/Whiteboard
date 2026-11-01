@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, FilePlus2, FileText, Image as ImageIcon, LineChart, Plus, Sigma, Trash2, FileDown } from 'lucide-preact'
+import { ArrowDownToLine, ChevronLeft, ChevronRight, Focus, FilePlus2, FileText, Image as ImageIcon, LineChart, Plus, Sigma, Trash2, FileDown } from 'lucide-preact'
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { board } from '@/engine/instance'
@@ -24,12 +24,26 @@ export function InsertPopover(): JSX.Element {
 
 export function PageBar(): JSX.Element | null {
   const page = S.page.value, count = S.pageCount.value
+  if (S.kind.value === 'canvas') {
+    const frame = S.frameIndex.value, frames = S.frameCount.value
+    return (
+      <div class="pagebar panel ui">
+        {frames > 0 && <>
+          <Btn icon={ChevronLeft} title="Previous frame  (PgUp)" disabled={frame === 0} onClick={() => board.turnFrame(-1)} />
+          <span class="pageval" title="Frame">{frame < 0 ? '–' : frame + 1} / {frames}</span>
+          <Btn icon={ChevronRight} title="Next frame  (PgDn)" disabled={frame >= frames - 1} onClick={() => board.turnFrame(1)} />
+        </>}
+        <Btn icon={Focus} title="Frame what's on screen (step through frames like slides)" onClick={() => board.addFrame('here')} />
+      </div>
+    )
+  }
   return (
     <div class="pagebar panel ui">
-      <Btn icon={ChevronLeft} title="Previous page  (PgUp)" disabled={page === 0} onClick={() => board.goToPage(page - 1)} />
+      <Btn icon={ChevronLeft} title="Previous page  (PgUp)" disabled={page === 0} onClick={() => board.turnPage(-1)} />
       <span class="pageval" title="Page">{page + 1} / {count}</span>
-      <Btn icon={ChevronRight} title="Next page  (PgDn)" disabled={page >= count - 1} onClick={() => board.goToPage(page + 1)} />
+      <Btn icon={ChevronRight} title="Next page  (PgDn)" disabled={page >= count - 1} onClick={() => board.turnPage(1)} />
       <Btn icon={Plus} title="New page after this one" onClick={() => board.addPage()} />
+      <Btn icon={ArrowDownToLine} title="More space below on this page" onClick={() => board.extendPage()} />
       {count > 1 && <Btn icon={Trash2} title="Delete this page" onClick={() => { if (confirm(`Delete page ${page + 1}? This cannot be undone.`)) board.deletePage() }} />}
     </div>
   )

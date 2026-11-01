@@ -29,7 +29,7 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Content | Generic tools | **NCERT-mapped animated library, Class 6–12, English + Hindi** |
 | Lecture notes | None | **Notes from the teacher's own voice and board drawings, made into a PDF and shared by QR** |
 | Ink | Soft pen | Soft pen **plus** real pen pressure, prediction for low lag, shape snapping |
-| Hindi | Not documented | Hindi interface, Devanagari text, Hindi handwriting lines, Hindi labels in the library |
+| Hindi content | Not documented | Devanagari text, Hindi writing lines, Hindi labels in the library |
 | Over other apps | Annotate | Annotate **plus** a click-through overlay, screen → page, and a replay you can export as a video |
 | AI | None | Optional, teacher-controlled, and faithful to the lecture by default |
 | Panel makers | Closed | Can be branded with their logo and shipped preinstalled, and IT can deploy it silently |
@@ -45,9 +45,9 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Pen styles: marker, pencil, brush, **chalk texture** | 🛠 ⏳ |
 | Highlighter that stays behind ink | ✅ |
 | **A tool per input:** fine tip, thick end, finger and palm each get their own tool and colour, so turning the stylus around switches colour | 🛠 |
-| **Palm, fist or edge-of-hand erase** | 🛠 |
+| **Palm, fist or edge-of-hand erase** (wipes like a duster, sized to the hand) | ✅ |
 | Stroke eraser, pixel eraser, clear page | ✅ |
-| Calibration: "touch with the pen, now with your palm" | 🛠 |
+| Calibration: "touch with a finger, now with your palm" | ✅ |
 | **Several writers at once** (20 touches); pair mode splits the board into 2–6 zones, each with its own pen | 🛠 ⏳ |
 | Shape snapping: hold still to turn a rough shape into a clean line, circle, rectangle or triangle | ✅ |
 | Shapes, arrows, text, sticky notes | ✅ |
@@ -61,10 +61,16 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Feature | Status |
 |---|---|
 | Pages: add, delete, PgUp/PgDn and presentation clickers | ✅ |
-| **Screen-sized pages** like a notebook; *Extend down* when a page fills up | 🛠 |
+| **Two kinds of board: Notebook or Canvas.** A notebook is a stack of fixed 16:9 pages, each at one fixed size (no zoom, no panning); a canvas is one endless board, free to zoom and pan, with no pages | ✅ |
+| **Frames on a canvas:** mark sheet-sized areas, numbered, and step through them with Back/Next like slides; the infinite canvas and pagination together | ✅ |
+| Turn a notebook into a canvas (pages become frames side by side) and back again; nothing is lost | ✅ |
+| **More space below:** a page grows a screen at a time (up to 8), and empty space can be removed again | ✅ |
+| **Turning pages:** two-finger swipe, toolbar Back/Next, PgUp/PgDn or a presentation clicker, with a quick slide (on a canvas the same controls fly between frames) | ✅ |
+| PDF worksheets: a page each in a notebook, a frame each on a canvas; slides fill the sheet, portrait sheets sit at a readable width and the sheet grows to fit | ✅ |
 | **Page sorter:** thumbnails, reorder, duplicate, delete | ✅ |
-| **Navigation map** for a long page | ⏳ |
-| **Background library:** white, black and green chalkboard, ruled, four-line English, Hindi writing lines, graph paper (mm/cm), square grid, dotted, isometric, music staff, coordinate axes, outline maps of India and the world, your own image | 🛠 (dots and lines ✅) |
+| **Page map** for a long page (drag to scroll) | ✅ |
+| **Background library, per page:** white, black and green chalkboard, ruled, four-line English, Hindi writing lines, mm graph paper, squares, dots, music staff | ✅ |
+| More papers: isometric, outline maps of India and the world, your own image | ⏳ |
 | Templates: Venn diagram, timeline, KWL chart, worksheet | ⏳ |
 | Home screen with recent lessons, a new lesson and open-from-pen-drive | 🛠 |
 | Autosave that never loses work | ✅ |
@@ -77,7 +83,7 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | PDF worksheets and textbook pages: one page each, write on them | ✅ |
 | PowerPoint: present it under the overlay now; import it as pages later | ✅ / ⏳ |
 | OpenBoard lesson import (`.ubz`) | ⏳ |
-| Export all pages as PDF | ✅ |
+| Export as PDF: a notebook exports whole sheets with their paper (blank ones included), a framed canvas one page per frame | ✅ |
 | Export a page as a picture | ⏳ |
 | Record the board, replay it step by step, export the replay as a video | ✅ |
 | **QR code share over the school's Wi-Fi** (students scan, PDF downloads; no cloud) | ⏳ |
@@ -87,7 +93,7 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 
 | Feature | Status |
 |---|---|
-| **Subjects drawer:** Maths · Physics · Chemistry · Biology · English · Hindi, each with its own tools, backgrounds and lessons | 🛠 |
+| **Subjects drawer:** Maths · Physics · Chemistry · Biology · English · Hindi, each with its own tools and papers (lessons join with the library) | ✅ |
 | Ruler, set square, protractor, compass, with pen strokes snapping to their edges | ✅ |
 | Equations, maths and chemistry (MathJax + mhchem), editable later | ✅ |
 | Graph of a function (several functions, editable) | ✅ |
@@ -147,10 +153,9 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Colours and pen sizes **on the toolbar**: one tap, no popover | ✅ |
 | Buttons 4–6 cm across on the panel, labels under icons | ✅ |
 | Thick default ink and high-contrast colours, readable from the back row | 🛠 |
-| Light theme and **chalkboard theme** | 🛠 |
+| Light theme and **chalkboard theme** (toolbar goes dark on a dark board) | ✅ |
 | Internals hidden: zoom %, pin and pass-through tucked away; save status only on error | 🛠 |
 | Settings for teachers, plus an *Advanced* page for IT | 🛠 |
-| **English and Hindi interface**, more Indian languages later | 🛠 |
 | Radial tool menu (press and hold) | ✅ |
 
 ## 9. For schools, IT and panel makers

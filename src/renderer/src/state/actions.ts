@@ -3,7 +3,7 @@ import { radial } from '@/engine/radial'
 import type { RadialPick } from '@/engine/radial'
 import { clipboardImage } from './insert'
 import { S, luminance, isDarkBg, showToast, styleKey, SIZE_RANGE } from './store'
-import type { Layout, ToolName } from './store'
+import type { BoardKind, Layout, ToolName } from './store'
 import { clamp } from '@/engine/geometry'
 
 /** Below this board opacity (percent) the board counts as "writing over the screen". */
@@ -37,8 +37,8 @@ export const actions = {
 
   cycleGrid(): void {
     const order = ['none', 'dots', 'lines'] as const
-    S.grid.value = order[(order.indexOf(S.grid.value) + 1) % 3]
-    showToast('Grid: ' + { none: 'off', dots: 'dots', lines: 'lines' }[S.grid.value])
+    S.grid.value = order[(Math.max(0, order.indexOf(S.grid.value as typeof order[number])) + 1) % 3]
+    showToast('Grid: ' + { none: 'off', dots: 'dots', lines: 'squares' }[S.grid.value as typeof order[number]])
   },
 
   setColor(c: string): void {
@@ -103,10 +103,21 @@ export const actions = {
     S.popover.value = null
     S.layout.value = layout
     S.layoutChosen.value = true
+    // An empty board takes the kind that suits the screen; a board with work on it keeps its kind.
+    if (board.isEmpty) board.convertTo(layout === 'board' ? 'notebook' : 'canvas')
     if (layout === 'board') {
       if (S.bgAlpha.value < 100) S.bgAlpha.value = 100
       window.api.win.setFullscreen(true)
     } else window.api.win.setFullscreen(false)
+  },
+
+  /** Turn this board into a notebook (fixed pages) or a canvas (endless, with frames). Nothing is lost. */
+  convertBoard(kind: BoardKind): void {
+    S.popover.value = null
+    if (!board.convertTo(kind)) return
+    showToast(kind === 'notebook'
+      ? `Now a notebook · ${board.pageCount} page${board.pageCount === 1 ? '' : 's'} · swipe with two fingers to turn`
+      : `Now a canvas${board.frameList.length ? ` · your pages are frames 1–${board.frameList.length}` : ''} · drag with two fingers to move around`, 4200)
   },
 
   /** Write over the screen: the board turns see-through (and back to solid). */
@@ -114,7 +125,7 @@ export const actions = {
     S.popover.value = null
     const on = S.bgAlpha.value >= OVERLAY_ALPHA
     S.bgAlpha.value = on ? 1 : 100
-    showToast(on ? 'Writing over the screen · use the hand button to use the apps underneath' : 'Back to the board')
+    showToast(on ? 'Writing over the screen · to click the apps underneath, use More → Use apps below' : 'Back to the board', 3600)
   },
 
   runRadial(pick: RadialPick): void {

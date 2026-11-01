@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.6.0-beta.1 — smart board mode (Track A2) — 2026-11-01
+
+- First launch asks "Smart board or laptop?". Smart board opens full screen with a bottom toolbar:
+  labelled tools, six high-contrast inks (chalk colours on dark boards), three one-tap sizes,
+  undo/redo, pages and a **More** menu of large tiles. The toolbar moves to the teacher's side;
+  tabs on both edges bring the menu to whoever is standing there. Zoom %, pin and pass-through are
+  tucked away; the save status shows only when saving fails.
+- **Notebook and Canvas are separate kinds of board**, saved with the board. A notebook is a stack
+  of fixed pages at one size (no zoom, no panning), turned with a two-finger swipe, Back/Next,
+  PgUp/PgDn or a clicker, with a short slide; *More space below* lengthens a page and a page map
+  scrolls it. A canvas is one endless board with optional numbered **frames** stepped through like
+  slides. Converting lays pages out as frames and back, losing nothing.
+- Page sorter with thumbnails: go to, reorder, duplicate, delete, add (frames on a canvas).
+- Page paper per page: ruled, four-line English, Hindi lines, mm graph paper, squares, dots, music.
+- Palm erase: a palm, fist or hand edge wipes like a duster, judged against the fingertip size
+  learnt on this screen; optional calibration in Settings.
+- Soft pen: on touch panels without pressure, ink width follows writing speed.
+- Subjects drawer (Maths, Physics, Chemistry, Biology, English, Hindi) and a chalkboard theme.
+- PDF import puts each PDF page on its own sheet (page or frame); PDF export of a notebook keeps
+  whole sheets with their paper, blank ones included; a framed canvas exports one page per frame.
+- Fixes: pen prediction no longer flickers ahead of the mouse; e2e test windows stay off-screen.
+- The interface stays in English; Hindi lives in the content.
+
 ## Unreleased — teaching essentials (Track A) — 2026-10-31
 
 - Laser: fix sections of a fast scribble vanishing and reappearing. The trail is now painted in short

@@ -177,9 +177,13 @@ function sendCommand(cmd: MainCommand): void {
   win.webContents.send('main:command', cmd)
 }
 
+/** Automated tests run the real app off-screen so they never flash over the user's desktop. */
+const OFFSCREEN_TEST = process.env['FW_E2E_OFFSCREEN'] === '1'
+
 async function createWindow(): Promise<void> {
   const st = await loadWindowState()
   onTop = st.onTop
+  if (OFFSCREEN_TEST) Object.assign(st, { x: -6000, y: 60, width: 1100, height: 750 })
 
   win = new BrowserWindow({
     x: st.x,
@@ -254,7 +258,7 @@ function setFullscreen(on: boolean): void {
   if (on === fullscreen) return
   if (on) {
     if (!zoomed) restoreBounds = win.getBounds()
-    const d = screen.getDisplayMatching(win.getBounds())
+    const d = OFFSCREEN_TEST ? { bounds: { ...win.getBounds(), width: 1920, height: 1080 } } : screen.getDisplayMatching(win.getBounds())
     win.setBounds(d.bounds)
     win.setAlwaysOnTop(true, 'screen-saver')
     fullscreen = true

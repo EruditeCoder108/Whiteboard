@@ -17,6 +17,7 @@ export async function launch({ userData, executablePath, inputIsolated = process
   const app = await electron.launch({
     ...(executablePath ? { executablePath } : {}),
     args: [...(executablePath ? [] : [appDir]), `--user-data-dir=${dir}`],
+    env: { ...process.env, FW_E2E_OFFSCREEN: '1' },
     cwd: appDir
   })
   const page = await app.firstWindow()
@@ -44,6 +45,7 @@ export async function launch({ userData, executablePath, inputIsolated = process
  *   pressure: number | 'ramp' | 'wave'
  *   hold: ms to wait after the down event (for long-press)
  *   gap: ms between move events (a real pen reports every ~5-8 ms)
+ *   size: touch contact diameter in CSS px (palm erase)
  */
 export async function gesture(page, pts, opts = {}) {
   const o = { type: 'mouse', pressure: 0.5, buttons: 1, button: 0, shift: false, id: 1, down: true, up: true, hold: 0, gap: 6, ...opts }
@@ -62,7 +64,7 @@ export async function gesture(page, pts, opts = {}) {
           pointerId: o.id, pointerType: o.type, isPrimary: o.id === 1,
           clientX: r.left + p[0], clientY: r.top + p[1],
           screenX: p[0], screenY: p[1],
-          pressure: pr, button: name === 'pointermove' ? -1 : o.button, buttons: b, shiftKey: o.shift
+          pressure: pr, button: name === 'pointermove' ? -1 : o.button, buttons: b, shiftKey: o.shift, width: o.size ?? 1, height: o.size ?? 1
         })
       if (o.down) el.dispatchEvent(mk('pointerdown', pts[0], o.buttons, press(0)))
       if (o.hold) await sleep(o.hold)

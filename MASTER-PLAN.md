@@ -329,9 +329,8 @@ circle → clean circle) to make it look good.
 There are four tracks. The college project tracks (C and D) don't depend on the library, so they can
 start now.
 
-**Track A: Board essentials**: done on 31 Oct 2026 except the Hindi interface translation (see
-[CHANGELOG](CHANGELOG.md)). Still to do: translate the interface itself into Hindi (needs a string
-table), a full spatial index (only a bounds check so far, which is enough for typical boards) and
+**Track A: Board essentials**: done on 31 Oct 2026 (see [CHANGELOG](CHANGELOG.md)). The
+interface stays in English (decided 31 Oct); Hindi lives in the content. Still to do: a full spatial index (only a bounds check so far, which is enough for typical boards) and
 benchmarks on the test PC.
 1. Fix the laser flicker, plus a scribble test.
 2. Images (paste/insert), pages, PDF import and annotation.
@@ -347,7 +346,7 @@ section 4.
    menus; page control and page sorter. Developer and rarely used controls hidden.
 3. Screen-sized pages, the background library, and *Extend down*.
 4. Touch input: palm erase, pen/finger by contact size, calibration, several writers at once.
-5. Visual polish pass, chalkboard theme, Hindi string table.
+5. Visual polish pass, chalkboard theme.
 6. Then the extras: QR share over local Wi-Fi, screen capture → page, split screen, OpenBoard
    import.
 

@@ -190,8 +190,8 @@ is the same set of tools as today, sorted the way teachers think.
 - **Calm, solid toolbar:** no hairline borders, clear active state, labels under icons in board mode.
 - **Animations:** 120–160 ms, with nothing that delays drawing.
 - **Dark chalkboard theme** with ink colours tuned for it (white, yellow, light blue, pink, green).
-- **Hindi labels** come with the string table (the leftover Track A item), and they need room for
-  longer words.
+- The interface stays in English (decided 31 Oct 2026). Hindi is in the content: Hindi lines
+  paper, Devanagari text and Hindi library labels.
 - **Accessibility:** focus rings, aria labels and enough contrast in both themes.
 
 ### 4.6 Classroom extras (after the core)

@@ -1,5 +1,9 @@
 import type { GraphItem, ImageItem, Item, ObjectMeta, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
 import { assetKey } from './media'
+import { isPaper } from './grid'
+import type { Paper } from './grid'
+import { isBoardKind, isDefaultFrame, validFrame } from './pages'
+import type { BoardKind, Frame } from './pages'
 import { newId } from './types'
 import { MAX_ZOOM, MIN_ZOOM } from './view'
 import { clamp } from './geometry'
@@ -189,17 +193,24 @@ export function serializeBoard(items: Item[], view?: View): string {
   return JSON.stringify(file)
 }
 
-export interface PageData { items: Item[]; view?: View }
+export interface PageData { items: Item[]; view?: View; paper?: Paper; frame?: Frame }
+
+/** What kind of board this is; a canvas also keeps its frames. */
+export interface BoardMeta { kind: BoardKind; frames: Frame[] }
 
 /**
- * Multi-page boards and boards with pictures use format 4. With `inline` the pictures are embedded
- * (portable files); otherwise they are returned separately so autosave writes each picture once.
+ * Notebooks, framed canvases and boards with pictures use format 4; a plain canvas keeps the
+ * older single-board format. With `inline` the pictures are embedded (portable files); otherwise
+ * they are returned separately so autosave writes each picture once.
  */
-export function serializePages(pages: PageData[], page: number, inline: boolean): { json: string; assets: Record<string, string> } {
-  if (pages.length === 1 && !pages[0].items.some(it => it.t === 'i')) return { json: serializeBoard(pages[0].items, pages[0].view), assets: {} }
+export function serializePages(pages: PageData[], page: number, inline: boolean, meta: BoardMeta = { kind: 'canvas', frames: [] }): { json: string; assets: Record<string, string> } {
+  const plain = meta.kind === 'canvas' && !meta.frames.length && pages.length === 1
+  if (plain && !pages[0].items.some(it => it.t === 'i') && (!pages[0].frame || isDefaultFrame(pages[0].frame))) return { json: serializeBoard(pages[0].items, pages[0].view), assets: {} }
   const assets: Record<string, string> = {}
   const pageJson = pages.map(pg => ({
     view: pg.view ? { x: r2(pg.view.x), y: r2(pg.view.y), zoom: r3(pg.view.zoom) } : undefined,
+    ...(pg.paper ? { paper: pg.paper } : {}),
+    ...(pg.frame ? { frame: { x: r2(pg.frame.x), y: r2(pg.frame.y), extent: pg.frame.extent } } : {}),
     items: pg.items.map(it => {
       if (it.t !== 'i') return itemToJson(it)
       const key = assetKey(it.src)
@@ -208,7 +219,8 @@ export function serializePages(pages: PageData[], page: number, inline: boolean)
       return { ...rest, a: key }
     })
   }))
-  const file = { format: FORMAT, version: PAGES_VERSION, page, pages: pageJson, ...(inline ? { assets } : { assetKeys: Object.keys(assets) }) }
+  const frames = meta.kind === 'canvas' && meta.frames.length ? { frames: meta.frames.map(f => ({ x: r2(f.x), y: r2(f.y), extent: f.extent })) } : {}
+  const file = { format: FORMAT, version: PAGES_VERSION, kind: meta.kind, ...frames, page, pages: pageJson, ...(inline ? { assets } : { assetKeys: Object.keys(assets) }) }
   return { json: JSON.stringify(file), assets }
 }
 
@@ -220,6 +232,9 @@ export interface ParsedBoard {
   /** every page (format 4); `items`/`view` describe page `page` */
   pages?: PageData[]
   page?: number
+  /** format 4 only; older files are plain canvases */
+  kind?: BoardKind
+  frames?: Frame[]
 }
 
 const isAssetKey = (v: unknown): v is string => typeof v === 'string' && /^[0-9a-f]{16,32}$/.test(v)
@@ -233,7 +248,7 @@ function parsePages(f: Record<string, unknown>, externalAssets: boolean): Parsed
   let skipped = 0, total = 0
   const pages: PageData[] = []
   for (const raw of f.pages as unknown[]) {
-    const pg = raw as { view?: unknown; items?: unknown }
+    const pg = raw as { view?: unknown; items?: unknown; paper?: unknown; frame?: unknown }
     if (!pg || typeof pg !== 'object' || !Array.isArray(pg.items)) return null
     total += pg.items.length
     if (total > MAX_ITEMS) return null
@@ -250,11 +265,14 @@ function parsePages(f: Record<string, unknown>, externalAssets: boolean): Parsed
       ids.add(it.id)
       items.push(it)
     }
-    pages.push({ items, view: parseView(pg.view, false) })
+    pages.push({ items, view: parseView(pg.view, false), paper: isPaper(pg.paper) ? pg.paper : undefined, frame: validFrame(pg.frame) })
   }
   if (total && !pages.some(pg => pg.items.length)) return null
   const page = Number.isSafeInteger(f.page) && (f.page as number) >= 0 && (f.page as number) < pages.length ? f.page as number : 0
-  return { items: pages[page].items, view: pages[page].view, skipped, legacy: false, pages, page }
+  // Files from before board kinds: several pages read as a notebook, one page as a canvas.
+  const kind: BoardKind = isBoardKind(f.kind) ? f.kind : pages.length > 1 ? 'notebook' : 'canvas'
+  const frames = kind === 'canvas' && Array.isArray(f.frames) ? (f.frames as unknown[]).slice(0, MAX_PAGES).map(validFrame).filter((x): x is Frame => !!x) : []
+  return { items: pages[page].items, view: pages[page].view, skipped, legacy: false, pages, page, kind, frames }
 }
 
 function parseView(v: unknown, legacy: boolean): View | undefined {
