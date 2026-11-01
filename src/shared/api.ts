@@ -16,6 +16,27 @@ export interface WinState {
   passthrough: boolean
 }
 
+/** Objects to place on a page, or a whole page with its paper, colour and background picture. */
+export type ShelfKind = 'selection' | 'page'
+export interface ShelfItem {
+  id: string
+  title: string
+  subject: string
+  kind: ShelfKind
+  created: string
+  /** when it was last put into a lesson */
+  used?: string
+  /** how many objects it holds */
+  count: number
+  /** the lesson it was saved from */
+  from?: string
+  thumb?: string
+  /** of its contents, so a shelf file added twice does not double everything */
+  hash: string
+}
+export type ShelfNew = Pick<ShelfItem, 'title' | 'subject' | 'kind' | 'count' | 'from' | 'thumb'>
+export type ShelfImport = { ok: true; added: number; same: number; bad: number } | { ok: false; error: string }
+
 /** Commands the main process can push to the renderer (global hotkeys, tray, …). */
 export type MainCommand = 'show-ui' | 'save-failed'
 
@@ -148,6 +169,20 @@ export interface Api {
     reveal(path: string): Promise<void>
     getLink(): Promise<LessonLink>
     setLink(link: LessonLink): Promise<SaveResult>
+  }
+  /** The teacher's own saved diagrams and pages. */
+  shelf: {
+    list(): Promise<ShelfItem[]>
+    /** `json`: one page in the lesson file format, with its pictures inside. */
+    save(info: ShelfNew, json: string): Promise<{ ok: true; item: ShelfItem } | { ok: false; error: string }>
+    read(id: string): Promise<string | null>
+    update(id: string, change: { title?: string; subject?: string }): Promise<SaveResult>
+    /** To the Recycle Bin. */
+    remove(id: string): Promise<SaveResult>
+    /** The file dialog, then the whole shelf as one file; null if cancelled. */
+    exportFile(): Promise<{ ok: true; count: number } | { ok: false; error: string } | null>
+    /** The file dialog, then what that file holds added to the shelf; null if cancelled. */
+    importFile(): Promise<ShelfImport | null>
   }
   files: {
     openRecording(): Promise<{ path: string; json: string } | null>

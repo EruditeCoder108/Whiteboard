@@ -20,6 +20,7 @@ import { ReplayPanel, ReplayCanvas, ReplayControls, RecordingControls } from '@/
 import { Dialog } from '@/ui/Dialog'
 import { SharePanel } from '@/ui/Share'
 import { LessonLibrary, NewLessonSheet } from '@/ui/Lessons'
+import { ShelfSaveSheet, ShelfSheet } from '@/ui/Shelf'
 import { CapturePanel } from '@/ui/Capture'
 import { lesson } from '@/state/lesson'
 import { ScienceUI } from '@/ui/science/Science'
@@ -241,6 +242,8 @@ export function App(): JSX.Element {
       <PalmCalibration />
       {S.popover.value === 'lessons' && <LessonLibrary />}
       {S.popover.value === 'new-lesson' && <NewLessonSheet />}
+      {S.popover.value === 'shelf' && <ShelfSheet />}
+      {S.popover.value === 'shelf-save' && <ShelfSaveSheet />}
       <Dialog />
       <SharePanel />
       <CapturePanel />

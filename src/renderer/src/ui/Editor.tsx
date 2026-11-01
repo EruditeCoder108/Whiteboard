@@ -1,5 +1,5 @@
 import {
-  AlignCenter, AlignLeft, AlignRight, ArrowDownToLine, ArrowUpToLine, Bold, Check,
+  AlignCenter, AlignLeft, AlignRight, Archive, ArrowDownToLine, ArrowUpToLine, Bold, Check,
   Copy, Ellipsis, Group, Italic, List, ListOrdered, LockKeyhole, Palette, Pencil,
   RotateCw, Scan, Trash2, Ungroup, UnlockKeyhole, X
 } from 'lucide-preact'
@@ -13,6 +13,7 @@ import { MAX_TEXT_LENGTH } from '@/engine/serialize'
 import type { EditableItem, Item } from '@/engine/types'
 import { isBox } from '@/engine/types'
 import { PALETTE, S } from '@/state/store'
+import { shelf } from '@/state/shelf'
 import { Btn, MenuItem, Row, Slider, Swatch } from './kit'
 
 const editable = (it: Item): it is EditableItem => it.t === 't' || (it.t === 'h' && it.k !== 'line' && it.k !== 'arrow')
@@ -187,7 +188,7 @@ export function SelectionToolbar(): JSX.Element | null {
   const box = items.reduce((r, it) => unionRect(r, itemBounds(it)), null as ReturnType<typeof itemBounds> | null)!
   const z = board.view.zoom, { w: vw, h: vh } = board.size
   const dockEdge = vh <= 540 ? 88 : 56
-  const width = Math.min(328, vw - dockEdge - 12), cx = ((box[0] + box[2]) / 2 - board.view.x) * z
+  const width = Math.min(360, vw - dockEdge - 12), cx = ((box[0] + box[2]) / 2 - board.view.x) * z
   const above = (box[1] - board.view.y) * z - 86
   const below = (box[3] - board.view.y) * z + 20
   const top = clamp(above >= 38 ? above : below + 46 < vh - 50 ? below : 38, 38, Math.max(38, vh - 98))
@@ -205,12 +206,14 @@ export function SelectionToolbar(): JSX.Element | null {
       {single && <Btn icon={Pencil} title={single.text ? 'Edit text  (Enter)' : 'Add text  (Enter)'} disabled={locked} onClick={() => board.editText(single)} />}
       {items.length > 1 && <Btn icon={grouped ? Ungroup : Group} title={grouped ? 'Ungroup  (Ctrl+Shift+G)' : 'Group  (Ctrl+G)'} disabled={locked} onClick={() => grouped ? board.ungroupSelection() : board.groupSelection()} />}
       <Btn icon={Copy} title="Duplicate selection  (Ctrl+D)" onClick={() => board.duplicateSelection()} />
+      <Btn icon={Archive} title="Save to My shelf" onClick={() => shelf.startSelection()} />
       <Btn icon={locked ? UnlockKeyhole : LockKeyhole} title={locked ? 'Unlock selection' : 'Lock selection'} onClick={() => board.toggleLockSelection()} />
       <Btn icon={Trash2} title="Delete selection  (Delete)" disabled={allLocked} danger onClick={() => board.deleteSelection()} />
       <Btn icon={Ellipsis} title="More selection actions" active={panel === 'more'} onClick={() => setPanel(panel === 'more' ? null : 'more')} />
     </div>
     {panel && <div class={`selection-detail panel ${panel}`} style={{ maxHeight: Math.max(80, vh - toolbarTop - 102) }}>
       {panel === 'style' ? <ObjectStyles items={items} /> : <>
+        <MenuItem icon={Archive} label="Save to My shelf" onClick={() => run(() => shelf.startSelection())} />
         <MenuItem icon={ArrowUpToLine} label="Bring to front" onClick={() => run(() => board.arrangeSelection('front'))} />
         <MenuItem icon={ArrowDownToLine} label="Send to back" onClick={() => run(() => board.arrangeSelection('back'))} />
         {!locked && <MenuItem icon={RotateCw} label="Rotate 90°" onClick={() => run(() => board.rotateSelection(Math.PI / 2))} />}
