@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.0-beta.9 — Number line and coordinate axes — 2026-11-01
+
+- **Number line and coordinate axes as real objects** (More menu, Subjects › Maths and Physics, laptop Insert menu).
+  - Each states its own range, step, name and unit. One-tap starting points: 0 to 10, −10 to 10, quarters, tenths, first quadrant, time and distance.
+  - Big + and − buttons change the range with no typing. A step can be typed as 2, 0.5 or 1/4; fractions are labelled as children write them, stacked.
+  - Axes keep one unit the same length both ways, so a square stays square. Turn that off for graphs whose axes measure different things.
+  - Tap the picture in the editor to mark a point: it lands exactly on a tick and stays exact when the object moves or resizes. Coordinates can be written beside it.
+  - Labels thin out by ones, twos, fives or tens when space is short, so numbers never run together, while the ticks stay as stated.
+  - Drawn in the ink colour on a clear background, so it suits any board and you can write over it. Arrows can point at a spot on it.
+- The pencil button on the selection toolbar now also opens equations and graphs for editing, so they no longer need a double tap.
+
 ## 1.6.0-beta.8 — Attached arrows — 2026-11-01
 
 - **Arrows and lines stay attached** (mind maps, flowcharts, labelled diagrams).
