@@ -2,7 +2,7 @@
   --accent: #4262ff;
   --accent-soft: rgba(66, 98, 255, 0.12);
   --text: #1b2030;
-  --muted: #7a8194;
+  --muted: #667085;
   --line: rgba(20, 26, 50, 0.1);
   --panel: rgba(255, 255, 255, 0.97);
   --hover: rgba(20, 30, 70, 0.07);
@@ -405,8 +405,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .replay-panel button:not(.btn),.recording-finish,.playback-keep { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:8px 11px; border-radius:8px; border:1px solid var(--line); background:var(--hover); font-size:11px; }
 .replay-panel button:not(.btn):hover:not(:disabled),.recording-finish:hover,.playback-keep:hover { background:var(--accent-soft); }
 .replay-panel button:disabled { opacity:.4; }
-.replay-panel .replay-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
-.replay-panel .replay-primary:hover:not(:disabled) { background:#3550e6; }
+.replay-panel button.replay-primary:not(.btn) { background:var(--accent); color:#fff; border-color:var(--accent); }
+.replay-panel button.replay-primary:not(.btn):hover:not(:disabled) { background:#3550e6; }
 .replay-options select { width:70px; flex:none; }
 .replay-buttons { flex-wrap:wrap; }
 .replay-panel .replay-delete { color:var(--danger); justify-self:start; background:none; padding:4px 0; border:none; }
@@ -824,9 +824,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .window.board .tune-row { min-height: 44px; }
 .paper-tune .seg { height: 36px; }
 .window.board .paper-tune .seg { height: 42px; }
-.window.board.dark .paper-sheet .seg { background: rgba(255, 255, 255, .06); }
-.window.board.dark .paper-sheet .seg-thumb { background: rgba(255, 255, 255, .16); box-shadow: none; }
-.window.board.dark .paper-sheet :is(.tune-step button, .align-grid button) { background: rgba(255, 255, 255, .1); }
+.window.dark .paper-sheet .seg { background: rgba(255, 255, 255, .06); }
+.window.dark .paper-sheet .seg-thumb { background: rgba(255, 255, 255, .16); box-shadow: none; }
+.window.dark .paper-sheet :is(.tune-step button, .align-grid button) { background: rgba(255, 255, 255, .1); }
 
 /* ── subjects ──────────────────────────────────────────────────────────── */
 .subjects-sheet { width: 470px; padding: 10px 12px 12px; gap: 8px; }
@@ -834,16 +834,13 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .subject-tab { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 2px; border-radius: 9px; font-size: 10.5px; font-weight: 600; color: var(--muted); }
 .subject-tab.on { background: var(--panel); color: var(--accent); box-shadow: 0 1px 3px rgba(15, 23, 42, .14); }
 
-/* ── chalkboard theme: on a dark board the board's own controls go dark too ── */
-.window.board.dark :is(.boardbar, .board-sheet, .page-sorter, .paper-sheet, .subjects-sheet, .edge-tab, .page-rail, .minibar) {
-  --panel: rgba(30, 35, 46, .97); --text: #e8ebf2; --muted: #9aa3b5; --line: rgba(255, 255, 255, .12);
-  --hover: rgba(255, 255, 255, .08); --accent: #6c8cff; --accent-soft: rgba(108, 140, 255, .2);
+/* ── dark mode: the variables below are set for the whole window at the end of this file ── */
+.window.dark :is(.boardbar, .board-sheet, .page-sorter, .paper-sheet, .subjects-sheet, .edge-tab, .page-rail, .minibar) {
   background: var(--panel); color: var(--text);
 }
-.window.board.dark .boardbar .bbtn { color: var(--text); }
-.window.board.dark .tile:hover { background: rgba(255, 255, 255, .13); }
-.window.board.dark .subject-tab.on { background: rgba(255, 255, 255, .1); }
-.window.board.dark .bb-ink.sel { box-shadow: 0 0 0 2.5px #fff; }
+.window.dark .tile:hover { background: rgba(255, 255, 255, .13); }
+.window.dark .subject-tab.on { background: rgba(255, 255, 255, .1); }
+.window.dark .bb-ink.sel { box-shadow: 0 0 0 2.5px #fff; }
 
 /* ── lessons, export, dialog, page names ─────────────────────────────────── */
 .lesson-sheet { width: 400px; padding: 10px 12px 12px; gap: 6px; }
@@ -896,7 +893,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .file-status.saved { color: #15803d; }
 .file-status.saving { color: var(--muted); }
 .file-status.failed { color: var(--danger); }
-.window.board.dark .file-status.saved { color: #6ee7a0; }
+.window.dark .file-status.saved { color: #6ee7a0; }
 .lesson-subject { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 9px; background: var(--hover); color: var(--muted); text-transform: none; letter-spacing: 0; }
 
 .new-lesson { z-index: 125; }
@@ -948,14 +945,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .lesson-actions button { display: inline-flex; align-items: center; gap: 5px; min-height: 36px; padding: 0 10px; border-radius: 9px; background: var(--hover); font-size: 12.5px; font-weight: 600; touch-action: manipulation; }
 .lesson-actions button.danger { color: var(--danger); }
 .card-input { height: 36px; border-radius: 8px; border: 1.5px solid var(--accent); background: var(--panel); color: var(--text); font: 600 13px/1 inherit; padding: 0 8px; min-width: 0; }
-.window.board.dark :is(.library-card, .new-lesson-card, .dialog-card) {
-  --panel: rgba(30, 35, 46, .98); --text: #e8ebf2; --muted: #9aa3b5; --line: rgba(255, 255, 255, .12);
-  --hover: rgba(255, 255, 255, .08); --accent: #6c8cff; --accent-soft: rgba(108, 140, 255, .2);
+.window.dark :is(.library-card, .new-lesson-card, .dialog-card) {
   background: var(--panel); color: var(--text);
 }
-.window.board.dark :is(.lesson-sheet) {
-  --panel: rgba(30, 35, 46, .97); --text: #e8ebf2; --muted: #9aa3b5; --line: rgba(255, 255, 255, .12);
-  --hover: rgba(255, 255, 255, .08); --accent: #6c8cff; --accent-soft: rgba(108, 140, 255, .2);
+.window.dark :is(.lesson-sheet) {
   background: var(--panel); color: var(--text);
 }
 
@@ -1043,8 +1036,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .capture-corner.se { left: 100%; top: 100%; cursor: nwse-resize; }
 .capture-corner.sw { left: 0; top: 100%; cursor: nesw-resize; }
 .window.dark .capture-panel {
-  --panel: #1e232e; --text: #e8ebf2; --muted: #b3bdcf; --line: rgba(255, 255, 255, .12);
-  --hover: rgba(255, 255, 255, .08); --accent: #6c8cff; --accent-soft: rgba(108, 140, 255, .2);
 }
 .window.dark .capture-stage { background: #121720; }
 .window.dark .capture-error { color: #ff9aa2; }
@@ -1105,9 +1096,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .scale-actions { flex-direction: row; }
 .scale-actions .dialog-btn { flex: 1; }
 .scale-actions .dialog-btn:disabled { opacity: .5; }
-.window.board.dark .scale-card {
-  --panel: rgba(30, 35, 46, .98); --text: #e8ebf2; --muted: #9aa3b5; --line: rgba(255, 255, 255, .12);
-  --hover: rgba(255, 255, 255, .08); --accent: #6c8cff; --accent-soft: rgba(108, 140, 255, .2);
+.window.dark .scale-card {
   background: var(--panel); color: var(--text);
 }
 
@@ -1126,8 +1115,25 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .reveal-chips .chip { min-height: 44px; padding: 0 12px; }
 .reveal-cover { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 13px; font-weight: 600; }
 .reveal-remove { min-height: 44px; border-radius: 10px; background: var(--hover); font-size: 13px; font-weight: 600; touch-action: manipulation; }
-.window.board.dark .reveal-bar {
-  --panel: rgba(30, 35, 46, .97); --text: #e8ebf2; --muted: #9aa3b5; --line: rgba(255, 255, 255, .12);
-  --hover: rgba(255, 255, 255, .08); --accent: #6c8cff;
+.window.dark .reveal-bar {
   background: var(--panel); color: var(--text);
 }
+
+/* ── light and dark mode ────────────────────────────────────────────────── */
+.window.dark {
+  color-scheme: dark;
+  --panel: rgba(30, 35, 46, .97); --text: #e8ebf2; --muted: #a3acbd; --line: rgba(255, 255, 255, .14);
+  --hover: rgba(255, 255, 255, .09); --accent: #6584fa; --accent-soft: rgba(101, 132, 250, .24); --danger: #ff7b80;
+  --shadow: 0 8px 28px rgba(0, 0, 0, .5), 0 1px 3px rgba(0, 0, 0, .4);
+  color: var(--text);
+}
+.window.dark .seg { background: rgba(255, 255, 255, .07); }
+.window.dark .seg button.on { color: #fff; }
+.window.dark :is(.topbar, .minibar) { background: var(--panel); border-color: var(--line); }
+.window.dark :is(.btn.active, .subject-tab.on) { color: #b9c8ff; }
+.window.dark .equation-preview { color: #4b5568; } /* equations are dark ink, so their preview stays on light paper */
+.window.dark :is(.science-subjects button[aria-pressed=true], .science-library-tabs button[aria-pressed=true], .science-card-topic, .science-question, .science-scrub-row button, .science-library-empty button, .science-library-empty > svg) { color: #5fd0db; }
+.window.dark .seg-thumb { background: rgba(255, 255, 255, .17); box-shadow: none; }
+.window.dark .minibar { background: var(--panel); }
+.bb-ink::before { box-shadow: inset 0 0 0 1px rgba(128, 128, 128, .6); }
+.window.dark .bb-ink.sel { box-shadow: 0 0 0 2.5px var(--text); }

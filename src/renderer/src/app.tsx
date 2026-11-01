@@ -4,7 +4,7 @@ import { board } from '@/engine/instance'
 import { InputRouter } from '@/engine/input'
 import { actions } from '@/state/actions'
 import { installShortcuts } from '@/state/shortcuts'
-import { S, applySettings, boardMode, isDarkBg, showToast, startPersisting } from '@/state/store'
+import { S, applySettings, boardMode, darkUi, showToast, startPersisting } from '@/state/store'
 import { BoardBar, BoardSaveChip, EdgeTabs, LayoutChooser } from '@/ui/Board'
 import { PalmCalibration } from '@/ui/Calibrate'
 import { Autosave } from '@/state/autosave'
@@ -209,7 +209,7 @@ export function App(): JSX.Element {
   // pass-through hides the chrome too: nothing on the board is clickable in that mode
   const hidden = S.uiHidden.value || S.passthrough.value
   const onBoard = boardMode.value && S.layoutChosen.value
-  const cls = ['window', onBoard ? `board bar-${S.barSide.value}` : '', S.fullscreen.value || S.zoomed.value ? 'flat' : '', isDarkBg.value ? 'dark' : '', hidden ? 'ui-hidden' : '', !S.ready.value ? 'loading' : '', S.replaying.value ? 'replaying' : '']
+  const cls = ['window', onBoard ? `board bar-${S.barSide.value}` : '', S.fullscreen.value || S.zoomed.value ? 'flat' : '', darkUi.value ? 'dark' : '', hidden ? 'ui-hidden' : '', !S.ready.value ? 'loading' : '', S.replaying.value ? 'replaying' : '']
     .filter(Boolean)
     .join(' ')
 
