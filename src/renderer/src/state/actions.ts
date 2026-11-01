@@ -2,9 +2,11 @@ import { board } from '@/engine/instance'
 import { radial } from '@/engine/radial'
 import type { RadialPick } from '@/engine/radial'
 import { clipboardImage } from './insert'
-import { S, luminance, isDarkBg, showToast, styleKey, SIZE_RANGE } from './store'
-import type { BoardKind, Layout, ToolName } from './store'
+import { S, showToast, styleKey, SIZE_RANGE } from './store'
+import type { BoardKind, GridMode, Layout, ToolName } from './store'
+import type { PictureScope } from '@/engine/board'
 import { clamp } from '@/engine/geometry'
+import { exportName, lesson } from './lesson'
 
 /** Below this board opacity (percent) the board counts as "writing over the screen". */
 export const OVERLAY_ALPHA = 20
@@ -37,8 +39,15 @@ export const actions = {
 
   cycleGrid(): void {
     const order = ['none', 'dots', 'lines'] as const
-    S.grid.value = order[(Math.max(0, order.indexOf(S.grid.value as typeof order[number])) + 1) % 3]
-    showToast('Grid: ' + { none: 'off', dots: 'dots', lines: 'squares' }[S.grid.value as typeof order[number]])
+    const next = order[(Math.max(0, order.indexOf(S.grid.value as typeof order[number])) + 1) % 3]
+    actions.setPaper(next)
+    showToast('Grid: ' + { none: 'off', dots: 'dots', lines: 'squares' }[next])
+  },
+
+  /** Paper for this page (or canvas frame), or for every page; it is also what new lessons start with. */
+  setPaper(paper: GridMode, everywhere = false): void {
+    board.setPaper(paper, everywhere)
+    S.defaultPaper.value = paper
   },
 
   setColor(c: string): void {
@@ -65,16 +74,10 @@ export const actions = {
     actions.setSize(cur + dir * (key === 'pen' ? 1 : key === 'marker' ? 2 : 4))
   },
 
-  setBackground(color: string): void {
-    const wasDark = isDarkBg.value
-    S.bgColor.value = color
-    const dark = isDarkBg.value
-    if (dark !== wasDark) {
-      // keep new ink readable on the new board colour
-      const L = luminance(S.penColor.value)
-      if (dark && L < 0.2) S.penColor.value = '#ffffff'
-      else if (!dark && L > 0.85) S.penColor.value = '#111827'
-    }
+  /** Board colour for the whole lesson, or (`onlyHere`) for this page or frame alone. */
+  setBackground(color: string, onlyHere = false): void {
+    board.setColor(color, onlyHere)
+    if (!onlyHere) S.defaultColor.value = color
   },
 
   toggleUi(): void {
@@ -148,42 +151,27 @@ export const actions = {
   },
 
   // ── files ───────────────────────────────────────────────────────────────────
-  async savePng(): Promise<void> {
+  /** A picture of the page (notebook) or of everything drawn (canvas) as a PNG file. */
+  async savePng(opts: { scope?: PictureScope; paper?: boolean } = {}): Promise<void> {
     try {
-      const png = await board.exportPng(S.bgColor.value, S.bgAlpha.value > 0)
-      if (!png) return showToast('Nothing to export yet — the board is empty')
-      const stamp = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19)
-      const path = await window.api.files.savePng(png, `whiteboard_${stamp}.png`)
+      const png = await board.exportPng(opts)
+      if (!png) return showToast('Nothing to save yet — nothing is drawn there')
+      const path = await window.api.files.savePng(png, exportName('png'))
       if (path) showToast('Saved  ' + path.split(/[\\/]/).pop())
     } catch {
       showToast('Could not export the image. Please try another location.', 5000)
     }
   },
 
-  async copyImage(): Promise<void> {
+  async copyImage(opts: { scope?: PictureScope; paper?: boolean } = {}): Promise<void> {
     try {
-      const png = await board.exportPng(S.bgColor.value, S.bgAlpha.value > 0)
-      if (!png) return showToast('Nothing to copy yet — the board is empty')
+      const png = await board.exportPng(opts)
+      if (!png) return showToast('Nothing to copy yet — nothing is drawn there')
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': new Blob([png], { type: 'image/png' }) })])
       clipboardImage.value = true
       showToast('Image copied to the clipboard')
     } catch {
       showToast('Could not copy the image')
-    }
-  },
-
-  async openBoard(): Promise<void> {
-    try {
-      const r = await window.api.files.openBoard()
-      if (!r) return
-      const parsed = board.load(r.json, { undoable: true })
-      if (parsed) {
-        board.fitContent()
-        const detail = parsed.skipped ? ` · ${parsed.skipped} invalid object(s) skipped` : ''
-        showToast((parsed.legacy ? 'Python board imported' : 'Board opened') + detail + ' · Ctrl+Z to go back', parsed.skipped ? 6000 : 3000)
-      } else showToast('Unsupported or damaged board file. Your current board is unchanged.', 5000)
-    } catch {
-      showToast('Could not read that file. Your current board is unchanged.', 5000)
     }
   },
 
@@ -193,19 +181,15 @@ export const actions = {
       if (!json || !board.load(json, { undoable: true })) return showToast('That backup is unavailable. Please refresh the list.')
       S.popover.value = null
       board.fitContent()
-      showToast('Backup restored · Ctrl+Z to return to your current board', 5000)
+      showToast('Backup restored', 8000, { label: 'Undo', run: () => board.undoStructure() })
     } catch {
       showToast('Could not restore that backup. Please try again.', 5000)
     }
   },
 
-  async saveBoardFile(): Promise<void> {
-    try {
-      const stamp = new Date().toISOString().slice(0, 10)
-      const path = await window.api.files.saveBoardAs(board.serialize(), `board_${stamp}.wbd`)
-      if (path) showToast('Board saved  ' + path.split(/[\\/]/).pop())
-    } catch {
-      showToast('Could not save the board file. Please try another location.', 5000)
-    }
-  }
+  // ── lessons (see lesson.ts) ─────────────────────────────────────────────────
+  newLesson: () => lesson.newLesson(),
+  openLesson: () => lesson.open(),
+  saveLesson: () => lesson.save(),
+  saveLessonAs: () => lesson.saveAs()
 }

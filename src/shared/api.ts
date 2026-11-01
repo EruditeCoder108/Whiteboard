@@ -25,6 +25,18 @@ export interface BoardLoad {
   recovered: boolean
   message?: string
 }
+/** A lesson file the teacher opened or saved lately. */
+export interface RecentLesson {
+  path: string
+  /** the file name without its extension */
+  name: string
+  savedAt: string
+}
+/** Which file the lesson on the board belongs to, and whether it has changes that file does not. */
+export interface LessonLink {
+  path: string | null
+  dirty: boolean
+}
 export interface BackupInfo {
   id: string
   savedAt: string
@@ -74,6 +86,22 @@ export interface Api {
     saveBoard(json: string, assets?: Record<string, string>): Promise<SaveResult>
     listBackups(): Promise<BackupInfo[]>
     loadBackup(id: string): Promise<string | null>
+    /** Keep the board as it is now as a backup, even if one was made a moment ago (before it is replaced). */
+    archiveBoard(): Promise<void>
+  }
+  lessons: {
+    recent(): Promise<RecentLesson[]>
+    /** The file dialog; the chosen path may then be saved to. */
+    pickSavePath(suggestedName: string): Promise<string | null>
+    /** The file dialog, then the lesson read back. */
+    pickOpen(): Promise<{ path: string; json: string } | null>
+    /** A lesson from the recent list. */
+    open(path: string): Promise<{ path: string; json: string } | null>
+    /** Write the lesson file in one piece (the previous file stays until the new one is complete). */
+    save(path: string, json: string): Promise<SaveResult>
+    forget(path: string): Promise<void>
+    getLink(): Promise<LessonLink>
+    setLink(link: LessonLink): Promise<SaveResult>
   }
   files: {
     openRecording(): Promise<{ path: string; json: string } | null>
@@ -81,8 +109,6 @@ export interface Api {
     saveVideo(video: ArrayBuffer, suggestedName: string): Promise<string | null>
     savePng(png: ArrayBuffer, suggestedName: string): Promise<string | null>
     savePdf(pages: ArrayBuffer[], suggestedName: string): Promise<string | null>
-    openBoard(): Promise<{ path: string; json: string } | null>
-    saveBoardAs(json: string, suggestedName: string): Promise<string | null>
   }
 }
 

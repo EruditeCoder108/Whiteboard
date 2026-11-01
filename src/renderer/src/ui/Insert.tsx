@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { board } from '@/engine/instance'
 import { compile, GRAPH_COLORS } from '@/engine/graph'
 import { S, currentColor } from '@/state/store'
-import { editEquation, editGraph, equationTarget, exportPdf, graphTarget, importing, insertFiles, loadTypesetter, pickFiles, svgDataUrl } from '@/state/insert'
+import { editEquation, editGraph, equationTarget, graphTarget, importing, insertFiles, loadTypesetter, pickFiles, svgDataUrl } from '@/state/insert'
 import { Btn, MenuItem, Sep } from './kit'
 
 export function InsertPopover(): JSX.Element {
@@ -17,7 +17,7 @@ export function InsertPopover(): JSX.Element {
       <MenuItem icon={LineChart} label="Graph of a function" onClick={() => editGraph(null)} />
       <Sep />
       <MenuItem icon={FilePlus2} label="New page" hint="PgDn to move" onClick={close(() => board.addPage())} />
-      <MenuItem icon={FileDown} label="Export all pages as PDF" onClick={close(() => void exportPdf())} />
+      <MenuItem icon={FileDown} label="Export picture or PDF…" onClick={() => { S.popover.value = 'export' }} />
     </div>
   )
 }
@@ -44,7 +44,7 @@ export function PageBar(): JSX.Element | null {
       <Btn icon={ChevronRight} title="Next page  (PgDn)" disabled={page >= count - 1} onClick={() => board.turnPage(1)} />
       <Btn icon={Plus} title="New page after this one" onClick={() => board.addPage()} />
       <Btn icon={ArrowDownToLine} title="More space below on this page" onClick={() => board.extendPage()} />
-      {count > 1 && <Btn icon={Trash2} title="Delete this page" onClick={() => { if (confirm(`Delete page ${page + 1}? This cannot be undone.`)) board.deletePage() }} />}
+      {count > 1 && <Btn icon={Trash2} title="Delete this page (Undo brings it back)" onClick={() => board.deletePage()} />}
     </div>
   )
 }

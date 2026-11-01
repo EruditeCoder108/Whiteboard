@@ -1,5 +1,7 @@
 import type { JSX } from 'preact'
+import { useState } from 'preact/hooks'
 import { Plus } from 'lucide-preact'
+import { sameColor } from '@/engine/colour'
 import type { Paper } from '@/engine/grid'
 import { actions } from '@/state/actions'
 import { BACKGROUNDS, S } from '@/state/store'
@@ -10,29 +12,40 @@ const PAPER_NAMES: [Paper, string][] = [
   ['lines', 'Squares'], ['graph', 'Graph paper'], ['dots', 'Dots'], ['music', 'Music']
 ]
 
-/** Board colour and page paper. The paper belongs to the visible page; new pages take it too. */
+/**
+ * Board colour and page paper. The colour is the whole lesson's unless "Only this page" is on; the
+ * paper is this page's (this frame's, on a canvas) unless "All pages" is on. The choice also becomes
+ * what new lessons start with.
+ */
 export function PaperPicker(): JSX.Element {
+  const [onlyHere, setOnlyHere] = useState(false)
+  const [everywhere, setEverywhere] = useState(false)
+  const here = S.here.value
+  const noun = here.unit === 'frame' ? 'frame' : 'page'
+  const colour = (c: string): void => actions.setBackground(c, onlyHere && here.unit !== null)
   return (
     <>
       <div class="pop-sub">Board colour</div>
       <div class="swatches">
         {BACKGROUNDS.map((b) => (
-          <Swatch key={b.color} color={b.color} title={b.name} selected={S.bgColor.value === b.color} onClick={() => actions.setBackground(b.color)} />
+          <Swatch key={b.color} color={b.color} title={b.name} selected={sameColor(here.color, b.color)} onClick={() => colour(b.color)} />
         ))}
         <label class="swatch custom nodrag" title="Custom background…">
           <Plus size={14} strokeWidth={2} />
-          <input type="color" value={S.bgColor.value} onInput={(e) => actions.setBackground((e.target as HTMLInputElement).value)} />
+          <input type="color" value={here.color} onChange={(e) => colour((e.target as HTMLInputElement).value)} />
         </label>
       </div>
-      <div class="pop-sub">Page paper <i>(this page and new ones)</i></div>
+      {here.unit && <button type="button" class={`chip nodrag ${onlyHere ? 'on' : ''}`} aria-pressed={onlyHere} onClick={() => setOnlyHere(!onlyHere)}>Only this {noun}</button>}
+      <div class="pop-sub">Paper <i>({everywhere ? `every ${noun}` : here.unit ? `this ${noun}` : 'the canvas'}, and new lessons)</i></div>
       <div class="papers">
         {PAPER_NAMES.map(([paper, name]) => (
-          <button type="button" key={paper} class={`paper-tile nodrag ${S.grid.value === paper ? 'on' : ''}`} aria-pressed={S.grid.value === paper} onClick={() => (S.grid.value = paper)}>
-            <span class={`paper-prev p-${paper}`} style={{ background: S.bgColor.value }} />
+          <button type="button" key={paper} class={`paper-tile nodrag ${here.paper === paper ? 'on' : ''}`} aria-pressed={here.paper === paper} onClick={() => actions.setPaper(paper, everywhere)}>
+            <span class={`paper-prev p-${paper}`} style={{ background: here.color }} />
             <span>{name}</span>
           </button>
         ))}
       </div>
+      {here.unit && <button type="button" class={`chip nodrag ${everywhere ? 'on' : ''}`} aria-pressed={everywhere} onClick={() => setEverywhere(!everywhere)}>All {noun}s</button>}
     </>
   )
 }

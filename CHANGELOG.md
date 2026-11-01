@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.6.0-beta.2 — lesson integrity (Note 3 deep dive F1–F6, F9) — 2026-11-01
+
+- **A lesson now carries how it looks.** The board colour is saved in the lesson (with an optional
+  colour for a single page) and every page keeps its paper, its own paper start point and a name.
+  A dark lesson opens dark on any computer, and opening it no longer changes your own default.
+  Your last choice of colour and paper is what *new* lessons start with.
+- **No more silent loss.** A plain canvas with a paper is saved in the format that keeps it.
+  Turning a notebook into a canvas and back keeps each page's paper, colour and name, and keeps the
+  paper lines lined up with the writing.
+- **One file convention:** Ctrl+S saves the *lesson* (it asks where the first time, then overwrites
+  the same file), Ctrl+Shift+S saves a copy, Ctrl+O opens, Ctrl+N starts a new lesson, Ctrl+E
+  exports. The smart board's **More** menu has big New lesson / Open / Save lesson / Export tiles,
+  and Open lists your recent lessons. New and Open ask before dropping unsaved work, and keep the
+  replaced lesson as a recovery backup.
+- **Pictures and PDFs match the board.** A PNG of the page includes the paper and board colour (or
+  ink only on a see-through background); choose this page, everything, or the selection. A PDF of a
+  page lengthened with "more space below" gives one readable sheet per screen. Blank pages with
+  paper still print.
+- **Page changes can be undone.** Deleting, moving or copying a page, removing a frame, turning the
+  board into a notebook/canvas, and changing colour or paper bring up an *Undo* button (also Ctrl+Z
+  and the page sorter). The offer ends as soon as something else changes. Pages can be named in the
+  page sorter, and the name is saved.
+- Paper picker: board colour for the whole lesson or "Only this page"; paper for this page or
+  "All pages".
+- Older settings and files keep working: the board colour and paper from before become the defaults
+  for new lessons; files saved before this version open with your current colour.
+
 ## 1.6.0-beta.1 — smart board mode (Track A2) — 2026-11-01
 
 - First launch asks "Smart board or laptop?". Smart board opens full screen with a bottom toolbar:

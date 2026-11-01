@@ -12,6 +12,7 @@ import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import type { Bounds, MainCommand, WinState } from '../shared/api'
 import { DiskStore, MAX_FILE_BYTES, saveError } from './storage'
+import { Lessons } from './lessons'
 import { randomUUID } from 'node:crypto'
 import { AgentBridge } from './agent-bridge'
 import { Assistant } from './assistant'
@@ -24,6 +25,7 @@ let win: BrowserWindow | null = null
 let quitting = false
 let closing = false
 let storage: DiskStore
+let lessons: Lessons
 let fullscreen = false
 let zoomed = false
 let onTop = true
@@ -354,6 +356,31 @@ function registerIpc(): void {
   ipcMain.handle('store:save-board', (_e, json: string, assets?: unknown) => storage.saveBoard(json, assets))
   ipcMain.handle('store:list-backups', () => storage.listBackups())
   ipcMain.handle('store:load-backup', (_e, id: string) => storage.loadBackup(id))
+  ipcMain.handle('store:archive-board', () => storage.keepNextBackup())
+
+  ipcMain.handle('lessons:recent', () => lessons.recent())
+  ipcMain.handle('lessons:pick-save-path', async (_e, name: unknown) => {
+    const owner = w()
+    if (!owner) return null
+    const fileName = typeof name === 'string' && name.trim() ? name.replace(/[\\/:*?"<>|]/g, '_').slice(0, 120) : 'lesson.wbd'
+    const r = await dialog.showSaveDialog(owner, { title: 'Save lesson', defaultPath: join(app.getPath('documents'), fileName), filters: [{ name: 'Whiteboard lesson', extensions: ['wbd'] }] })
+    if (r.canceled || !r.filePath) return null
+    lessons.allow(r.filePath)
+    return r.filePath
+  })
+  ipcMain.handle('lessons:pick-open', async () => {
+    const owner = w()
+    if (!owner) return null
+    const r = await dialog.showOpenDialog(owner, { title: 'Open lesson', properties: ['openFile'], filters: [{ name: 'Whiteboard lesson', extensions: ['wbd', 'json'] }] })
+    if (r.canceled || !r.filePaths[0]) return null
+    lessons.allow(r.filePaths[0])
+    return lessons.open(r.filePaths[0])
+  })
+  ipcMain.handle('lessons:open', (_e, path: unknown) => lessons.open(path))
+  ipcMain.handle('lessons:save', (_e, path: unknown, json: unknown) => lessons.save(path, json))
+  ipcMain.handle('lessons:forget', (_e, path: string) => lessons.forget(path))
+  ipcMain.handle('lessons:get-link', () => lessons.link())
+  ipcMain.handle('lessons:set-link', (_e, link: unknown) => lessons.setLink(link))
 
   ipcMain.on('main:flushed', async (e, ok: boolean) => {
     if (!closing || e.sender !== w()?.webContents) return
@@ -439,30 +466,6 @@ function registerIpc(): void {
     await fs.writeFile(result.filePath, Buffer.from(video))
     return result.filePath
   })
-  ipcMain.handle('files:open-board', async () => {
-    const win_ = w()
-    if (!win_) return null
-    const r = await dialog.showOpenDialog(win_, {
-      title: 'Open board',
-      properties: ['openFile'],
-      filters: [{ name: 'Whiteboard', extensions: ['wbd', 'json'] }]
-    })
-    if (r.canceled || !r.filePaths[0]) return null
-    if ((await fs.stat(r.filePaths[0])).size > MAX_FILE_BYTES) throw new Error('Board file exceeds 300 MB')
-    return { path: r.filePaths[0], json: await fs.readFile(r.filePaths[0], 'utf8') }
-  })
-  ipcMain.handle('files:save-board-as', async (_e, json: string, name: string) => {
-    const win_ = w()
-    if (!win_) return null
-    const r = await dialog.showSaveDialog(win_, {
-      title: 'Save board',
-      defaultPath: join(app.getPath('documents'), name),
-      filters: [{ name: 'Whiteboard', extensions: ['wbd'] }]
-    })
-    if (r.canceled || !r.filePath) return null
-    await fs.writeFile(r.filePath, json, 'utf8')
-    return r.filePath
-  })
 }
 
 function registerGlobalShortcuts(): void {
@@ -503,6 +506,7 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(async () => {
     app.setAppUserModelId('com.sambhav.floating-whiteboard')
     storage = new DiskStore(app.getPath('userData'))
+    lessons = new Lessons(app.getPath('userData'))
     setTimeout(() => { void storage.collectAssets().catch(() => {}) }, 60_000)
     agentBridge = new AgentBridge(app.getPath('userData'), app.isPackaged ? join(process.resourcesPath, 'mcp/whiteboard-mcp.cjs') : join(app.getAppPath(), 'mcp/whiteboard-mcp.cjs'), callBoard)
     await agentBridge.disable()

@@ -87,8 +87,9 @@ export function Toast(): JSX.Element | null {
   const t = toast.value
   if (!t) return null
   return (
-    <div class="toast" key={t.id}>
+    <div class={`toast ${t.action ? 'has-action' : ''}`} key={t.id} role="status">
       {t.text}
+      {t.action && <button type="button" class="toast-action nodrag" onClick={() => { const run = t.action!.run; toast.value = null; run() }}>{t.action.label}</button>}
     </div>
   )
 }

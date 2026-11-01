@@ -102,6 +102,8 @@ export class History {
     return state
   }
   restore(state: HistoryState): void { this.undoStack = state.undo; this.redoStack = state.redo }
+  /** The live stacks without detaching them (a snapshot that is only restored while nothing has changed). */
+  peek(): HistoryState { return { undo: this.undoStack, redo: this.redoStack } }
 
   constructor(
     private doc: Doc,

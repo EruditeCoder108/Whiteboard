@@ -76,11 +76,11 @@ try {
   await page.getByRole('button', { name: 'Ruler' }).click()
   check('subjects drawer puts the maths instruments one tap away', (await fw(page, w => w.board.instruments.shown ?? null)) !== undefined && await page.locator('.subjects-sheet .tile.on').count() === 1)
   await page.getByRole('button', { name: 'Ruler' }).click()
-  await fw(page, w => { w.S.bgColor.value = '#1d3b33'; w.S.penColor.value = '#ffffff' })
+  await fw(page, w => { w.board.setColor('#1d3b33'); w.S.penColor.value = '#ffffff' })
   await page.getByRole('tab', { name: 'English' }).click()
   await page.waitForTimeout(250)
   await page.screenshot({ path: join(shotDir, 'board-chalk.png') })
-  await fw(page, w => { w.S.bgColor.value = '#ffffff'; w.S.grid.value = 'none' })
+  await fw(page, w => { w.board.setColor('#ffffff'); w.board.setPaper('none', true) })
 
   // Notebook: each page is a fixed sheet: no zoom either way, no panning, turns with a swipe.
   await page.keyboard.press('Escape')
@@ -112,7 +112,7 @@ try {
   check('more space below extends the page and scrolls down to it', long.extent === 2 && long.y > 100, JSON.stringify(long))
   check('a long page shows its map on the right edge', await page.locator('.rail-map').isVisible())
   await page.screenshot({ path: join(shotDir, 'board-long-page.png') })
-  const pdf = await fw(page, async w => (await w.board.exportPages('#ffffff')).length)
+  const pdf = await fw(page, async w => (await w.board.exportPages()).length)
   check('PDF export keeps every sheet, blank ones too', pdf === await fw(page, w => w.board.pageCount), String(pdf))
   await page.getByRole('button', { name: 'Remove the empty space at the bottom' }).click()
   check('empty space at the bottom can be removed again', await fw(page, w => w.board.pageFrame.extent) === 1)

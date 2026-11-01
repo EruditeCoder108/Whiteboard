@@ -8,6 +8,7 @@ import { board } from '@/engine/instance'
 import type { Paper } from '@/engine/grid'
 import { instrumentsShown, type InstrumentKind } from '@/engine/instruments'
 import { S } from '@/state/store'
+import { actions } from '@/state/actions'
 import { editEquation, editGraph, insertFiles, pickFiles } from '@/state/insert'
 
 type Icon = typeof Ruler
@@ -25,7 +26,7 @@ const close = (): void => { S.popover.value = null }
 const instrument = (kind: InstrumentKind, icon: Icon, label: string): Entry =>
   ({ icon, label, on: () => instrumentsShown.value.includes(kind), run: () => board.instruments.toggle(kind), stay: true })
 const paper = (p: Paper, icon: Icon, label: string): Entry =>
-  ({ icon, label, on: () => S.grid.value === p, run: () => { S.grid.value = S.grid.value === p ? 'none' : p }, stay: true })
+  ({ icon, label, on: () => S.grid.value === p, run: () => actions.setPaper(S.grid.value === p ? 'none' : p), stay: true })
 const equation: Entry = { icon: Sigma, label: 'Equation', run: () => editEquation(null), stay: true }
 const graph: Entry = { icon: LineChart, label: 'Graph of a function', run: () => editGraph(null), stay: true }
 const labs: Entry = { icon: FlaskConical, label: 'Science labs', run: () => (S.popover.value = 'science'), stay: true }

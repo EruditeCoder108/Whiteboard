@@ -74,8 +74,8 @@ try {
   })
   check('each page keeps its own items and undo history', nav.first === 3 && nav.afterUndo === 2 && nav.second === 1 && nav.signals[0] === 1 && nav.signals[1] === 3, JSON.stringify(nav))
 
-  const exported = await fw(page, async w => (await w.board.exportPages('#ffffff')).map(b => b.byteLength))
-  check('every page renders for PDF export', exported.length === 3 && exported.every(n => n > 2000), JSON.stringify(exported))
+  const exported = await fw(page, async w => (await w.board.exportPages()).map(b => b.byteLength))
+  check('every page renders for PDF export (a tall worksheet page is split by screen)', exported.length === 5 && exported.every(n => n > 2000), JSON.stringify(exported))
 
   // Autosave writes pictures once as separate files; a restart restores every page.
   const save = await fw(page, async w => { await w.S.retrySave.value(); return w.S.saveStatus.value })

@@ -1,17 +1,20 @@
 import {
-  Blinds, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileDown, FileText, FlaskConical, GripVertical,
+  Blinds, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileText, FlaskConical, GripVertical, FilePlus2, FolderOpen, Pencil, Save, Share2,
   Highlighter, Image as ImageIcon, Laptop, LayoutGrid, LineChart, LogOut, Minus, MousePointer2, MousePointerClick, Pen, Plus,
   Presentation, GraduationCap, Redo2, ArrowDownToLine, ArrowUpToLine, Infinity as InfinityIcon, BookOpen, Frame, Focus, Ruler, Shapes, SlidersHorizontal, Sigma, Sparkles, Spotlight, Timer, Trash2, Type, Undo2, MonitorUp, Layers
 } from 'lucide-preact'
-import type { ComponentChildren, JSX } from 'preact'
-import { useEffect, useRef } from 'preact/hooks'
+import type { JSX } from 'preact'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { board } from '@/engine/instance'
 import { MAX_EXTENT, PAGE_H, PAGE_W, scrollOf } from '@/engine/pages'
 import { instrumentsShown } from '@/engine/instruments'
 import { OVERLAY_ALPHA, actions } from '@/state/actions'
 import { S, activeTool, currentColor, currentSize, isDarkBg, isShapeTool, styleKey } from '@/state/store'
 import type { BarSide, ToolName } from '@/state/store'
-import { editEquation, editGraph, exportPdf, insertFiles, pickFiles } from '@/state/insert'
+import { editEquation, editGraph, insertFiles, pickFiles } from '@/state/insert'
+import { lessonDirty, lessonName, lessonPath, lesson } from '@/state/lesson'
+import { LessonSheet, ExportSheet } from './Lessons'
+import { Section, Tile } from './kit'
 import { ShapesPopover, PropsPopover } from './Popovers'
 import { MathsPopover, curtainOn, spotlightOn, timerOn } from './Present'
 import { PaperPopover } from './Paper'
@@ -72,6 +75,8 @@ export function BoardBar(): JSX.Element {
       {p === 'props' && <PropsPopover />}
       {p === 'paper' && <PaperPopover />}
       {p === 'subjects' && <SubjectsPopover />}
+      {p === 'lessons' && <LessonSheet />}
+      {p === 'export' && <ExportSheet />}
       <div class="boardbar panel ui" role="toolbar" aria-label="Board tools">
         <button type="button" class="bb-grip nodrag" aria-label="Move the toolbar left or right" title="Drag to move the toolbar"
           onPointerDown={onGrip as never} onPointerMove={onGripMove as never} onPointerUp={() => (drag.current = false)} onPointerCancel={() => (drag.current = false)}>
@@ -135,24 +140,20 @@ export function BoardBar(): JSX.Element {
   )
 }
 
-function Tile({ icon: I, label, on, onClick, danger }: { icon: Icon; label: string; on?: boolean; onClick: () => void; danger?: boolean }): JSX.Element {
-  return (
-    <button type="button" class={`tile nodrag ${on ? 'on' : ''} ${danger ? 'danger' : ''}`} aria-pressed={on} onClick={onClick}>
-      <I size={24} strokeWidth={1.8} /><span>{label}</span>
-    </button>
-  )
-}
-
-function Section({ title, children }: { title: string; children: ComponentChildren }): JSX.Element {
-  return <><div class="sheet-head">{title}</div><div class="tiles">{children}</div></>
-}
-
 /** Everything that is not a drawing tool, in large tiles grouped by what a teacher wants to do. */
 function BoardMenu(): JSX.Element {
   const close = (fn: () => unknown) => () => { S.popover.value = null; void fn() }
   const overlay = S.bgAlpha.value < OVERLAY_ALPHA
+  const unsaved = lessonDirty.value && !board.isEmpty
   return (
     <div class="popover panel ui board-sheet" data-popover-keep="">
+      <div class="sheet-head lesson-line">Lesson · <b>{lessonName.value}</b>{unsaved && <i class="warn">{lessonPath.value ? 'changes not saved' : 'not saved'}</i>}</div>
+      <div class="tiles">
+        <Tile icon={FilePlus2} label="New lesson" onClick={() => { void lesson.newLesson() }} />
+        <Tile icon={FolderOpen} label="Open…" onClick={() => (S.popover.value = 'lessons')} />
+        <Tile icon={Save} label="Save lesson" on={unsaved} onClick={close(lesson.save)} />
+        <Tile icon={Share2} label="Export" onClick={() => (S.popover.value = 'export')} />
+      </div>
       <Section title="Add to the page">
         <Tile icon={ImageIcon} label="Picture" onClick={close(() => pickFiles('image/*').then(files => insertFiles(files)))} />
         <Tile icon={FileText} label="PDF / worksheet" onClick={close(() => pickFiles('application/pdf,.pdf', false).then(files => insertFiles(files)))} />
@@ -175,7 +176,6 @@ function BoardMenu(): JSX.Element {
         {S.kind.value === 'notebook'
           ? <Tile icon={InfinityIcon} label="Turn into canvas" onClick={() => actions.convertBoard('canvas')} />
           : <Tile icon={BookOpen} label="Turn into notebook" onClick={() => actions.convertBoard('notebook')} />}
-        <Tile icon={FileDown} label="Save as PDF" onClick={close(exportPdf)} />
         <Tile icon={SlidersHorizontal} label="Settings" onClick={() => (S.popover.value = 'settings')} />
         <Tile icon={Eye} label="Hide toolbar" onClick={actions.toggleUi} />
         <Tile icon={Laptop} label="Laptop layout" onClick={() => actions.chooseLayout('laptop')} />
@@ -184,6 +184,20 @@ function BoardMenu(): JSX.Element {
       </Section>
     </div>
   )
+}
+
+/** The name of a page or frame under its picture; tap to rename. */
+function ThumbTitle({ i, fallback }: { i: number; fallback: string }): JSX.Element {
+  const [editing, setEditing] = useState(false)
+  S.contentRevision.value // a rename elsewhere shows up here too
+  const title = board.titleOf(i)
+  const done = (text: string): void => { setEditing(false); if (text.trim() !== title) board.setTitle(i, text) }
+  if (editing) return (
+    <input class="thumb-input nodrag" type="text" maxLength={120} defaultValue={title} placeholder={fallback} aria-label="Name"
+      ref={el => el?.focus()} onBlur={e => done((e.target as HTMLInputElement).value)}
+      onKeyDown={e => { if (e.key === 'Enter') done((e.target as HTMLInputElement).value); else if (e.key === 'Escape') setEditing(false); e.stopPropagation() }} />
+  )
+  return <button type="button" class={`thumb-title nodrag ${title ? '' : 'plain'}`} aria-label={`Rename ${title || fallback}`} onClick={() => setEditing(true)}><span>{title || fallback}</span><Pencil size={12} /></button>
 }
 
 const THUMB_W = 176
@@ -198,8 +212,8 @@ function Thumb({ i }: { i: number }): JSX.Element {
     if (!c) return
     const dpr = window.devicePixelRatio || 1
     c.width = Math.round(THUMB_W * dpr); c.height = Math.round(TH * dpr)
-    board.paintPageThumb(i, c, S.bgColor.value)
-  }, [i, S.documentRevision.value, S.pageCount.value, S.frameCount.value, S.bgColor.value, S.kind.value])
+    board.paintPageThumb(i, c)
+  }, [i, S.documentRevision.value, S.contentRevision.value, S.pageCount.value, S.frameCount.value, S.kind.value])
   const current = notebook ? i === S.page.value : i === S.frameIndex.value
   if (!notebook) return (
     <div class={`thumb ${current ? 'current' : ''}`}>
@@ -207,6 +221,7 @@ function Thumb({ i }: { i: number }): JSX.Element {
         <canvas ref={cv} style={{ width: `${THUMB_W}px`, height: `${TH}px` }} />
         <b>{i + 1}</b>
       </button>
+      <ThumbTitle i={i} fallback={`Frame ${i + 1}`} />
       <div class="thumb-tools">
         <button type="button" class="nodrag" aria-label={`Move frame ${i + 1} earlier`} disabled={i === 0} onClick={() => board.moveFrame(i, i - 1)}><ChevronLeft size={16} /></button>
         <button type="button" class="nodrag" aria-label={`Remove frame ${i + 1}`} title="Remove the frame (the drawing stays)" onClick={() => board.deleteFrame(i)}><Trash2 size={15} /></button>
@@ -220,11 +235,11 @@ function Thumb({ i }: { i: number }): JSX.Element {
         <canvas ref={cv} style={{ width: `${THUMB_W}px`, height: `${TH}px` }} />
         <b>{i + 1}</b>
       </button>
+      <ThumbTitle i={i} fallback={`Page ${i + 1}`} />
       <div class="thumb-tools">
         <button type="button" class="nodrag" aria-label={`Move page ${i + 1} earlier`} disabled={i === 0} onClick={() => board.movePage(i, i - 1)}><ChevronLeft size={16} /></button>
         <button type="button" class="nodrag" aria-label={`Duplicate page ${i + 1}`} onClick={() => board.duplicatePage(i)}><Copy size={15} /></button>
-        <button type="button" class="nodrag" aria-label={`Delete page ${i + 1}`} onClick={() => {
-          if (!confirm(`Delete page ${i + 1}? This cannot be undone.`)) return
+        <button type="button" class="nodrag" aria-label={`Delete page ${i + 1}`} title="Delete the page (Undo brings it back)" onClick={() => {
           if (board.page === i || board.goToPage(i)) board.deletePage()
         }}><Trash2 size={15} /></button>
         <button type="button" class="nodrag" aria-label={`Move page ${i + 1} later`} disabled={i === S.pageCount.value - 1} onClick={() => board.movePage(i, i + 1)}><ChevronRight size={16} /></button>
@@ -239,7 +254,10 @@ function PageSorter(): JSX.Element {
   const add = (fn: () => void) => (): void => { fn(); S.popover.value = null }
   return (
     <div class="popover panel ui page-sorter" data-popover-keep="">
-      <div class="sheet-head">{notebook ? 'Pages' : 'Frames'}</div>
+      <div class="sheet-head sorter-head">
+        <span>{notebook ? 'Pages' : 'Frames'}</span>
+        {S.undoLabel.value && <button type="button" class="chip nodrag" onClick={() => board.undoStructure()}><Undo2 size={14} /> Undo: {S.undoLabel.value}</button>}
+      </div>
       <div class="thumbs">
         {Array.from({ length: notebook ? S.pageCount.value : S.frameCount.value }, (_, i) => <Thumb key={i} i={i} />)}
         {notebook
@@ -287,8 +305,8 @@ function PageRail({ onMenu }: { onMenu: () => void }): JSX.Element {
     if (!c) return
     const dpr = window.devicePixelRatio || 1
     c.width = Math.round(mapW * dpr); c.height = Math.round(mapH * dpr)
-    board.paintPageThumb(S.page.value, c, S.bgColor.value)
-  }, [S.documentRevision.value, S.page.value, f.extent, mapW, mapH, S.bgColor.value, S.grid.value])
+    board.paintPageThumb(S.page.value, c)
+  }, [S.documentRevision.value, S.contentRevision.value, S.page.value, f.extent, mapW, mapH, S.bgColor.value, S.grid.value])
   const scrollTo = (e: PointerEvent): void => {
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
     board.scrollPage(Math.max(0, Math.min(1, (e.clientY - r.top - box.height / 2) / Math.max(1, mapH - box.height))))

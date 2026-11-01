@@ -348,6 +348,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
   animation: toast 0.2s ease-out;
 }
 @keyframes toast { from { opacity: 0; transform: translate(-50%, 6px); } }
+.toast.has-action { pointer-events: auto; display: flex; align-items: center; gap: 14px; padding-right: 8px; }
+.toast-action { min-height: 36px; padding: 0 16px; border-radius: 14px; background: #fff; color: #172033; font-weight: 700; font-size: 13px; touch-action: manipulation; }
+.toast-action:active { transform: scale(.96); }
 
 /* ── invisible window-resize handles ────────────────────────────────────── */
 .rz { position: absolute; z-index: 40; -webkit-app-region: no-drag; }
@@ -820,3 +823,44 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .window.board.dark .tile:hover { background: rgba(255, 255, 255, .13); }
 .window.board.dark .subject-tab.on { background: rgba(255, 255, 255, .1); }
 .window.board.dark .bb-ink.sel { box-shadow: 0 0 0 2.5px #fff; }
+
+/* ── lessons, export, dialog, page names ─────────────────────────────────── */
+.lesson-sheet { width: 400px; padding: 10px 12px 12px; gap: 6px; }
+.window:not(.board) .lesson-sheet { left: 8px; top: calc(var(--topbar) + 6px); width: 300px; }
+.lesson-head { display: flex; flex-direction: column; gap: 2px; padding: 4px 4px 2px; }
+.lesson-head b { font-size: 16px; overflow-wrap: anywhere; }
+.lesson-head span { font-size: 11.5px; color: var(--muted); }
+.lesson-head span.warn, .lesson-line .warn { color: #b45309; }
+.lesson-line { text-transform: none; letter-spacing: 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.lesson-line b { color: var(--text); font-size: 13px; }
+.lesson-line i { font-style: normal; font-weight: 600; font-size: 11px; }
+.tiles.two { grid-template-columns: repeat(2, 1fr); }
+.recent-list { display: flex; flex-direction: column; gap: 4px; }
+.recent-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 46px; padding: 6px 12px; border-radius: 10px; background: var(--hover); text-align: left; touch-action: manipulation; }
+.recent-row b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent-row small { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.recent-row:active { transform: scale(.98); }
+.chip { align-self: flex-start; display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 12px; border-radius: 15px; background: var(--hover); font-size: 11.5px; font-weight: 600; touch-action: manipulation; }
+.chip.on { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.window.board .chip { min-height: 38px; }
+.sorter-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-transform: none; letter-spacing: 0; }
+.sorter-head span { text-transform: uppercase; letter-spacing: .5px; }
+.thumb-title { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 30px; font-size: 12px; font-weight: 600; border-radius: 8px; color: var(--text); touch-action: manipulation; }
+.thumb-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; }
+.thumb-title.plain { color: var(--muted); font-weight: 500; }
+.thumb-title svg { color: var(--muted); flex: none; }
+.thumb-title:hover { background: var(--hover); }
+.thumb-input { height: 30px; border-radius: 8px; border: 1.5px solid var(--accent); background: var(--panel); color: var(--text); font: 600 12px/1 inherit; padding: 0 8px; text-align: center; min-width: 0; }
+.dialog { z-index: 140; }
+.dialog-card { width: min(520px, 100%); padding: 28px; }
+.dialog-card h1 { font-size: 22px; }
+.dialog-choices { display: flex; flex-direction: column; gap: 8px; }
+.dialog-btn { min-height: 56px; border-radius: 14px; background: var(--hover); font-size: 16px; font-weight: 700; touch-action: manipulation; }
+.dialog-btn:active { transform: scale(.98); }
+.dialog-btn.primary { background: var(--accent); color: #fff; }
+.dialog-btn.danger { color: var(--danger); }
+.window.board.dark :is(.lesson-sheet) {
+  --panel: rgba(30, 35, 46, .97); --text: #e8ebf2; --muted: #9aa3b5; --line: rgba(255, 255, 255, .12);
+  --hover: rgba(255, 255, 255, .08); --accent: #6c8cff; --accent-soft: rgba(108, 140, 255, .2);
+  background: var(--panel); color: var(--text);
+}

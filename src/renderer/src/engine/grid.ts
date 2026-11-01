@@ -26,11 +26,12 @@ export function squareGridLevel(zoom: number): { step: number; fade: number } {
 
 /** Decorative grid only. Scientific axes have their own calibrated SI scale.
  * Positions retain subpixel camera motion; Canvas antialiasing handles fractional
- * DPR instead of rounding positions on every pan. Size is always in CSS pixels. */
+ * DPR instead of rounding positions on every pan. Size is always in CSS pixels.
+ * `clear: false` paints over what is already there (a coloured sheet, a frame). */
 export function paintGrid(ctx: CanvasRenderingContext2D, view: View, width: number, height: number,
-  dpr: number, mode: Paper, dark: boolean): void {
+  dpr: number, mode: Paper, dark: boolean, clear = true): void {
   ctx.setTransform(1, 0, 0, 1, 0, 0)
-  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+  if (clear) ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
   if (mode === 'none') return
   if (mode !== 'dots' && mode !== 'lines') {
     ctx.save()
@@ -145,7 +146,7 @@ function paintRuled(ctx: CanvasRenderingContext2D, view: View, width: number, he
       margin()
       break
     case 'graph': {
-      // Millimetre graph paper: fine every 10, bold every 50.
+      // Graph paper in world units (not calibrated millimetres): fine every 10, bold every 50.
       const g = ink('rgba(22,140,110,', 'rgba(140,230,200,')
       for (const [step, alpha, w] of [[10, dark ? .16 : .14, 1], [50, dark ? .34 : .32, 1]] as const) {
         if (step * z < 4) continue

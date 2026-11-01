@@ -1,4 +1,7 @@
+import { isBoardColor } from './colour'
 import { clamp } from './geometry'
+import { isPaper } from './grid'
+import type { Paper } from './grid'
 import type { Rect, View } from './types'
 
 /**
@@ -67,3 +70,46 @@ export function validFrame(v: unknown): Frame | undefined {
   if (!Number.isInteger(extent) || (extent as number) < 1 || (extent as number) > MAX_EXTENT) return undefined
   return { x, y, extent: extent as number }
 }
+
+/**
+ * How a page (or canvas frame) looks and what it is called. Anything left out is inherited:
+ * the colour from the lesson, the paper from "plain".
+ *  - color: an override of the lesson's board colour for this page only
+ *  - origin: where the paper pattern starts, in the same coordinates as the page's ink
+ */
+export interface PageLook { paper?: Paper; color?: string; title?: string; origin?: [number, number] }
+
+/** A canvas frame: a sheet-sized region with a look of its own. */
+export type LookFrame = Frame & PageLook
+
+export const MAX_TITLE = 120
+
+const coord = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 1e7
+
+/** Only the valid parts of a look survive; the rest is ignored rather than failing the file. */
+export function validLook(v: unknown): PageLook {
+  const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>
+  const look: PageLook = {}
+  if (isPaper(o.paper)) look.paper = o.paper
+  if (isBoardColor(o.color)) look.color = o.color
+  if (typeof o.title === 'string' && o.title.trim()) look.title = o.title.trim().slice(0, MAX_TITLE)
+  if (Array.isArray(o.origin) && o.origin.length === 2 && coord(o.origin[0]) && coord(o.origin[1]) && (o.origin[0] !== 0 || o.origin[1] !== 0)) look.origin = [o.origin[0], o.origin[1]]
+  return look
+}
+
+export function validLookFrame(v: unknown): LookFrame | undefined {
+  const frame = validFrame(v)
+  return frame && { ...frame, ...validLook(v) }
+}
+
+/** The look as plain JSON: only what is set, origin rounded to hundredths. */
+export function lookJson(look: PageLook): PageLook {
+  const out: PageLook = {}
+  if (look.paper) out.paper = look.paper
+  if (look.color) out.color = look.color
+  if (look.title) out.title = look.title
+  if (look.origin && (look.origin[0] || look.origin[1])) out.origin = [Math.round(look.origin[0] * 100) / 100, Math.round(look.origin[1] * 100) / 100]
+  return out
+}
+
+export const hasLook = (look: PageLook): boolean => Object.keys(lookJson(look)).some(k => k !== 'paper') || (!!look.paper && look.paper !== 'none')
