@@ -7,6 +7,7 @@ import {
   runsOutsideCircle,
   segDistSq
 } from './geometry'
+import { chiselPressures, outlineOptions, paintInk } from './ink'
 import { MARKER_ALPHA, isBox, newId } from './types'
 import type { Item, Rect, ShapeItem, StrokeItem } from './types'
 import { paintText } from './text'
@@ -15,6 +16,8 @@ import { paintImage } from './media'
 import { paintGraph } from './graph'
 import { paintScale } from './scale'
 import { paintTable } from './table'
+import { paintClip } from './clip'
+import { paintPart } from './apparatus/world'
 
 export function rotatePoint(x: number, y: number, cx: number, cy: number, angle: number): [number, number] {
   const c = Math.cos(angle), s = Math.sin(angle)
@@ -35,17 +38,14 @@ const halfWidth = (it: StrokeItem, v: number): number => (it.w / 2) * (it.v ? wi
 
 // ── stroke outline ────────────────────────────────────────────────────────────
 export function strokeOutline(it: StrokeItem): number[][] {
-  const pts: [number, number, number][] = []
-  for (let i = 0; i + 2 < it.p.length; i += 3) pts.push([it.p[i], it.p[i + 1], it.p[i + 2]])
+  let pts: [number, number, number][] = []
+  if (it.style === 'felt') pts = chiselPressures(it.p)
+  else for (let i = 0; i + 2 < it.p.length; i += 3) pts.push([it.p[i], it.p[i + 1], it.p[i + 2]])
   return getStroke(pts, {
     size: it.w,
-    thinning: it.v ? THINNING : 0,
-    smoothing: 0.55,
-    streamline: 0.2,
     simulatePressure: false,
     last: true,
-    start: { cap: true },
-    end: { cap: true }
+    ...outlineOptions(it.style, it.w, it.v, pts.length)
   })
 }
 
@@ -57,6 +57,12 @@ const ELLIPSE_SEGMENTS = 72
 function linePoints(s: ShapeItem): number[] {
   const [x0, y0, x1, y1] = s.p
   const dx = x1 - x0, dy = y1 - y0
+  if (s.wire) {
+    // A wire hangs a little, like a real lead.
+    const sag = Math.min(70, Math.hypot(dx, dy) * .16), out: number[] = []
+    for (let i = 0; i <= 24; i++) { const t = i / 24; out.push(x0 + dx * t, y0 + dy * t + sag * 4 * t * (1 - t)) }
+    return out
+  }
   if (!s.elbow || Math.abs(dx) < 1 || Math.abs(dy) < 1) return [x0, y0, x1, y1]
   if (s.elbow === 'h') { const mx = (x0 + x1) / 2; return [x0, y0, mx, y0, mx, y1, x1, y1] }
   const my = (y0 + y1) / 2
@@ -259,6 +265,20 @@ export function paintItem(ctx: CanvasRenderingContext2D, it: Item, alpha = 1, la
     return
   }
   paintObject(ctx, it, alpha, labTime)
+  if (it.link) paintLinkBadge(ctx, it)
+}
+
+/** A small chain mark, so a class can see the object leads somewhere. */
+function paintLinkBadge(ctx: CanvasRenderingContext2D, it: Item): void {
+  const [, y0, x1] = itemBounds(it)
+  ctx.save()
+  ctx.fillStyle = '#2f6bff'
+  ctx.beginPath(); ctx.arc(x1, y0, 14, 0, Math.PI * 2); ctx.fill()
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 2.4
+  ctx.beginPath(); ctx.roundRect(x1 - 8.5, y0 - 3, 10, 6, 3); ctx.stroke()
+  ctx.beginPath(); ctx.roundRect(x1 - 1.5, y0 - 3, 10, 6, 3); ctx.stroke()
+  ctx.restore()
 }
 
 function paintObject(ctx: CanvasRenderingContext2D, it: Item, alpha: number, labTime?: number): void {
@@ -273,11 +293,12 @@ function paintObject(ctx: CanvasRenderingContext2D, it: Item, alpha: number, lab
   if (it.t === 'g') { ctx.globalAlpha = alpha; paintGraph(ctx, it); ctx.restore(); return }
   if (it.t === 'n') { ctx.globalAlpha = alpha; paintScale(ctx, it); ctx.restore(); return }
   if (it.t === 'b') { ctx.globalAlpha = alpha; paintTable(ctx, it); ctx.restore(); return }
+  if (it.t === 'm') { ctx.globalAlpha = alpha; paintClip(ctx, it); ctx.restore(); return }
+  if (it.t === 'a') { ctx.globalAlpha = alpha; paintPart(ctx, it); ctx.restore(); return }
   const path = itemPath(it)
   if (it.t === 's') {
     ctx.globalAlpha = alpha * (it.m ? MARKER_ALPHA : 1)
-    ctx.fillStyle = it.c
-    ctx.fill(path)
+    paintInk(ctx, it, path)
   } else if (it.t === 't') {
     ctx.globalAlpha = alpha
     if (it.fill && it.fill !== 'none') { ctx.fillStyle = it.fill; ctx.fill(path) }
@@ -351,14 +372,14 @@ export function splitErase(it: Item, cx: number, cy: number, r: number): StrokeI
     return splitErase({ ...it, angle: 0 }, lx, ly, r).map(s => ({ ...s, p: s.p.map((v, i, pts) => i % 3 === 2 ? v : rotatePoint(pts[i - i % 3], pts[i - i % 3 + 1], cX, cY, it.angle!)[i % 3]) }))
   }
   const frags: StrokeItem[] = []
-  const mk = (run: number[], base: Pick<StrokeItem, 'c' | 'w' | 'm' | 'v' | 'group' | 'opacity'>): void => {
+  const mk = (run: number[], base: Pick<StrokeItem, 'c' | 'w' | 'm' | 'v' | 'style' | 'group' | 'opacity'>): void => {
     if (run.length < 6) return // drop crumbs: a lone sample left between two cuts
     frags.push({ t: 's', id: newId(), ...base, p: run })
   }
   if (it.t === 's') {
     const d = denseOf(it)
     if (d.length <= 3) return []
-    const base = { c: it.c, w: it.w, m: it.m, v: it.v, group: it.group, opacity: it.opacity }
+    const base = { c: it.c, w: it.w, m: it.m, v: it.v, ...(it.style ? { style: it.style } : {}), group: it.group, opacity: it.opacity }
     for (const run of runsOutsideCircle(d, cx, cy, r, (v) => halfWidth(it, v))) mk(run, base)
   } else {
     const base = { c: it.c, w: it.w, m: false, v: false, group: it.group, opacity: it.opacity }

@@ -2,7 +2,7 @@ import {
   Crosshair, Eraser, Eye, EyeOff, Hand, Highlighter, Menu, Minimize2,
   MousePointer2, MousePointerClick, Pen, Pin, PinOff, Redo2, Scan, SlidersHorizontal, Undo2, X, Minus, Plus,
   Slash, ArrowUpRight, Square, Circle, Maximize2, Diamond, Triangle, Type, StickyNote, Lasso, Sparkles, Clapperboard, FlaskConical, ImagePlus, Ruler, Presentation
-} from 'lucide-preact'
+} from './icons'
 import type { JSX } from 'preact'
 import { board } from '@/engine/instance'
 import { actions } from '@/state/actions'
@@ -26,11 +26,11 @@ export function TopBar(): JSX.Element {
       <div class="grow" />
       <SaveIndicator />
       <Btn icon={ImagePlus} title="Insert picture, PDF, equation, graph or page" keep onClick={() => toggle('insert')} active={['insert', 'equation', 'graph'].includes(S.popover.value ?? '')} />
-      <Btn icon={Presentation} title="Present: spotlight, curtain, timer" keep onClick={() => toggle('present')} active={S.popover.value === 'present'} />
+      <Btn icon={Presentation} title="Teach: spotlight, screen cover, timer and more" keep onClick={() => toggle('present')} active={S.popover.value === 'present'} />
       <Btn icon={FlaskConical} title="Science labs" keep onClick={() => toggle('science')} active={S.popover.value === 'science'} />
       <Btn icon={Clapperboard} title="Record and replay" keep onClick={() => toggle('replay')} active={S.popover.value === 'replay' || S.replaying.value} />
       <Btn icon={Sparkles} title="Agent tools and assistant" keep onClick={() => toggle('agent')} active={S.popover.value === 'agent'} />
-      <Btn icon={EyeOff} title="Hide interface  (Tab)  —  a small button stays to bring it back" onClick={actions.toggleUi} />
+      <Btn icon={EyeOff} title="Hide the toolbars  (Tab)  ·  a small button stays to bring them back" onClick={actions.toggleUi} />
       <Btn
         icon={MousePointerClick}
         title="Pass-through: click the apps underneath  (Ctrl+Shift+Space)"
@@ -58,7 +58,11 @@ function SaveIndicator(): JSX.Element {
 }
 
 function ToolBtn({ tool, icon, title }: { tool: ToolName; icon: Parameters<typeof Btn>[0]['icon']; title: string }): JSX.Element {
-  return <Btn icon={icon} title={title} active={activeTool.value === tool} onClick={() => actions.setTool(tool)} />
+  const choices = tool === 'pen' || tool === 'eraser' || tool === 'marker'
+  return <Btn icon={icon} title={title} keep={choices} active={activeTool.value === tool} onClick={() => {
+    if (choices && S.tool.value === tool) toggle('props')
+    else actions.setTool(tool)
+  }} />
 }
 
 export function Dock(): JSX.Element {
@@ -75,7 +79,7 @@ export function Dock(): JSX.Element {
         <Sep />
         <ToolBtn tool="pen" icon={Pen} title="Pen  (P)" />
         <ToolBtn tool="marker" icon={Highlighter} title="Highlighter  (M)" />
-        <ToolBtn tool="eraser" icon={Eraser} title="Eraser  (E)  ·  press E again to switch Stroke ⇄ Pixel" />
+        <ToolBtn tool="eraser" icon={Eraser} title="Eraser  (E)  ·  press E again to switch whole stroke ⇄ rub out" />
         <div class="anchor">
           <Btn
             icon={ShapeIcon}

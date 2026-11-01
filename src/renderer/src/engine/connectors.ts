@@ -18,7 +18,7 @@ const attachedTo = (c: ShapeItem, ids: Set<string>): boolean => (!!c.from && ids
 
 /** Ink is left out: one stroke of a hand-drawn word is not the thing being pointed at. */
 const attachable = (it: Item): boolean => !it.locked && it.t !== 's' && !isConnector(it)
-const pinned = (it: Item): boolean => (it.t === 'i' && it.latex === undefined) || it.t === 'g' || it.t === 'l' || it.t === 'n'
+const pinned = (it: Item): boolean => (it.t === 'i' && it.latex === undefined) || it.t === 'g' || it.t === 'l' || it.t === 'n' || it.t === 'a'
 
 const centreOf = (it: Exclude<Item, { t: 's' }>): Pt => [(it.p[0] + it.p[2]) / 2, (it.p[1] + it.p[3]) / 2]
 const angleOf = (it: Exclude<Item, { t: 's' }>): number => it.angle ?? 0

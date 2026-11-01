@@ -18,6 +18,8 @@ import { Lessons } from './lessons'
 import { Shelf } from './shelf'
 import { pagesToPdf } from './pdf'
 import { ShareServer, listAddresses } from './share'
+import { PollServer, validPoll } from './poll'
+import { slidesToPdf } from './slides'
 import { Capture, CaptureError } from './capture'
 import { randomUUID } from 'node:crypto'
 import { AgentBridge } from './agent-bridge'
@@ -44,7 +46,8 @@ let agentBridge: AgentBridge
 let assistant: Assistant
 const share = new ShareServer()
 let shareRequest = 0
-const stopShare = (): void => { shareRequest++; share.stop() }
+const poll = new PollServer()
+const stopShare = (): void => { shareRequest++; share.stop(); poll.stop() }
 let capturing = false
 const capture = new Capture({
   sources: options => desktopCapturer.getSources(options),
@@ -335,6 +338,7 @@ function registerIpc(): void {
   ipcMain.handle('assistant:save-config', (_e, config) => assistant.save(config))
   ipcMain.handle('assistant:models', () => assistant.models())
   ipcMain.handle('assistant:generate', (_e, prompt, selection) => assistant.generate(prompt, selection))
+  ipcMain.handle('assistant:recognize', (e, image, kind) => e.sender === w()?.webContents ? assistant.recognize(image, kind) : { ok: false, error: 'Not allowed' })
   ipcMain.on('assistant:cancel', () => assistant.cancel())
 
   ipcMain.on('win:minimize', () => w()?.minimize())
@@ -364,6 +368,18 @@ function registerIpc(): void {
   ipcMain.on('win:set-passthrough', (_e, on: boolean) => setPassthrough(!!on))
   ipcMain.on('ctl:exit', () => setPassthrough(false))
   ipcMain.handle('win:get-bounds', () => w()?.getBounds() ?? { x: 0, y: 0, width: 800, height: 600 })
+
+  // A link on an object opens in the teacher's browser: web addresses only, and never behind a full-screen board.
+  ipcMain.handle('link:open', async (e, link: unknown) => {
+    if (e.sender !== w()?.webContents || typeof link !== 'string' || link.length > 2000) return false
+    let url: URL
+    try { url = new URL(link) } catch { return false }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return false
+    if (process.env.FW_E2E_OFFSCREEN) return true
+    if (w()?.isAlwaysOnTop() && w()?.isFullScreen()) w()?.minimize()
+    await shell.openExternal(url.href)
+    return true
+  })
 
   ipcMain.handle('store:load-settings', async () => {
     const raw = await readText(dataFile('settings.json'))
@@ -453,6 +469,17 @@ function registerIpc(): void {
     try { return { ok: true, ...await capture.grab(id) } }
     catch (error) { return { ok: false, error: error instanceof CaptureError ? error.message : 'Could not capture that screen or window. Refresh and try again.' } }
     finally { capturing = false }
+  })
+  ipcMain.handle('slides:to-pdf', async (e, bytes: unknown, name: unknown) => {
+    if (e.sender !== w()?.webContents || !(bytes instanceof ArrayBuffer) || typeof name !== 'string' || process.env.FW_E2E_OFFSCREEN) return null
+    return slidesToPdf(bytes, name)
+  })
+  ipcMain.handle('poll:status', () => poll.status())
+  ipcMain.handle('poll:stop', () => poll.stop())
+  ipcMain.handle('poll:start', async (e, question: unknown, options: unknown, address: unknown) => {
+    if (e.sender !== w()?.webContents || !validPoll(question, options) || typeof address !== 'string' || !listAddresses().some(n => n.address === address)) return { ok: false, error: 'Choose an available network and try again.' }
+    try { return { ok: true, ...await poll.start({ question: question as string, options, address }) } }
+    catch { return { ok: false, error: 'Could not start the poll on this network. Try another network.' } }
   })
   ipcMain.handle('share:status', () => share.status())
   ipcMain.handle('share:stop', () => stopShare())

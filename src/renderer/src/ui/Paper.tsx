@@ -1,6 +1,6 @@
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { ImagePlus, Images, Minus, Plus, RotateCcw, Trash2 } from 'lucide-preact'
+import { Crop, ImagePlus, Images, Minus, Plus, RotateCcw, Trash2 } from './icons'
 import { sameColor } from '@/engine/colour'
 import { board } from '@/engine/instance'
 import { PRESET, SPACING_RANGE, hasSpacing, isLayout } from '@/engine/grid'
@@ -13,11 +13,13 @@ import { actions } from '@/state/actions'
 import { background, selectedPicture } from '@/state/background'
 import { SURFACES, S } from '@/state/store'
 import { Segmented, Slider, Swatch, Tile } from './kit'
+import { openCrop } from './Crop'
 
 const PAPER_GROUPS: [string, [Paper, string][]][] = [
   ['Writing', [['none', 'Plain'], ['ruled', 'Ruled'], ['fourline', 'Four-line'], ['hindi', 'Hindi lines']]],
-  ['Maths', [['lines', 'Squares'], ['graph', 'Graph paper'], ['dots', 'Dots'], ['isodots', 'Isometric dots'], ['isogrid', 'Isometric grid']]],
-  ['Music and lesson layouts', [['music', 'Music'], ['compare', 'Two columns'], ['predict', 'Three columns'], ['worked', 'Worked example'], ['exit', 'Exit ticket']]]
+  ['Maths', [['lines', 'Squares'], ['graph', 'Graph paper'], ['dots', 'Dots'], ['isodots', 'Isometric dots'], ['isogrid', 'Isometric grid'], ['semilog', 'Semi-log'], ['loglog', 'Log-log'], ['polar', 'Polar']]],
+  ['Music and lesson layouts', [['music', 'Music'], ['compare', 'Two columns'], ['predict', 'Three columns'], ['worked', 'Worked example'], ['exit', 'Exit ticket']]],
+  ['Playing fields', [['football', 'Football'], ['cricket', 'Cricket'], ['basketball', 'Basketball'], ['kabaddi', 'Kabaddi']]]
 ]
 const TEXTURE_NAMES: [Texture, string][] = [['none', 'Smooth'], ['chalk', 'Chalk'], ['slate', 'Slate'], ['paper', 'Paper']]
 const SPACINGS: [string, number][] = [['Small', .75], ['Medium', 1], ['Large', 1.5]]
@@ -215,6 +217,7 @@ export function PaperPicker(): JSX.Element {
               <Segmented<ArtSpan> options={[{ value: 'first', label: 'First screen' }, { value: 'each', label: 'Every screen' }, { value: 'whole', label: 'Whole page' }]} value={art.span} onChange={span => background.adjust({ span }, artEverywhere)} />
             </div>
           )}
+          <button type="button" class="chip nodrag" onClick={() => openCrop(null)}><Crop size={14} /> Crop the picture</button>
           <button type="button" class="chip nodrag danger" onClick={() => background.remove(artEverywhere)}><Trash2 size={14} /> Remove the picture</button>
         </div>
       )}

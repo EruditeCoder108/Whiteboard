@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.7.0-beta.1 — Real pictures, working apparatus, classroom tools, PowerPoint — 2026-11-01
+
+- **Pen styles:** pencil, brush, chalk and a chisel marker. Tap the pen in hand to choose; the preview shows the real ink on your board colour. They survive erasing part of a stroke, saving and export.
+- **A tool per input:** the thin tip, thick end and finger can each have their own tool and colour (Settings › Pen and finger). On IR panels they are told apart by contact size, measured once.
+- **Slide to clear** the page, with an Undo button.
+- **Big action bar** beside a selected object on the board, with named actions: Style, Edit, Bigger, Smaller, Bold, Copy, Mirror, Flip, Shelf, Hide, Lock, Delete.
+- **Mirror and flip.** Pictures really mirror; writing, graphs and tables only change place, so they stay readable.
+- **Links on objects:** web addresses only, including when reading a file.
+- **Mind maps:** type the idea, tap Branch; each branch finds a clear spot and its line follows it.
+- **Instruments:** finger-sized turn and close buttons, larger numbers, and readings in large print. Draw along the ruler and it says how long the line is; drag the protractor's red arm to read an angle.
+- **Graph editor:** keys, common curves, a live preview and zoom, so a board with no keyboard can plot any function.
+- **Templates:** Venn diagrams, KWL chart, two columns, timeline, steps, cycle and worksheet, made of ordinary objects.
+- **Papers:** semi-log, log-log, polar, and football, cricket, basketball and kabaddi fields in true proportions.
+- **Crop** a picture by hand, on the page or behind the writing.
+- **Classroom tools:** magnifier, clock, one-tap timer presets, name picker with roll numbers, dice, scoreboard.
+- **Students at the board:** up to six write at once, each on their own side with their own colour, eraser and undo.
+- **Ask the class:** a poll on phones over the school's own network, with no account and one answer per phone. The result can go on the board.
+- **PowerPoint** opens exactly when Office is on the PC, and with no Office as editable text, pictures, tables and shapes. **OpenBoard** lessons open as pictures to write on.
+- **Video and audio clips** on a page, kept in the lesson, up to 28 MB each.
+- **Handwriting to text or equation** (optional): select the writing, and a model the teacher has connected reads it. The teacher checks it before it replaces anything.
+- **Capturing one window** no longer makes the system redraw every open window.
+- The More menu is wider, so everything shows at once on a board, and Settings and Background are in its first row.
+- **Working apparatus** (More › Apparatus, or Subjects): take parts out of a cupboard that stays open beside the board.
+  - **Circuits that really run:** drag between terminals to wire any of 17 parts. Ammeters, voltmeters and a galvanometer read true values, bulbs glow by power and burn out, fuses blow, and a short circuit warns.
+  - **Light:** a ray box shines through convex and concave lenses, a mirror and a prism, and white light splits into its colours.
+  - **Physics:** pendulum with its true period, spring balance, vernier caliper, bar magnet, a compass that turns towards it, force arrows.
+  - **Chemistry:** glassware you can fill by dragging, a burette that really titrates, with worked-out pH and true indicator colours. A burner heats what stands above it, and a thermometer or pH paper reads the vessel it is in. Balance, atomic shells up to krypton.
+  - **Biology:** microscope with a focus knob and three slides, labelled plant and animal cells, bacterium, nerve cell, flower, inside a leaf, a stoma that opens and closes, a breathing model, osmosis, DNA.
+  - **Ready-made set-ups** to start from: Ohm's law, series and parallel, charging a capacitor, rays through a lens, a prism, titration, heating water.
+- **Real pictures on the buttons:** 108 classroom objects, from a gear for Settings to a wooden duster for the eraser, on both layouts, in light and dark. They come to about 0.7 MB in all. Tiny symbols such as close and tick stay as simple marks.
+- **One look:** quiet, warm panels and one way of showing what is selected. Touch targets grow on the board; the type does not. Plainer wording throughout.
+
 ## 1.6.0-beta.10 — Tables, reveals, light and dark mode, export preview, classroom tools — 2026-11-01
 
 - **Tables** (More menu, laptop Insert menu): choose rows and columns, then tap a cell and type.

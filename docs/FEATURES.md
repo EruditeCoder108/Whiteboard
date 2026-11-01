@@ -42,19 +42,23 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 |---|---|
 | Fast pen with real pressure, smoothing, and pointer prediction for low lag | ✅ |
 | **Soft pen** for IR panels, which send no pressure: line width follows writing speed | ✅ |
-| Pen styles: marker, pencil, brush, **chalk texture** | 🛠 ⏳ |
+| Pen styles: pen, pencil, brush, **chalk texture**, chisel marker | ✅ |
+| **Slide to clear** the page, with Undo | ✅ |
 | Highlighter that stays behind ink | ✅ |
-| **A tool per input:** fine tip, thick end, finger and palm each get their own tool and colour, so turning the stylus around switches colour | 🛠 |
+| **A tool per input:** fine tip, thick end, finger and palm each get their own tool and colour, so turning the stylus around switches colour (told apart by contact size; needs tuning on a real panel) | ✅ |
 | **Palm, fist or edge-of-hand erase** (wipes like a duster, sized to the hand) | ✅ |
 | Stroke eraser, pixel eraser, clear page | ✅ |
 | Calibration: "touch with a finger, now with your palm" | ✅ |
-| **Several writers at once** (20 touches); pair mode splits the board into 2–6 zones, each with its own pen | 🛠 ⏳ |
+| **Students at the board:** several write at once, together or on 2, 3, 4 or 6 sides, each with their own colour, eraser and undo (tested with simulated touches) | ✅ |
 | Shape snapping: hold still to turn a rough shape into a clean line, circle, rectangle or triangle | ✅ |
 | Shapes, arrows, text, sticky notes | ✅ |
 | Lasso and box select; move, resize, rotate; copy/paste; undo/redo | ✅ |
-| Handwriting → typed text (English and Hindi) | ⏳ 🎙 |
-| Handwritten maths → typeset equation | ⏳ 🎙 |
-| Table tool (cells grow on their own) and mind map | ⏳ |
+| Handwriting → typed text (English and Hindi), checked by the teacher first; needs a model the teacher connects | ✅ 🎙 |
+| Handwritten maths → editable equation, checked by the teacher first; needs a model the teacher connects | ✅ 🎙 |
+| Mind maps: one tap adds a branch in a clear spot, tied by a line that follows it | ✅ |
+| Big named actions beside a selected object; bigger, smaller and bold within reach | ✅ |
+| Mirror and flip (pictures really mirror; writing keeps reading the right way round) | ✅ |
+| Links on objects (web addresses only), opened in the browser | ✅ |
 
 ## 2. Pages and lessons
 
@@ -75,8 +79,10 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Paper spacing, strength and line colour, for this page or all pages; restore as designed | ✅ |
 | Writing papers follow the zoom on a canvas (no stretched or crowded lines); graph paper keeps its scale | ✅ |
 | Your own background picture: fit or fill, position, strength, long-page placement; kept in the lesson, survives erase/clear, save, convert and export | ✅ |
-| More papers: outline maps of India and the world, logarithmic, polar | ⏳ |
-| Templates: Venn diagram, timeline, KWL chart, worksheet | ⏳ |
+| Semi-log, log-log and polar papers; football, cricket, basketball and kabaddi fields, drawn to true proportions | ✅ |
+| Outline maps of India and the world (the borders must follow an official source) | ⏳ |
+| Templates: Venn diagrams, KWL chart, two columns, timeline, steps, cycle, worksheet; all ordinary objects | ✅ |
+| Crop a picture by hand, on the page or behind the writing | ✅ |
 | **My lessons:** every lesson filed by subject with a first-page picture and date; search, open, rename, copy, show in folder, delete to the Recycle Bin | ✅ |
 | New lesson with a name, subject or class, and notebook or canvas | ✅ |
 | **Tables:** typed text in rows and columns; Tab between cells; rows grow to fit; add, remove, drag lines, heading row; Hindi; behaves like any other object | ✅ |
@@ -98,8 +104,8 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 |---|---|
 | Pictures: paste, drop, insert | ✅ |
 | PDF worksheets and textbook pages: one page each, write on them | ✅ |
-| PowerPoint: present it under the overlay now; import it as pages later | ✅ / ⏳ |
-| OpenBoard lesson import (`.ubz`) | ⏳ |
+| PowerPoint as pages: exact through Office when it is on the PC; with no Office, editable text, pictures, tables and shapes | ✅ |
+| OpenBoard lesson import (`.ubz`), as pictures to write on | ✅ |
 | Export as PDF: a notebook exports its sheets with their paper (blank ones included), a framed canvas one page per frame; long pages split by screen | ✅ |
 | Export a page, everything or the selection as a picture (paper and board colour included, or ink only) | ✅ |
 | Lesson files: New, Open, Save now, Save a copy, recent lessons; open from a pen drive | ✅ |
@@ -117,13 +123,23 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | Ruler, set square, protractor, compass, with pen strokes snapping to their edges | ✅ |
 | Equations, maths and chemistry (MathJax + mhchem), editable later | ✅ |
 | Graph of a function (several functions, editable) | ✅ |
-| Number line, fraction bars, coordinate grid, geometry shapes with measurements | ⏳ |
-| Calculator, unit converter, periodic table | ⏳ 📚 |
+| Fraction bars, geometry shapes with measurements | ⏳ |
+| Unit converter | ⏳ 📚 |
+| **Working apparatus** (More › Apparatus, or Subjects): 58 parts that really work: 28 for physics, 17 for chemistry, 13 for biology | ✅ |
+| **Real circuits:** cells, batteries, AC supply, switches, resistors, rheostat, bulbs, LEDs, diodes, capacitors, coils, ammeter, voltmeter, galvanometer, fuses, motor, buzzer; drag between terminals to wire them; meters read true values; bulbs burn out and fuses blow; short circuits warn | ✅ |
+| **Light:** a ray box shines through lenses, mirrors and a prism on the page; white light splits into its colours | ✅ |
+| **Chemistry:** glassware with liquid levels, titration with worked-out pH and real indicator colours, burner that heats what is above it, thermometer and pH paper that read the vessel they stand in, balance, atomic shells to krypton | ✅ |
+| **Biology:** microscope with a focus knob and three slides, glass slide, plant and animal cells, bacterium, nerve cell, inside a leaf, a stoma that opens and closes, flower, breathing model, osmosis, DNA | ✅ |
+| Ready-made set-ups: Ohm's law, series and parallel, charging a capacitor, titration, heating, prism and more | ✅ |
+| Instruments with finger-sized buttons and live readings: a line's length along the ruler, a protractor arm that reads the angle, the compass radius | ✅ |
+| Graph entry by tapping: keys, common curves, live preview, zoom | ✅ |
 | Spotlight, curtain (screen cover), timer and stopwatch | ✅ |
-| Magnifier | 🛠 |
-| Random name picker, dice, team scoreboard | ⏳ |
+| Magnifier that redraws the board, so writing stays sharp | ✅ |
+| Clock, with the date; timer presets that start on one tap | ✅ |
+| **Ask the class:** a poll from students' phones over the school's own network, with no account; the result can go on the board | ✅ |
+| Name picker (roll numbers or names, everyone gets a turn), dice, team scoreboard | ✅ |
 | Screen capture → new page (freeze a screen, window or area and write on it; Ctrl+Shift+C) | ✅ |
-| Video and audio clips on a page | ⏳ |
+| Video and audio clips on a page, kept in the lesson (up to 28 MB each) | ✅ |
 
 ## 5. Write over anything (overlay mode)
 

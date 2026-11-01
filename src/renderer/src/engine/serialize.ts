@@ -1,8 +1,11 @@
+import { CLIP_SOURCE } from './clip'
+import { safeLink } from './objects'
 import { validStep } from './reveals'
 import { MAX_POINTS, validAxis } from './scale'
 import { validTable } from './table'
 import type { TableItem } from './types'
-import type { Anchor, GraphItem, ImageItem, Item, ObjectMeta, ScaleAxis, ScaleItem, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
+import { PEN_STYLES } from './types'
+import type { Anchor, ClipItem, GraphItem, ImageItem, Item, ObjectMeta, PenStyle, ScaleAxis, ScaleItem, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
 import { assetKey } from './media'
 import { artJson, hasLook, isBoardKind, lookJson, validArt, validLook, validLookFrame } from './pages'
 import type { Artwork, BoardKind, Frame, LookFrame, PageLook } from './pages'
@@ -41,9 +44,11 @@ export interface BoardFile {
 }
 
 export function itemToJson(it: Item): unknown {
-  const meta: ObjectMeta = { group: it.group, locked: it.locked, opacity: it.opacity, step: it.step }
+  const meta: ObjectMeta = { group: it.group, locked: it.locked, opacity: it.opacity, step: it.step, ...(it.link ? { link: it.link } : {}) }
   if (it.t === 'l') return { ...it, p: [...it.p], params: { ...it.params }, reveal: { ...it.reveal }, ...(it.gesture ? { gesture: it.gesture.map(p => ({ ...p })) } : {}) }
-  if (it.t === 'i') return { t: 'i', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, src: it.src, aspect: it.aspect, latex: it.latex, ...meta }
+  if (it.t === 'i') return { t: 'i', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, src: it.src, aspect: it.aspect, latex: it.latex, ...(it.flipX ? { flipX: true } : {}), ...(it.flipY ? { flipY: true } : {}), ...meta }
+  if (it.t === 'a') return { t: 'a', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, kind: it.kind, params: { ...it.params }, ...meta }
+  if (it.t === 'm') return { t: 'm', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, kind: it.kind, src: it.src, name: it.name, poster: it.poster, aspect: it.aspect, ...meta }
   if (it.t === 'b') return { t: 'b', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, cols: [...it.cols], rows: [...it.rows], cells: it.cells.map(row => [...row]), fontSize: it.fontSize, textColor: it.textColor, head: it.head, ...meta }
   if (it.t === 'n') return { t: 'n', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, x: { ...it.x }, y: it.y && { ...it.y }, grid: it.grid, equal: it.equal, points: it.points?.map(q => [...q]), coords: it.coords, ...meta }
   if (it.t === 'g') return { t: 'g', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, fns: [...it.fns], xr: [...it.xr], yr: [...it.yr], ...meta }
@@ -54,7 +59,7 @@ export function itemToJson(it: Item): unknown {
       p[i + 1] = r2(it.p[i + 1])
       p[i + 2] = r3(it.p[i + 2])
     }
-    return { t: 's', id: it.id, c: it.c, w: r2(it.w) || it.w, m: it.m ? 1 : 0, v: it.v ? 1 : 0, p, ...meta }
+    return { t: 's', id: it.id, c: it.c, w: r2(it.w) || it.w, m: it.m ? 1 : 0, v: it.v ? 1 : 0, ...(it.style ? { style: it.style } : {}), p, ...meta }
   }
   const text: TextStyle = {
     text: it.text, fontSize: it.fontSize, bold: it.bold, italic: it.italic,
@@ -62,7 +67,7 @@ export function itemToJson(it: Item): unknown {
   }
   const common = { id: it.id, c: it.c, w: r2(it.w) || it.w, p: it.p.map(r2), angle: it.angle, fill: it.fill, ...meta, ...text }
   if (it.t === 't') return { t: 't', ...common, note: it.note }
-  return { t: 'h', ...common, k: it.k, dash: it.dash, radius: it.radius, from: it.from, to: it.to, elbow: it.elbow }
+  return { t: 'h', ...common, k: it.k, dash: it.dash, radius: it.radius, from: it.from, to: it.to, elbow: it.elbow, ...(it.wire ? { wire: true } : {}) }
 }
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
@@ -86,6 +91,9 @@ function objectMeta(o: Record<string, unknown>): ObjectMeta | null {
   // A bad step only loses the step, never the object: better a visible answer than a lost one.
   const step = validStep(o.step)
   if (step) meta.step = step
+  // A link that is not an ordinary web address is dropped, never opened.
+  const link = safeLink(o.link)
+  if (link) meta.link = link
   return meta
 }
 
@@ -173,6 +181,23 @@ export function itemFromJson(raw: unknown): Item | null {
     if (o.points !== undefined) scale.points = (o.points as [number, number][]).map(q => [q[0], q[1]])
     return scale
   }
+  if (o.t === 'a') {
+    const p = o.p as number[]
+    if (p.length !== 4 || !p.every(isCoord) || p[2] <= p[0] || p[3] <= p[1] || typeof o.kind !== 'string' || !/^[a-z][a-z0-9-]{0,40}$/.test(o.kind) || !o.params || typeof o.params !== 'object') return null
+    const params: Record<string, number> = {}
+    const given = Object.entries(o.params as Record<string, unknown>)
+    if (given.length > 40) return null
+    for (const [key, value] of given) { if (!/^[a-zA-Z]{1,24}$/.test(key) || !isNum(value)) return null; params[key] = value }
+    return { t: 'a', id, c: o.c, w: o.w, p: [p[0], p[1], p[2], p[3]], kind: o.kind, params, ...meta, ...(o.angle !== undefined && isNum(o.angle) ? { angle: o.angle } : {}) }
+  }
+  if (o.t === 'm') {
+    const p = o.p as number[]
+    if (p.length !== 4 || !p.every(isCoord) || p[2] <= p[0] || p[3] <= p[1] || (o.kind !== 'video' && o.kind !== 'audio')) return null
+    if (typeof o.src !== 'string' || o.src.length > MAX_IMAGE_CHARS || !CLIP_SOURCE.test(o.src) || !isNum(o.aspect) || o.aspect <= 0 || o.aspect > 1e4) return null
+    const clip: ClipItem = { t: 'm', id, c: o.c, w: o.w, p: [p[0], p[1], p[2], p[3]], kind: o.kind, src: o.src, name: typeof o.name === 'string' ? o.name.slice(0, 200) : '', aspect: o.aspect, ...meta, ...(o.angle !== undefined && isNum(o.angle) ? { angle: o.angle } : {}) }
+    if (typeof o.poster === 'string' && o.poster.length < 2_000_000 && /^data:image\/(?:png|jpeg|webp)[;,]/.test(o.poster)) clip.poster = o.poster
+    return clip
+  }
   if (o.t === 'i' || o.t === 'g') {
     const p = o.p as number[]
     if (p.length !== 4 || !p.every(isCoord) || p[2] <= p[0] || p[3] <= p[1]) return null
@@ -184,6 +209,8 @@ export function itemFromJson(raw: unknown): Item | null {
       if (o.latex !== undefined && (!isText(o.latex) || !o.src.startsWith('data:image/svg+xml'))) return null
       const image: ImageItem = { t: 'i', ...box, src: o.src, aspect: o.aspect }
       if (o.latex !== undefined) image.latex = o.latex as string
+      if (o.flipX === true) image.flipX = true
+      if (o.flipY === true) image.flipY = true
       return image
     }
     const range = (v: unknown): v is [number, number] => Array.isArray(v) && v.length === 2 && v.every(n => isNum(n) && Math.abs(n) <= 1e9) && v[0] < v[1]
@@ -197,7 +224,8 @@ export function itemFromJson(raw: unknown): Item | null {
     for (let i = 0; i < p.length; i += 3) {
       if (!isCoord(p[i]) || !isCoord(p[i + 1]) || !isNum(p[i + 2]) || p[i + 2] < 0 || p[i + 2] > 1) return null
     }
-    const s: StrokeItem = { t: 's', id, c: o.c, w: o.w, m: !!o.m, v: !!o.v, p: [...p], ...meta }
+    // A style from a newer version falls back to the plain pen rather than losing the stroke.
+    const s: StrokeItem = { t: 's', id, c: o.c, w: o.w, m: !!o.m, v: !!o.v, ...(PEN_STYLES.includes(o.style as PenStyle) ? { style: o.style as PenStyle } : {}), p: [...p], ...meta }
     return s
   }
   if (o.t === 'h' || o.t === 't') {
@@ -228,6 +256,7 @@ export function itemFromJson(raw: unknown): Item | null {
       if (from) s.from = from
       if (to) s.to = to
       if (o.elbow === 'h' || o.elbow === 'v') s.elbow = o.elbow
+      if (o.wire === true) s.wire = true
     }
     if (o.dash !== undefined) s.dash = o.dash as ShapeItem['dash']
     if (o.radius !== undefined) s.radius = o.radius as number
@@ -264,7 +293,7 @@ export interface BoardMeta { kind: BoardKind; frames: LookFrame[]; color?: strin
 export function serializePages(pages: PageData[], page: number, inline: boolean, meta: BoardMeta = { kind: 'canvas', frames: [] }): { json: string; assets: Record<string, string> } {
   const plain = meta.kind === 'canvas' && !meta.frames.length && pages.length === 1
   const bare = !hasLook(pages[0]) && (!meta.color || sameColor(meta.color, DEFAULT_BOARD_COLOR)) && (!meta.texture || meta.texture === 'none')
-  if (plain && bare && !pages[0].items.some(it => it.t === 'i') && (!pages[0].frame || isDefaultFrame(pages[0].frame))) return { json: serializeBoard(pages[0].items, pages[0].view), assets: {} }
+  if (plain && bare && !pages[0].items.some(it => it.t === 'i' || it.t === 'm') && (!pages[0].frame || isDefaultFrame(pages[0].frame))) return { json: serializeBoard(pages[0].items, pages[0].view), assets: {} }
   const assets: Record<string, string> = {}
   // A background picture is stored with the other pictures, under its content key.
   const look = (l: PageLook): Record<string, unknown> => {
@@ -278,7 +307,7 @@ export function serializePages(pages: PageData[], page: number, inline: boolean,
     ...look(pg),
     ...(pg.frame ? { frame: { x: r2(pg.frame.x), y: r2(pg.frame.y), extent: pg.frame.extent } } : {}),
     items: pg.items.map(it => {
-      if (it.t !== 'i') return itemToJson(it)
+      if (it.t !== 'i' && it.t !== 'm') return itemToJson(it)
       const key = assetKey(it.src)
       assets[key] = it.src
       const { src: _src, ...rest } = itemToJson(it) as Record<string, unknown>
@@ -334,8 +363,8 @@ function parsePages(f: Record<string, unknown>, externalAssets: boolean): Parsed
     const items: Item[] = []
     for (const rawItem of pg.items) {
       let source = rawItem as Record<string, unknown>
-      if (source && typeof source === 'object' && source.t === 'i') {
-        const src = isAssetKey(source.a) ? (externalAssets ? (source.latex !== undefined ? 'data:image/svg+xml,' : PLACEHOLDER) : assets[source.a]) : undefined
+      if (source && typeof source === 'object' && (source.t === 'i' || source.t === 'm')) {
+        const src = isAssetKey(source.a) ? (externalAssets ? (source.t === 'm' ? 'data:video/mp4;base64,' : source.latex !== undefined ? 'data:image/svg+xml,' : PLACEHOLDER) : assets[source.a]) : undefined
         source = { ...source, src, a: undefined }
       }
       const it = itemFromJson(source)

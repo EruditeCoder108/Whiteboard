@@ -1,5 +1,5 @@
 import type { ComponentChildren, JSX } from 'preact'
-import type { LucideIcon } from 'lucide-preact'
+import type { LucideIcon } from './icons'
 
 type IconType = LucideIcon | ((p: Record<string, unknown>) => JSX.Element)
 

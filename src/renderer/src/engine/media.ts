@@ -43,7 +43,14 @@ export function paintImage(ctx: CanvasRenderingContext2D, it: ImageItem): void {
   if (img) {
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = 'high'
-    ctx.drawImage(img, x0, y0, x1 - x0, y1 - y0)
+    if (it.flipX || it.flipY) {
+      ctx.save()
+      ctx.translate((x0 + x1) / 2, (y0 + y1) / 2)
+      ctx.scale(it.flipX ? -1 : 1, it.flipY ? -1 : 1)
+      ctx.translate(-(x0 + x1) / 2, -(y0 + y1) / 2)
+      ctx.drawImage(img, x0, y0, x1 - x0, y1 - y0)
+      ctx.restore()
+    } else ctx.drawImage(img, x0, y0, x1 - x0, y1 - y0)
     // A hairline edge keeps white pages (PDF worksheets) visible on a white board.
     if (it.latex === undefined) { ctx.strokeStyle = 'rgba(100,110,130,.35)'; ctx.lineWidth = Math.max(.5, (x1 - x0) / 1200); ctx.strokeRect(x0, y0, x1 - x0, y1 - y0) }
     return
@@ -92,6 +99,16 @@ export function rasterize(source: CanvasImageSource, width: number, height: numb
 
 const keys = new Map<string, string>()
 /** Content key for a picture: FNV-1a over the data URL, cached per string. */
+/** The part of a picture inside `crop` (fractions), at its full resolution. */
+export function cropImage(image: HTMLImageElement, crop: [number, number, number, number]): { src: string; aspect: number } {
+  const [x0, y0, x1, y1] = crop
+  const sx = image.naturalWidth * x0, sy = image.naturalHeight * y0, sw = Math.max(1, image.naturalWidth * (x1 - x0)), sh = Math.max(1, image.naturalHeight * (y1 - y0))
+  const cv = document.createElement('canvas')
+  cv.width = Math.round(sw); cv.height = Math.round(sh)
+  cv.getContext('2d')!.drawImage(image, sx, sy, sw, sh, 0, 0, cv.width, cv.height)
+  return { src: cv.toDataURL('image/webp', .92), aspect: sw / sh }
+}
+
 export function assetKey(src: string): string {
   let key = keys.get(src)
   if (key) return key

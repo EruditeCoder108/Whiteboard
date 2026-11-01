@@ -3,6 +3,7 @@ import { radial } from './radial'
 import type { RadialPick } from './radial'
 import type { Ptr, Tool } from './tool-types'
 import { S, activeTool } from '@/state/store'
+import { inputKind, rolesApply } from './roles'
 
 const LONG_PRESS_SLOP = 9
 const PEN_PALM_MS = 700
@@ -36,6 +37,8 @@ export class InputRouter {
   private penUntil = 0
   /** a palm is erasing; extra contacts from the same hand are ignored */
   private palm = false
+  /** this gesture's input brought its own tool or colour */
+  private roleOn = false
   private toolSince = 0
   private space = false
   private lastPan: [number, number] = [0, 0]
@@ -160,7 +163,9 @@ export class InputRouter {
     }
     this.toolSince = performance.now()
     const instruments = this.board.instruments
-    this.tool = instruments.active ? instruments.intercept(p) ?? instruments.snapTool(this.board.currentTool(), p) : this.board.currentTool()
+    // A switch, a slider or a terminal answers to whatever is in hand, except the tools meant to pass over things.
+    const part = activeTool.value === 'eraser' || activeTool.value === 'laser' ? null : this.board.partTool(p)
+    this.tool = part ?? (instruments.active ? instruments.intercept(p) ?? instruments.snapTool(this.board.currentTool(), p) : this.board.currentTool())
     this.mode = 'tool'
     this.tool.down(p)
     if (this.tool.allowsRadial) this.armLongPress(e, p)
@@ -193,12 +198,40 @@ export class InputRouter {
 
   /** Erase with the palm for as long as it touches, then go back to the chosen tool. */
   private beginPalm(e: PointerEvent): void {
+    this.clearRole()
     this.palm = true
     S.palm.value = contactSize(e) * 1.15
     S.override.value = 'eraser'
     this.beginTool(e)
     window.clearTimeout(this.longTimer)
     this.longTimer = 0
+  }
+
+  /** This gesture's input has its own tool or colour; it lasts until the gesture ends. Returns what the input should do. */
+  private applyRole(e: PointerEvent): 'write' | 'move' | null {
+    if (!rolesApply(S.tool.value)) return null
+    const kind = inputKind(e.pointerType === 'pen' ? 'pen' : e.pointerType === 'touch' ? 'touch' : 'mouse', contactSize(e), S.tipMax.value, S.thickMax.value)
+    if (!kind) return null
+    const role = { tip: S.tipRole, thick: S.thickRole, finger: S.fingerRole }[kind].value
+    if (role === 'same') return null
+    if (role === 'move') return 'move'
+    this.roleOn = true
+    S.override.value = role
+    if (role !== 'eraser') S.inkOverride.value = { tip: S.tipInk, thick: S.thickInk, finger: S.fingerInk }[kind].value
+    return 'write'
+  }
+
+  private clearRole(): void {
+    if (!this.roleOn) return
+    this.roleOn = false
+    S.override.value = null
+    S.inkOverride.value = null
+  }
+
+  /** A stylus touching down: its eraser end has already asked for the eraser. */
+  private beginPen(e: PointerEvent): void {
+    if (S.override.value !== 'eraser' && this.applyRole(e) === 'move') this.beginPan(e)
+    else this.beginTool(e)
   }
 
   private beginPan(e: PointerEvent): void {
@@ -246,6 +279,7 @@ export class InputRouter {
       this.winDrag = null
     }
     this.tool = null
+    this.clearRole()
     if (palm) this.endPalm()
     this.el.style.cursor = this.space ? 'grab' : this.board.currentTool().cursor()
   }
@@ -270,7 +304,9 @@ export class InputRouter {
     this.touches.clear()
     this.palm = false
     S.palm.value = 0
+    this.roleOn = false
     S.override.value = null
+    S.inkOverride.value = null
     this.board.currentTool().leave?.()
     this.el.style.cursor = this.board.currentTool().cursor()
   }
@@ -281,6 +317,19 @@ export class InputRouter {
       this.mode = 'idle'
       this.primary = null
     }
+  }
+
+  // ── students at the board ────────────────────────────────────────────────
+  /** Every hand is its own writer here: no gestures, no pen-beats-touch, because several people are writing. */
+  private zoneDown(e: PointerEvent): void {
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    if (e.pointerType === 'touch') {
+      const palm = this.isPalm(e)
+      this.noteTouch(e)
+      if (palm) return // a resting hand
+    }
+    try { this.el.setPointerCapture(e.pointerId) } catch { /* pointer already gone */ }
+    this.board.zoneDown(e.pointerId, this.toPtr(e), this.el.clientWidth)
   }
 
   // ── pointer events ──────────────────────────────────────────────────────────
@@ -294,8 +343,10 @@ export class InputRouter {
     // the rest of that touch is not a stroke.
     if (this.mode === 'idle' && !this.touches.size && !this.space && e.button === 0 && activeTool.value !== 'hand') {
       const p = this.toPtr(e)
-      if (this.board.revealAt(p.wx, p.wy)) { this.tapped = e.pointerId; return }
+      if (this.board.revealAt(p.wx, p.wy) || this.board.playClipAt(p.wx, p.wy)) { this.tapped = e.pointerId; return }
     }
+
+    if (S.zones.value) return this.zoneDown(e)
 
     if (e.pointerType === 'touch') {
       if (this.penRecent()) return // palm
@@ -305,8 +356,10 @@ export class InputRouter {
       const palm = this.isPalm(e)
       this.noteTouch(e)
       if (this.touches.size === 1 && this.mode === 'idle') {
+        const asked = palm ? null : this.applyRole(e)
         if (palm) this.beginPalm(e)
-        else if (S.fingerDraw.value || activeTool.value === 'laser') this.beginTool(e)
+        else if (asked === 'move') this.beginPan(e)
+        else if (asked === 'write' || S.fingerDraw.value || activeTool.value === 'laser') this.beginTool(e)
         else this.beginPan(e)
       } else if (this.touches.size >= 2) {
         if (palm && !(this.mode === 'tool' && this.tool?.underway())) {
@@ -321,6 +374,7 @@ export class InputRouter {
         window.clearTimeout(this.longTimer)
         if (this.mode === 'tool') this.tool?.cancel()
         if (this.mode === 'radial') radial.cancel()
+        this.clearRole()
         this.tool = null
         this.mode = 'pinch'
         this.primary = null
@@ -336,7 +390,7 @@ export class InputRouter {
       this.updateOverride(e)
       if (this.mode === 'idle' && InputRouter.penContact(e)) {
         if (e.button === 1) this.beginPan(e)
-        else this.beginTool(e)
+        else this.beginPen(e)
       }
       return
     }
@@ -352,6 +406,10 @@ export class InputRouter {
     if (this.tapped === e.pointerId) return
     const events = e.getCoalescedEvents?.() ?? []
     const list = events.length ? events : [e]
+    if (S.zones.value) {
+      for (const sample of list) this.board.zoneMove(e.pointerId, this.toPtr(sample as PointerEvent), this.el.clientWidth)
+      return
+    }
 
     if (e.pointerType === 'pen') {
       this.penUntil = performance.now() + PEN_PALM_MS
@@ -359,7 +417,7 @@ export class InputRouter {
       const contact = InputRouter.penContact(e)
       // Chrome reports tip contact while the barrel button is held as a *move*, not a down
       if (this.mode === 'idle' && contact) {
-        this.beginTool(e)
+        this.beginPen(e)
         return
       }
       if ((this.mode === 'tool' || this.mode === 'pan') && this.primary === e.pointerId && !contact) {
@@ -427,6 +485,7 @@ export class InputRouter {
 
   private onUp(e: PointerEvent): void {
     if (this.tapped === e.pointerId) { this.tapped = null; return }
+    if (this.board.zoneUp(e.pointerId, this.toPtr(e), this.el.clientWidth)) return
     if (e.pointerType === 'touch') {
       this.touches.delete(e.pointerId)
       if (this.mode === 'pinch') {
@@ -449,6 +508,7 @@ export class InputRouter {
   }
 
   private onCancel(e: PointerEvent): void {
+    if (this.board.zoneUp(e.pointerId, null, this.el.clientWidth)) return
     if (e.pointerType === 'touch') this.touches.delete(e.pointerId)
     if (this.mode === 'pinch') {
       if (this.touches.size === 0) {

@@ -1,8 +1,7 @@
 import { signal } from '@preact/signals'
-import {
-  Atom, Axis3d, BookOpen, Calculator, Rows3, Dna, DraftingCompass, FlaskConical, Gauge, Image as ImageIcon, LineChart, NotebookPen,
-  MoveHorizontal, Ruler, Sigma, TestTubes, TriangleRight, Type
-} from 'lucide-preact'
+import { Atom } from './icons'
+import { SubjectMaths, SubjectEnglish, PeriodicTable, PaperSquared, PaperGraph, PaperFourline, PaperRuled, PaperHindi } from './icons'
+import { Axis3d, Calculator, Dna, DraftingCompass, FlaskConical, Gauge, Image as ImageIcon, LineChart, NotebookPen, MoveHorizontal, Ruler, Sigma, TestTubes, TriangleRight, Type } from './icons'
 import type { JSX } from 'preact'
 import { board } from '@/engine/instance'
 import type { Paper } from '@/engine/grid'
@@ -14,14 +13,15 @@ import { placeInView } from '@/engine/shelf'
 import { writingStrip } from '@/engine/strips'
 import { isDarkBg, showToast } from '@/state/store'
 import { calculatorOn } from './Tools'
+import { openTray, trayOn, traySubject } from './Apparatus'
 
 type Icon = typeof Ruler
 type Subject = 'maths' | 'physics' | 'chemistry' | 'biology' | 'english' | 'hindi'
 const subject = signal<Subject>('maths')
 
 const SUBJECTS: [Subject, string, Icon][] = [
-  ['maths', 'Maths', Calculator], ['physics', 'Physics', Atom], ['chemistry', 'Chemistry', TestTubes],
-  ['biology', 'Biology', Dna], ['english', 'English', BookOpen], ['hindi', 'Hindi', NotebookPen]
+  ['maths', 'Maths', SubjectMaths], ['physics', 'Physics', Atom], ['chemistry', 'Chemistry', TestTubes],
+  ['biology', 'Biology', Dna], ['english', 'English', SubjectEnglish], ['hindi', 'Hindi', NotebookPen]
 ]
 
 interface Entry { icon: Icon; label: string; on?: () => boolean; run: () => void; stay?: boolean }
@@ -36,9 +36,9 @@ const graph: Entry = { icon: LineChart, label: 'Graph of a function', run: () =>
 const numberLine: Entry = { icon: MoveHorizontal, label: 'Number line', run: () => editScale(null, 'line'), stay: true }
 const axes: Entry = { icon: Axis3d, label: 'Coordinate axes', run: () => editScale(null, 'axes'), stay: true }
 const calculator: Entry = { icon: Calculator, label: 'Calculator', on: () => calculatorOn.value, run: () => { calculatorOn.value = !calculatorOn.value } }
-const periodic: Entry = { icon: Atom, label: 'Periodic table', run: () => (S.popover.value = 'periodic'), stay: true }
+const periodic: Entry = { icon: PeriodicTable, label: 'Periodic table', run: () => (S.popover.value = 'periodic'), stay: true }
 const strip = (kind: 'fourline' | 'hindi', label: string): Entry => ({
-  icon: Rows3, label,
+  icon: kind === 'hindi' ? PaperHindi : PaperFourline, label,
   run: () => {
     close()
     board.insertSaved(placeInView(writingStrip(kind, isDarkBg.value), board.visibleRect()))
@@ -46,17 +46,18 @@ const strip = (kind: 'fourline' | 'hindi', label: string): Entry => ({
   }
 })
 const labs: Entry = { icon: FlaskConical, label: 'Science labs', run: () => (S.popover.value = 'science'), stay: true }
+const apparatus = (from: 'physics' | 'chemistry' | 'biology'): Entry => ({ icon: TestTubes, label: 'Apparatus', on: () => trayOn.value && traySubject.value === from, run: () => openTray(from) })
 const picture: Entry = { icon: ImageIcon, label: 'Picture / diagram', run: () => { close(); void pickFiles('image/*').then(files => insertFiles(files)) } }
 const text: Entry = { icon: Type, label: 'Typed text', run: () => { close(); board.setTool('text') } }
 
 const TOOLS: Record<Subject, Entry[]> = {
   maths: [calculator, instrument('ruler', Ruler, 'Ruler'), instrument('setsquare', TriangleRight, 'Set square'), instrument('protractor', Gauge, 'Protractor'),
-    instrument('compass', DraftingCompass, 'Compass'), numberLine, axes, equation, graph, paper('lines', Calculator, 'Squared paper'), paper('graph', LineChart, 'Graph paper')],
-  physics: [calculator, axes, equation, graph, paper('graph', LineChart, 'Graph paper'), instrument('ruler', Ruler, 'Ruler'), instrument('protractor', Gauge, 'Protractor'), labs],
-  chemistry: [periodic, { ...equation, label: 'Chemical equation' }, calculator, labs, picture, paper('lines', Calculator, 'Squared paper')],
-  biology: [labs, picture, text],
-  english: [strip('fourline', 'Four-line strip'), paper('fourline', BookOpen, 'Four-line paper'), paper('ruled', NotebookPen, 'Ruled paper'), text, picture],
-  hindi: [strip('hindi', 'Hindi strip'), paper('hindi', NotebookPen, 'Hindi lines'), paper('ruled', BookOpen, 'Ruled paper'), text, picture]
+    instrument('compass', DraftingCompass, 'Compass'), numberLine, axes, equation, graph, paper('lines', PaperSquared, 'Squared paper'), paper('graph', PaperGraph, 'Graph paper')],
+  physics: [apparatus('physics'), calculator, axes, equation, graph, paper('graph', PaperGraph, 'Graph paper'), instrument('ruler', Ruler, 'Ruler'), instrument('protractor', Gauge, 'Protractor'), labs],
+  chemistry: [apparatus('chemistry'), periodic, { ...equation, label: 'Chemical equation' }, calculator, labs, picture, paper('lines', PaperSquared, 'Squared paper')],
+  biology: [apparatus('biology'), labs, picture, text],
+  english: [strip('fourline', 'Four-line strip'), paper('fourline', PaperFourline, 'Four-line paper'), paper('ruled', PaperRuled, 'Ruled paper'), text, picture],
+  hindi: [strip('hindi', 'Hindi strip'), paper('hindi', PaperHindi, 'Hindi lines'), paper('ruled', PaperRuled, 'Ruled paper'), text, picture]
 }
 
 /** Tools by subject, the way teachers think about a lesson. */

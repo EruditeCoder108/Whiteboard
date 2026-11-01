@@ -1,4 +1,4 @@
-import { Check, FileDown, X } from 'lucide-preact'
+import { Check, FileDown, X } from './icons'
 import type { JSX } from 'preact'
 import { useEffect, useMemo, useState } from 'preact/hooks'
 import { board } from '@/engine/instance'

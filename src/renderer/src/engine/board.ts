@@ -4,15 +4,20 @@ import { effect } from '@preact/signals'
 import { Doc, History, opBounds, restyleItems } from './doc'
 import type { EditOp, HistoryState } from './doc'
 import { clamp, inflate, lerp, rectsHit, unionRect } from './geometry'
+import { playSpot } from './clip'
+import { appHooks, world } from './apparatus/world'
+import type { Setting } from './apparatus/parts'
+import { keepInZone, zoneAt, zoneInks } from './classroom'
+import { BRANCH_FILLS, NODE_H, NODE_W, branchSpot, croppedBox, flipItem, mindNode } from './objects'
 import { cloneItem, concealed, isHidden, itemBounds, paintItem, hitObject, setHiddenMode, translateItem } from './items'
 import { fitTextHeight, textAlign, textColor } from './text'
 import { transformItem } from './transforms'
 import { parseBoard, serializePages, MAX_TEXT_LENGTH, itemFromJson } from './serialize'
 import type { BoardMeta, PageData, ParsedBoard } from './serialize'
 import { EraserTool, HandTool, LaserTool, PenTool, SelectTool, ShapeTool, TextTool } from './tools'
-import type { Tool, ToolHost } from './tool-types'
+import type { Ptr, Tool, ToolHost } from './tool-types'
 import { newId } from './types'
-import type { Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, LabItem, ImageItem, GraphItem, ScaleItem, TableItem } from './types'
+import type { ApparatusItem, ClipItem, Item, Rect, View, EditableItem, TextItem, TextStyle, ShapeItem, LabItem, ImageItem, GraphItem, ScaleItem, TableItem } from './types'
 import { MAX_COLS, MAX_ROWS, addCol, addRow, cellAt, fitTable, newTable, removeCol, removeRow, setCell, tableFont } from './table'
 import { onImageReady, preloadImages } from './media'
 import { Instruments } from './instruments'
@@ -30,7 +35,7 @@ import { ART_DEFAULTS, DEFAULT_FRAME, MAX_EXTENT, MAX_TITLE, PAGE_H, PAGE_W, STY
 import type { Artwork, BoardKind, Frame, LookFrame, PageLook } from './pages'
 import { canvasToNotebook, nextFrameSlot, notebookToCanvas } from './convert'
 import { pageAt, readableOn } from './shelf'
-import { followConnectors, isConnector, remapAnchors, withNewIds } from './connectors'
+import { followConnectors, isConnector, remapAnchors, routeConnector, withNewIds } from './connectors'
 import { assignStep, clearStep, hideAgain, showStep, stepsOf } from './reveals'
 import type { StepInfo } from './reveals'
 import { LabRuntime, supportedLab } from './science/runtime'
@@ -137,6 +142,8 @@ export class Board implements ToolHost {
   readonly tools: Record<string, Tool>
 
   constructor() {
+    appHooks.dark = () => isDarkBg.value
+    appHooks.toast = text => showToast(text)
     const t: Record<string, Tool> = {
       pen: new PenTool(this, false, 'pen'),
       marker: new PenTool(this, true, 'marker'),
@@ -446,12 +453,18 @@ export class Board implements ToolHost {
     for (const it of labs) if (this.labs.playing(it) && (S.replaying.value || S.passthrough.value || !rectsHit(itemBounds(it), visible))) this.labs.pause(it)
     const changed = this.labs.tick(labs)
     for (const it of changed) this.refresh(itemBounds(it))
+    if (world.update(this.doc, performance.now())) {
+      for (const it of world.repaint) this.refresh(itemBounds(it))
+      this.dirtyLive = true
+    }
+    // A burette that has run keeps its new level: the lesson saves when it stops.
+    if (world.needsSaving && !world.moving) { world.saved(); this.changed() }
     if (this.dirtyBlit || this.dirtyAll || this.dirtyRegion) this.renderCommitted()
     const tool = this.currentTool()
     const animating = tool.animating || this.tools.laser.animating
     if (this.dirtyLive || animating) this.renderLive()
     this.dirtyLive = false
-    if (animating || labs.some(it => this.labs.playing(it))) this.schedule()
+    if (animating || world.moving || labs.some(it => this.labs.playing(it))) this.schedule()
   }
 
   /** Bring the cache up to date, then blit it to the visible canvas. */
@@ -599,6 +612,9 @@ export class Board implements ToolHost {
     const editing = S.editing.value
     if (editing) this.withWorld(ctx, () => paintItem(ctx, { ...editing.item, text: '' }))
     this.currentTool().paintOverlay?.(ctx)
+    for (const w of this.writers.values()) w.tool.paintOverlay?.(ctx)
+    if (world.hasBeams) this.withWorld(ctx, () => world.paintOverlay(ctx))
+    this.partGesture?.paintOverlay?.(ctx)
     const laser = this.tools.laser
     if (laser !== this.currentTool() && laser.animating) laser.paintOverlay?.(ctx)
     if (this.instruments.active) this.withWorld(ctx, () => this.instruments.paint(ctx))
@@ -643,7 +659,7 @@ export class Board implements ToolHost {
     this.refresh(null)
     // Clearing takes the ink only: a worksheet picture and the paper stay for the next class.
     const kept = this.look.art ? 'the picture and paper stay' : (this.look.paper ?? 'none') !== 'none' ? 'the paper stays' : ''
-    showToast(kept ? `Ink cleared · ${kept} · Ctrl+Z brings it back` : 'Board cleared  ·  Ctrl+Z brings it back')
+    showToast(kept ? `Ink cleared · ${kept}` : 'Board cleared', 6000, { label: 'Undo', run: () => this.undo() })
   }
 
   selectAll(): void {
@@ -789,6 +805,242 @@ export class Board implements ToolHost {
   }
 
   nudgeSelection(dx: number, dy: number): void { this.editSelection(it => translateItem(it, dx, dy)) }
+
+  // ── students at the board ────────────────────────────────────────────────
+  /** Each hand writing now, with its own tool: several can be under way at once. */
+  private writers = new Map<number, { tool: Tool; zone: number }>()
+  /** What each side wrote, newest last: a student's undo only ever touches their own work. */
+  private zoneWork: string[][] = []
+
+  startZones(count: number): void {
+    this.commitText()
+    this.setTool('pen')
+    this.setSelection([])
+    const inks = zoneInks(isDarkBg.value)
+    S.zoneChoices.value = inks
+    S.zoneInks.value = count === 1 ? [S.penColor.value] : inks.slice(0, count)
+    S.zoneTools.value = Array.from({ length: count }, () => 'pen')
+    this.zoneWork = Array.from({ length: count }, () => [])
+    S.zones.value = count
+    this.requestOverlay()
+  }
+
+  endZones(): void {
+    for (const w of this.writers.values()) w.tool.cancel()
+    this.writers.clear()
+    S.zones.value = 0
+    this.requestOverlay()
+  }
+
+  setZoneTool(i: number, tool: 'pen' | 'eraser'): void { S.zoneTools.value = S.zoneTools.value.map((t, k) => k === i ? tool : t) }
+  setZoneInk(i: number, ink: string): void { S.zoneInks.value = S.zoneInks.value.map((c, k) => k === i ? ink : c); this.setZoneTool(i, 'pen') }
+
+  undoZone(i: number): void {
+    const work = this.zoneWork[i]
+    while (work?.length) {
+      const id = work.pop()!
+      const it = this.doc.items.find(o => o.id === id)
+      if (!it) continue
+      const before = this.doc.snapshot()
+      this.doc.replaceAll(before.filter(o => o !== it))
+      this.commit(this.doc.diff(before), 'Undo a stroke')
+      this.refresh(itemBounds(it))
+      return
+    }
+  }
+
+  /** A hand landing on the board: it writes on its own side, in its side's colour, alongside any others. */
+  zoneDown(id: number, p: Ptr, width: number): void {
+    const count = S.zones.value
+    const zone = zoneAt(p.x, width, count)
+    const tool: Tool = S.zoneTools.value[zone] === 'eraser' ? new EraserTool(this) : new PenTool(this, false, 'pen')
+    this.writers.set(id, { tool, zone })
+    S.inkOverride.value = S.zoneInks.value[zone] ?? null
+    tool.down(this.keptInZone(p, zone, width, count))
+    S.inkOverride.value = null
+  }
+
+  zoneMove(id: number, p: Ptr, width: number): boolean {
+    const w = this.writers.get(id)
+    if (!w) return false
+    w.tool.move(this.keptInZone(p, w.zone, width, S.zones.value))
+    return true
+  }
+
+  zoneUp(id: number, p: Ptr | null, width: number): boolean {
+    const w = this.writers.get(id)
+    if (!w) return false
+    this.writers.delete(id)
+    if (!p) { w.tool.cancel(); return true }
+    const before = this.doc.items.length
+    w.tool.up(this.keptInZone(p, w.zone, width, S.zones.value))
+    if (w.tool.name === 'pen' && this.doc.items.length > before) this.zoneWork[w.zone]?.push(this.doc.items[this.doc.items.length - 1].id)
+    return true
+  }
+
+  private keptInZone(p: Ptr, zone: number, width: number, count: number): Ptr {
+    if (count < 2) return p
+    const x = keepInZone(p.x, zone, width, count)
+    return x === p.x ? p : { ...p, x, wx: this.toWorld(x, p.y)[0] }
+  }
+
+  /** The board under a magnifier: drawn again at a larger scale, so writing stays sharp. */
+  paintLens(cv: HTMLCanvasElement, sx: number, sy: number, scale: number): void {
+    const ctx = cv.getContext('2d')
+    if (!ctx) return
+    const [wx, wy] = this.toWorld(sx, sy)
+    const zoom = this.view.zoom * scale * (cv.width / cv.clientWidth || 1)
+    const view = { x: wx - cv.width / 2 / zoom, y: wy - cv.height / 2 / zoom, zoom }
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.clearRect(0, 0, cv.width, cv.height)
+    paintBackdrop(ctx, view, cv.width, cv.height, 1, this.paged ? this.pageBackdrop(this.look, this.sheet) : { ...this.surfaceBackdrop(), adapt: true }, true)
+    ctx.setTransform(zoom, 0, 0, zoom, -view.x * zoom, -view.y * zoom)
+    for (const it of this.doc.items) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+  }
+
+  // ── handwriting to text ──────────────────────────────────────────────────
+  /** The selected writing as a picture on the board's own colour, for the teacher's chosen model to read. */
+  selectionPicture(): string | null {
+    const b = this.doc.bounds(this.selection)
+    if (!b) return null
+    const pad = 24, w = b[2] - b[0] + pad * 2, h = b[3] - b[1] + pad * 2
+    const k = Math.min(2, 1400 / Math.max(w, h, 1))
+    const cv = document.createElement('canvas')
+    cv.width = Math.max(1, Math.round(w * k)); cv.height = Math.max(1, Math.round(h * k))
+    const ctx = cv.getContext('2d')
+    if (!ctx) return null
+    ctx.fillStyle = S.bgColor.value
+    ctx.fillRect(0, 0, cv.width, cv.height)
+    ctx.setTransform(k, 0, 0, k, (pad - b[0]) * k, (pad - b[1]) * k)
+    for (const it of this.selection) paintItem(ctx, it)
+    return cv.toDataURL('image/png')
+  }
+
+  /** One object in place of the selected writing, as one undoable step. */
+  private replaceSelected(next: Item): void {
+    const before = this.doc.snapshot(), gone = new Set(this.selection)
+    const at = before.findIndex(it => gone.has(it))
+    const kept = before.filter(it => !gone.has(it))
+    kept.splice(Math.min(at < 0 ? kept.length : at, kept.length), 0, next)
+    this.doc.replaceAll(kept)
+    this.commit(this.doc.diff(before), 'Handwriting to text')
+    this.setSelection([next])
+    this.refresh(null)
+  }
+
+  replaceInkWithText(text: string): void {
+    const b = this.doc.bounds(this.selection)
+    if (!b || !text) return
+    const lines = text.split('\n').length, w = Math.max(240, b[2] - b[0]), h = b[3] - b[1]
+    const fontSize = Math.max(18, Math.min(72, h / lines * .75))
+    const c = this.selection[0]?.c ?? S.penColor.value
+    this.replaceSelected(this.fitItem({ t: 't', id: newId(), c, w: 1, p: [b[0], b[1], b[0] + w, b[1] + Math.max(h, fontSize * 1.6 * lines)], text, fontSize, note: false, fill: 'none' }))
+  }
+
+  replaceInkWithEquation(src: string, latex: string, width: number, height: number): void {
+    const b = this.doc.bounds(this.selection)
+    if (!b) return
+    const aspect = width / Math.max(1, height), boxW = Math.max(120, b[2] - b[0]), boxH = Math.max(50, b[3] - b[1])
+    const w = Math.min(boxW, boxH * aspect), h = w / aspect, x = (b[0] + b[2] - w) / 2, y = (b[1] + b[3] - h) / 2
+    this.replaceSelected({ t: 'i', id: newId(), c: this.selection[0]?.c ?? S.penColor.value, w: 1, p: [x, y, x + w, y + h], src, aspect, latex })
+  }
+
+  // ── apparatus ───────────────────────────────────────────────────────────
+  /** The wire or control a press lands on; the tool in hand keeps everything else. */
+  private partGesture: Tool | null = null
+  partTool(p: Ptr): Tool | null {
+    this.partGesture = world.intercept(p, this)
+    return this.partGesture
+  }
+
+  /** A change made in a part's settings: one undo step. */
+  setPartValue(it: ApparatusItem, setting: Setting, value: number): void {
+    const current = this.doc.items.find(o => o.id === it.id)
+    if (!current || current.t !== 'a') return
+    const params = { ...current.params }
+    if (setting.apply) setting.apply(value, params)
+    else params[setting.key] = value
+    const next: ApparatusItem = { ...current, params }
+    const before = this.doc.snapshot()
+    this.doc.replaceAll(before.map(o => o === current ? next : o))
+    this.commit(this.doc.diff(before), 'Change apparatus')
+    if (this.selection.includes(current)) this.setSelection(this.selection.map(o => o === current ? next : o))
+    this.refresh(itemBounds(next))
+  }
+
+  /** The clip whose play button is here, if any. */
+  clipAt(wx: number, wy: number): ClipItem | null {
+    for (let i = this.doc.items.length - 1; i >= 0; i--) {
+      const it = this.doc.items[i]
+      if (it.t !== 'm' || concealed(it)) continue
+      const { x, y, r } = playSpot(it.p)
+      if (Math.hypot(wx - x, wy - y) <= r) return it
+    }
+    return null
+  }
+  onPlayClip?: (it: ClipItem) => void
+  /** A tap on a play button plays the clip, with whatever tool is in hand. */
+  playClipAt(wx: number, wy: number): boolean {
+    const it = this.clipAt(wx, wy)
+    if (!it || !this.onPlayClip || S.tool.value === 'select' || S.tool.value === 'lasso') return false
+    this.onPlayClip(it)
+    return true
+  }
+
+  /** Replace a picture by its cropped part, shown where that part was. Undo brings the whole picture back. */
+  cropPicture(it: ImageItem, src: string, crop: [number, number, number, number], aspect: number): void {
+    const before = this.doc.snapshot()
+    const current = before.find(o => o.id === it.id)
+    if (!current || current.t !== 'i' || current.locked) return
+    const next: ImageItem = { ...current, src, aspect, p: croppedBox(current, crop) }
+    this.doc.replaceAll(before.map(o => o === current ? next : o))
+    this.commit(this.doc.diff(before), 'Crop picture')
+    this.setSelection([next])
+    this.refresh(null)
+  }
+
+  /** Mirror the selection left to right, or turn it upside down. */
+  flipSelection(axis: 'h' | 'v'): void {
+    const b = this.doc.bounds(this.selection)
+    if (b) this.editSelection(it => flipItem(it, (b[0] + b[2]) / 2, (b[1] + b[3]) / 2, axis))
+  }
+
+  /** The web address of the one selected object; empty removes it. */
+  setLink(link: string | null): void {
+    this.editSelection(it => {
+      const { link: _old, ...rest } = it
+      return (link ? { ...rest, link } : rest) as Item
+    })
+  }
+
+  /** The middle of a new mind map, ready to type in. */
+  startMindMap(): void {
+    const r = this.visibleRect(), cx = (r[0] + r[2]) / 2, cy = (r[1] + r[3]) / 2
+    const node = mindNode([cx - NODE_W * .6, cy - NODE_H * .6, cx + NODE_W * .6, cy + NODE_H * .6], BRANCH_FILLS[0], S.penColor.value, true)
+    this.addMindNode(node)
+    showToast('Type the main idea. Tap Branch to grow the map.', 4000)
+  }
+
+  /** A new idea beside this one, tied to it by a line that follows either of them. */
+  addBranch(parent: ShapeItem): void {
+    const taken = this.doc.items.filter(it => !isConnector(it) && !concealed(it)).map(itemBounds)
+    const spot = branchSpot(itemBounds(parent), taken, this.visibleRect())
+    const children = this.doc.items.filter(it => isConnector(it) && it.from?.id === parent.id).length
+    const root = !this.doc.items.some(it => isConnector(it) && it.to?.id === parent.id)
+    const fill = root ? BRANCH_FILLS[(children + 1) % BRANCH_FILLS.length] : parent.fill ?? BRANCH_FILLS[0]
+    const node = mindNode(spot, fill, parent.c)
+    const line: ShapeItem = { t: 'h', id: newId(), c: parent.c, w: 3, k: 'line', p: [spot[0], spot[1], spot[2], spot[3]], from: { id: parent.id }, to: { id: node.id } }
+    this.addMindNode(node, routeConnector(line, id => id === parent.id ? parent : id === node.id ? node : undefined))
+  }
+
+  private addMindNode(node: ShapeItem, line?: ShapeItem): void {
+    const before = this.doc.snapshot()
+    this.doc.replaceAll(line ? [...before, line, node] : [...before, node])
+    this.commit(this.doc.diff(before), 'Add to mind map')
+    this.refresh(null)
+    this.editText(node)
+  }
 
   rotateSelection(angle: number): void {
     const b = this.doc.bounds(this.selection)

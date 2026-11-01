@@ -1,4 +1,4 @@
-import { ArrowUpRight, Circle, FilePlus2, FolderOpen, Keyboard, Plus, Save, SaveAll, Share2, Slash, Square, Trash2, History, Diamond, Triangle, UnlockKeyhole, Clapperboard } from 'lucide-preact'
+import { ArrowUpRight, Circle, FilePlus2, FolderOpen, Keyboard, Plus, Save, SaveAll, Share2, Slash, Square, Trash2, History, Diamond, Triangle, UnlockKeyhole, Clapperboard } from './icons'
 import type { JSX } from 'preact'
 import { useEffect, useLayoutEffect, useState } from 'preact/hooks'
 import type { BackupInfo } from '@shared/api'
@@ -15,6 +15,7 @@ import { ExportSheet } from './Lessons'
 import { Btn, MenuItem, Row, Segmented, Sep, Slider, Swatch, Switch } from './kit'
 import { calibrating } from './Calibrate'
 import { PaperPicker } from './Paper'
+import { InkPreview, PenStylePicker, SlideToClear, penLabel } from './PenStyles'
 
 const TOOL_TITLE: Record<string, string> = {
   pen: 'Pen', marker: 'Highlighter', eraser: 'Eraser', line: 'Line', arrow: 'Arrow', rect: 'Rectangle', ellipse: 'Ellipse', diamond: 'Diamond', triangle: 'Triangle', text: 'Text', sticky: 'Sticky note'
@@ -30,23 +31,6 @@ function ColorPicker({ onPick, color = currentColor.value }: { onPick: (hex: str
   )
 }
 
-function Preview(): JSX.Element {
-  const marker = styleKey.value === 'marker'
-  const w = Math.min(currentSize.value, 30)
-  return (
-    <svg class="preview" viewBox="0 0 200 34" preserveAspectRatio="none">
-      <path
-        d="M 14 24 C 60 -4, 100 40, 186 10"
-        fill="none"
-        stroke={currentColor.value}
-        stroke-width={w}
-        stroke-linecap="round"
-        stroke-opacity={marker ? 0.4 : 1}
-      />
-    </svg>
-  )
-}
-
 export function PropsPopover(): JSX.Element {
   if (['select', 'lasso'].includes(S.tool.value) && S.selectionCount.value) return <SelectionPopover />
   const key = styleKey.value
@@ -54,7 +38,8 @@ export function PropsPopover(): JSX.Element {
   const eraser = key === 'eraser'
   return (
     <div class="popover panel ui props" data-popover-keep="">
-      <div class="pop-title">{TOOL_TITLE[activeTool.value] ?? 'Brush'}</div>
+      <div class="pop-title">{activeTool.value === 'pen' ? penLabel(S.penStyle.value) : TOOL_TITLE[activeTool.value] ?? 'Brush'}</div>
+      {activeTool.value === 'pen' && <PenStylePicker />}
       {!eraser && (
         <>
           <div class="swatches">
@@ -63,7 +48,7 @@ export function PropsPopover(): JSX.Element {
             ))}
             <ColorPicker onPick={actions.setColor} />
           </div>
-          <Preview />
+          <InkPreview />
         </>
       )}
       <Row label="Size">
@@ -74,7 +59,7 @@ export function PropsPopover(): JSX.Element {
         <>
           <div class="pop-sub">Eraser type  <i>(press E again to switch)</i></div>
           <Segmented
-            options={[{ value: 'stroke', label: 'Stroke' }, { value: 'pixel', label: 'Pixel' }]}
+            options={[{ value: 'stroke', label: 'Whole stroke' }, { value: 'pixel', label: 'Rub out' }]}
             value={S.eraserMode.value}
             onChange={(v) => (S.eraserMode.value = v)}
           />
@@ -83,6 +68,7 @@ export function PropsPopover(): JSX.Element {
               ? 'Touch a line to remove the whole stroke.'
               : 'Erase only the part you rub over — like a real eraser.'}
           </div>
+          <SlideToClear />
         </>
       )}
     </div>
@@ -151,7 +137,7 @@ export function MenuPopover(): JSX.Element {
       <MenuItem icon={SaveAll} label="Save a copy…" hint="Ctrl+Shift+S" onClick={close(actions.saveLessonAs)} />
       <Sep />
       <MenuItem icon={Share2} label="Export picture or PDF…" hint="Ctrl+E" onClick={() => (S.popover.value = 'export')} />
-      <MenuItem icon={History} label="Recovery backups…" onClick={() => (S.popover.value = 'recovery')} />
+      <MenuItem icon={History} label="Earlier saves…" onClick={() => (S.popover.value = 'recovery')} />
       <MenuItem icon={Clapperboard} label="Record and replay…" onClick={() => (S.popover.value = 'replay')} />
       <MenuItem icon={UnlockKeyhole} label="Unlock all objects" onClick={close(() => board.unlockAll())} />
       <Sep />
@@ -184,12 +170,12 @@ export function SettingsPopover(): JSX.Element {
         onChange={(v) => actions.convertBoard(v)}
       />
       <PaperPicker />
-      <Row label="Opacity" hint="Lower it to see the screen through the board">
+      <Row label="Board opacity" hint="Lower it to see the screen through the board">
         <Slider min={0} max={100} value={S.bgAlpha.value} onChange={(v) => (S.bgAlpha.value = v)} />
         <span class="val">{S.bgAlpha.value}%</span>
       </Row>
       <Sep />
-      <Row label="Smoothing" hint="Steadies shaky handwriting. 0 = raw input">
+      <Row label="Steady hand" hint="Steadies shaky handwriting. 0 = raw input">
         <Slider min={0} max={10} value={S.smoothing.value} onChange={(v) => (S.smoothing.value = v)} />
         <span class="val">{S.smoothing.value}</span>
       </Row>
@@ -206,12 +192,13 @@ export function SettingsPopover(): JSX.Element {
         <Switch on={S.palmErase.value} onChange={(v) => (S.palmErase.value = v)} />
       </Row>
       {S.palmErase.value && <button type="button" class="link-btn nodrag" onClick={() => { S.popover.value = null; calibrating.value = true }}>Calibrate palm size…</button>}
+      <button type="button" class="link-btn nodrag" onClick={() => (S.popover.value = 'inputs')}>Pen and finger: a tool for each…</button>
       <Sep />
-      <Row label="Hold for menu">
+      <Row label="Press and hold for a menu">
         <span class="grow" />
         <Switch on={S.radialEnabled.value} onChange={(v) => (S.radialEnabled.value = v)} />
       </Row>
-      {S.radialEnabled.value && <Row label="Hold delay" hint="Increase this if the menu opens while you are writing">
+      {S.radialEnabled.value && <Row label="How long to hold" hint="Increase this if the menu opens while you are writing">
         <Slider label="Radial menu hold delay" min={300} max={1500} step={50} value={S.radialDelay.value} onChange={(v) => (S.radialDelay.value = v)} />
         <span class="val">{(S.radialDelay.value / 1000).toFixed(2)}s</span>
       </Row>}
@@ -230,7 +217,7 @@ function RecoveryPopover(): JSX.Element {
   }, [])
   return (
     <div class="popover panel ui recovery" data-popover-keep="">
-      <div class="pop-title">Recovery backups</div>
+      <div class="pop-title">Earlier saves</div>
       <div class="pop-hint">Five previous saves are kept, at most once per minute. Restoring is undoable.</div>
       {error && <div class="pop-hint">{error}</div>}
       {!backups && !error && <div class="pop-hint">Loading…</div>}
@@ -247,7 +234,7 @@ function RecoveryPopover(): JSX.Element {
 }
 
 const SHORTCUTS: [string, [string, string][]][] = [
-  ['Tools', [['V / Q / H', 'Select · Lasso · Hand'], ['P / M / E', 'Pen · Highlighter · Eraser'], ['T / N', 'Text / Sticky note'], ['E again', 'Eraser: Stroke ⇄ Pixel'], ['K', 'Laser pointer'], ['L A R O', 'Line · Arrow · Rect · Oval'], ['[  ]', 'Brush size']]],
+  ['Tools', [['V / Q / H', 'Select · Lasso · Hand'], ['P / M / E', 'Pen · Highlighter · Eraser'], ['T / N', 'Text / Sticky note'], ['E again', 'Eraser: whole stroke ⇄ rub out'], ['K', 'Laser pointer'], ['L A R O', 'Line · Arrow · Rect · Oval'], ['[  ]', 'Brush size']]],
   ['Pen, mouse & touch', [['Hold press', 'Radial menu'], ['Barrel button', 'Eraser while held'], ['2 fingers', 'Pan & pinch-zoom'], ['Shift', 'Straight / square shapes'], ['Alt + drag', 'Move window']]],
   ['Board', [['Ctrl+Z / Y', 'Undo / Redo'], ['Ctrl+A', 'Select all'], ['Ctrl+D', 'Duplicate'], ['Ctrl+C / V', 'Copy / Paste objects'], ['Ctrl+G', 'Group selection'], ['Ctrl+Shift+G', 'Ungroup selection'], ['Enter', 'Edit selected text'], ['Delete', 'Delete selection'], ['Ctrl+Shift+C', 'Copy image']]],
   ['Lesson', [['Ctrl+N', 'New lesson'], ['Ctrl+O', 'My lessons'], ['Ctrl+S', 'Save now (lessons also save themselves)'], ['Ctrl+Shift+S', 'Save a copy'], ['Ctrl+E', 'Export picture or PDF']]],

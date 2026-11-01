@@ -39,6 +39,44 @@ export function placeCapture(image: CapturedImage): void {
   showToast('Captured · it is locked, write on it freely', 5000)
 }
 
+/**
+ * One window, straight from its own video stream. Asking the system for a still of one window makes it
+ * draw every open window at full size, which crawls on a PC with many open. Null means "use the slower way":
+ * it also decides what to say about protected windows that come out black.
+ */
+async function windowFrame(id: string): Promise<(CapturedImage & { ok: true }) | null> {
+  let stream: MediaStream | null = null
+  const video = document.createElement('video')
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { mandatory: { chromeMediaSource: 'desktop', chromeMediaSourceId: id, maxWidth: 4096, maxHeight: 4096 } } } as never)
+    video.muted = true
+    video.srcObject = stream
+    await video.play()
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('No picture')), 1500)
+      video.requestVideoFrameCallback(() => { clearTimeout(timer); resolve() })
+    })
+    const canvas = document.createElement('canvas')
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    if (!ctx || !canvas.width || !canvas.height) return null
+    ctx.drawImage(video, 0, 0)
+    // A sample is enough to spot a black frame: the slower way then gives the proper answer.
+    const sample = document.createElement('canvas')
+    sample.width = 32; sample.height = 32
+    const small = sample.getContext('2d', { willReadFrequently: true })!
+    small.drawImage(canvas, 0, 0, 32, 32)
+    const px = small.getImageData(0, 0, 32, 32).data
+    let lit = false
+    for (let i = 0; i < px.length; i += 4) if (px[i] || px[i + 1] || px[i + 2]) { lit = true; break }
+    if (!lit) return null
+    return { ok: true, src: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height }
+  } catch { return null } finally {
+    stream?.getTracks().forEach(t => t.stop())
+    video.srcObject = null
+  }
+}
+
 async function picture(image: CapturedImage, region: Region | null): Promise<CapturedImage> {
   const bytes = Uint8Array.from(atob(image.src.split(',')[1]), c => c.charCodeAt(0))
   let blob = new Blob([bytes], { type: 'image/png' })
@@ -85,7 +123,7 @@ export const capture = {
     const id = ++request
     captureBusy.value = true; captureError.value = ''
     try {
-      const result = await window.api.capture.grab(source.id)
+      const result = (source.kind === 'window' ? await windowFrame(source.id) : null) ?? await window.api.capture.grab(source.id)
       if (id !== request) return
       if (!result.ok) throw new Error(result.error)
       if (source.kind === 'screen') {

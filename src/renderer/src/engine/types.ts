@@ -26,6 +26,8 @@ export interface ObjectMeta {
   locked?: boolean
   opacity?: number
   step?: RevealStep
+  /** a web address the object opens (see objects.ts) */
+  link?: string
 }
 
 export interface TextStyle {
@@ -37,6 +39,10 @@ export interface TextStyle {
   list?: 'none' | 'bullet' | 'number'
   textColor?: string
 }
+
+/** How a pen stroke looks (see ink.ts); no style is the plain pen. */
+export type PenStyle = 'pencil' | 'brush' | 'chalk' | 'felt'
+export const PEN_STYLES: PenStyle[] = ['pencil', 'brush', 'chalk', 'felt']
 
 /** A freehand stroke (pen or highlighter). `p` is flat: x, y, pressure, x, y, pressure … */
 export interface StrokeItem extends ObjectMeta {
@@ -50,6 +56,7 @@ export interface StrokeItem extends ObjectMeta {
   m: boolean
   /** width follows pressure */
   v: boolean
+  style?: PenStyle
   p: number[]
 }
 
@@ -73,6 +80,8 @@ export interface ShapeItem extends ObjectMeta, TextStyle {
   to?: Anchor
   /** arrows and lines: square corners instead of a straight run, leaving sideways (h) or up and down (v) */
   elbow?: 'h' | 'v'
+  /** a wire between two terminals of apparatus: hangs in a soft curve, and carries current (see apparatus/world.ts) */
+  wire?: boolean
 }
 
 export interface TextItem extends ObjectMeta, TextStyle {
@@ -128,6 +137,9 @@ export interface ImageItem extends ObjectMeta {
   /** natural width / height, kept when resizing */
   aspect: number
   latex?: string
+  /** mirrored left to right, or upside down */
+  flipX?: boolean
+  flipY?: boolean
 }
 
 /** A function plot drawn as vectors at every zoom. */
@@ -191,11 +203,38 @@ export interface TableItem extends ObjectMeta {
   head?: boolean
 }
 
-export type Item = StrokeItem | ShapeItem | TextItem | LabItem | ImageItem | GraphItem | ScaleItem | TableItem
-export type BoxItem = TextItem | LabItem | ImageItem | GraphItem | ScaleItem | TableItem
+/** A video or audio clip kept in the lesson. On the page it is a picture with a play button (see clip.ts). */
+export interface ClipItem extends ObjectMeta {
+  t: 'm'
+  id: string
+  c: string
+  w: number
+  p: Rect
+  angle?: number
+  kind: 'video' | 'audio'
+  src: string
+  name: string
+  poster?: string
+  aspect: number
+}
+
+/** A piece of working apparatus: `kind` says which (apparatus/parts.ts); `params` is its state, by name. */
+export interface ApparatusItem extends ObjectMeta {
+  t: 'a'
+  id: string
+  c: string
+  w: number
+  p: Rect
+  angle?: number
+  kind: string
+  params: Record<string, number>
+}
+
+export type Item = StrokeItem | ShapeItem | TextItem | LabItem | ImageItem | GraphItem | ScaleItem | TableItem | ClipItem | ApparatusItem
+export type BoxItem = TextItem | LabItem | ImageItem | GraphItem | ScaleItem | TableItem | ClipItem | ApparatusItem
 
 /** Objects whose geometry is just their rectangle. */
-export const isBox = (it: Item): it is BoxItem => it.t === 't' || it.t === 'l' || it.t === 'i' || it.t === 'g' || it.t === 'n' || it.t === 'b'
+export const isBox = (it: Item): it is BoxItem => it.t === 't' || it.t === 'l' || it.t === 'i' || it.t === 'g' || it.t === 'n' || it.t === 'b' || it.t === 'm' || it.t === 'a'
 
 export const MARKER_ALPHA = 0.4
 

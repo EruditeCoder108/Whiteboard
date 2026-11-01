@@ -8,6 +8,13 @@ function subscribe<T>(channel: string, cb: (v: T) => void): () => void {
 }
 
 const api: Api = {
+  openLink: (link) => ipcRenderer.invoke('link:open', link),
+  slides: { toPdf: (bytes, name) => ipcRenderer.invoke('slides:to-pdf', bytes, name) },
+  poll: {
+    start: (question, options, address) => ipcRenderer.invoke('poll:start', question, options, address),
+    stop: () => ipcRenderer.invoke('poll:stop'),
+    status: () => ipcRenderer.invoke('poll:status')
+  },
   capture: {
     sources: () => ipcRenderer.invoke('capture:sources'),
     grab: (sourceId) => ipcRenderer.invoke('capture:grab', sourceId)
@@ -29,6 +36,7 @@ const api: Api = {
     saveConfig: (config) => ipcRenderer.invoke('assistant:save-config', config),
     models: () => ipcRenderer.invoke('assistant:models'),
     generate: (prompt, selection) => ipcRenderer.invoke('assistant:generate', prompt, selection),
+    recognize: (image, kind) => ipcRenderer.invoke('assistant:recognize', image, kind),
     cancel: () => ipcRenderer.send('assistant:cancel')
   },
   platform: process.platform,

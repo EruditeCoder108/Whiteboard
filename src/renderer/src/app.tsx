@@ -7,6 +7,16 @@ import { installShortcuts } from '@/state/shortcuts'
 import { S, applySettings, boardMode, darkUi, showToast, startPersisting } from '@/state/store'
 import { BoardBar, BoardSaveChip, EdgeTabs, LayoutChooser } from '@/ui/Board'
 import { PalmCalibration } from '@/ui/Calibrate'
+import { InputsSheet } from '@/ui/Inputs'
+import { ApparatusTray } from '@/ui/Apparatus'
+import { RecognizeSheet } from '@/ui/Recognize'
+import { ClipPlayer, playing } from '@/ui/Clips'
+board.onPlayClip = it => { playing.value = it }
+import { ClockWidget, DiceWidget, Magnifier, NamePicker, Scoreboard } from '@/ui/ClassTools'
+import { ZonesLayer, ZonesSheet } from '@/ui/Zones'
+import { PollSheet } from '@/ui/Poll'
+import { TemplatesSheet } from '@/ui/Templates'
+import { CropSheet } from '@/ui/Crop'
 import { Autosave } from '@/state/autosave'
 import { Radial } from '@/ui/Radial'
 import { ResizeHandles, Toast } from '@/ui/Chrome'
@@ -230,7 +240,7 @@ export function App(): JSX.Element {
 
       {!hidden && (
         <>
-          {onBoard ? <><BoardBar /><EdgeTabs /><BoardSaveChip /></> : <><TopBar /><Dock /><HistoryBar />{S.kind.value === 'canvas' && <ZoomBar />}<PageBar /></>}
+          {S.zones.value ? null : onBoard ? <><BoardBar /><EdgeTabs /><BoardSaveChip /></> : <><TopBar /><Dock /><HistoryBar />{S.kind.value === 'canvas' && <ZoomBar />}<PageBar /></>}
           <Popovers />
           <AgentPanel agent={agentForPanel} />
           <ReplayPanel />
@@ -246,6 +256,14 @@ export function App(): JSX.Element {
       <Radial />
       <TimerWidget />
       <CalculatorWidget />
+      <Magnifier />
+      <ClockWidget />
+      <NamePicker />
+      <DiceWidget />
+      <Scoreboard />
+      <ZonesLayer />
+      <ClipPlayer />
+      <ApparatusTray />
       <ImportStatus />
       <Toast />
       <PalmCalibration />
@@ -255,6 +273,12 @@ export function App(): JSX.Element {
       {S.popover.value === 'export-preview' && <ExportPreview />}
       {S.popover.value === 'periodic' && <PeriodicSheet />}
       {S.popover.value === 'table' && <TableChooser />}
+      {S.popover.value === 'inputs' && <InputsSheet />}
+      {S.popover.value === 'templates' && <TemplatesSheet />}
+      {S.popover.value === 'crop' && <CropSheet />}
+      {S.popover.value === 'recognize' && <RecognizeSheet />}
+      {S.popover.value === 'zones' && <ZonesSheet />}
+      {S.popover.value === 'poll' && <PollSheet />}
       {S.popover.value === 'shelf' && <ShelfSheet />}
       {S.popover.value === 'shelf-save' && <ShelfSaveSheet />}
       <Dialog />

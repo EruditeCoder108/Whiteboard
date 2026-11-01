@@ -1,5 +1,6 @@
 import { clamp } from './geometry'
 import { hexRgb } from './colour'
+import { FIELDS, fieldMarks, isField } from './fields'
 import type { Rect, View } from './types'
 
 /**
@@ -8,11 +9,12 @@ import type { Rect, View } from './types'
  *  - ruled, fourline, hindi, music: writing papers, fixed in world units
  *  - graph, isodots, isogrid: working papers with a fixed scale (world units, not calibrated millimetres)
  *  - compare, worked, predict, exit: lesson layouts that follow each screen of the page
+ *  - semilog, loglog, polar and the playing fields: measured papers fitted to each screen (fields.ts)
  */
-export const PAPERS = ['none', 'dots', 'lines', 'ruled', 'fourline', 'hindi', 'graph', 'music', 'isodots', 'isogrid', 'compare', 'worked', 'predict', 'exit'] as const
+export const PAPERS = ['none', 'dots', 'lines', 'ruled', 'fourline', 'hindi', 'graph', 'music', 'isodots', 'isogrid', 'compare', 'worked', 'predict', 'exit', ...FIELDS] as const
 export type Paper = (typeof PAPERS)[number]
 export const isPaper = (v: unknown): v is Paper => typeof v === 'string' && (PAPERS as readonly string[]).includes(v)
-export const LAYOUTS: readonly Paper[] = ['compare', 'worked', 'predict', 'exit']
+export const LAYOUTS: readonly Paper[] = ['compare', 'worked', 'predict', 'exit', ...FIELDS]
 export const isLayout = (p: Paper): boolean => LAYOUTS.includes(p)
 /** A layout follows the page, so only the patterns have a spacing. */
 export const hasSpacing = (p: Paper): boolean => p !== 'none' && !isLayout(p)
@@ -305,6 +307,15 @@ function planRuled(v: View, width: number, height: number, mode: Paper, dk: bool
 function planLayout(v: View, mode: Paper, cells: Rect[], ink: { rgb: string; alpha: number }): PaperPass[] {
   const z = v.zoom
   const X = (x: number): number => (x - v.x) * z, Y = (y: number): number => (y - v.y) * z
+  if (isField(mode)) {
+    const major: number[] = [], minor: number[] = []
+    const onScreen = (from: number[], to: number[]): void => { for (let i = 0; i + 3 < from.length; i += 4) to.push(X(from[i]), Y(from[i + 1]), X(from[i + 2]), Y(from[i + 3])) }
+    for (const cell of cells) { const m = fieldMarks(mode, cell); onScreen(m.major, major); onScreen(m.minor, minor) }
+    return [
+      ...(minor.length ? [{ rgb: ink.rgb, alpha: Math.min(.7, ink.alpha * 1.1), segs: minor, width: 1 }] : []),
+      ...(major.length ? [{ rgb: ink.rgb, alpha: Math.min(.7, ink.alpha * 1.7), segs: major, width: 2 }] : [])
+    ]
+  }
   const segs: number[] = []
   const h = (x0: number, x1: number, y: number): void => { segs.push(X(x0), Y(y), X(x1), Y(y)) }
   const vert = (x: number, y0: number, y1: number): void => { segs.push(X(x), Y(y0), X(x), Y(y1)) }

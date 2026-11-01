@@ -1,5 +1,5 @@
 import { signal } from '@preact/signals'
-import { Delete, GripHorizontal, X } from 'lucide-preact'
+import { Delete, GripHorizontal, X } from './icons'
 import type { JSX } from 'preact'
 import { useRef, useState } from 'preact/hooks'
 import { calculate, showNumber } from '@/engine/calculator'
