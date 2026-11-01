@@ -118,7 +118,7 @@ export async function pasteClipboardImage(): Promise<boolean> {
 }
 
 /** PDF of the whole lesson. A page lengthened with "more space below" gets one sheet per screen unless `split` is false. */
-export async function exportPdf(opts: { split?: boolean } = {}): Promise<void> {
+export async function exportPdf(opts: { split?: boolean; hidden?: 'keep' | 'show' } = {}): Promise<void> {
   try {
     importing.value = 'Preparing PDF…'
     const pages = await board.exportPages(opts)

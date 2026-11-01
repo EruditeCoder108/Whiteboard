@@ -1,6 +1,6 @@
 import { clamp, rectsHit, unionRect } from './geometry'
 import { anchorFor, attachAt, followersOf, isConnector, letGo, routeConnector } from './connectors'
-import { hitCircle, hitObject, itemBounds, paintItem, splitErase, translateItem } from './items'
+import { concealed, hitCircle, hitObject, itemBounds, paintItem, splitErase, translateItem } from './items'
 import { expandGroups, transformItem } from './transforms'
 import { handleCursor, HANDLE_ORDER, insideSelection, itemInLasso, pickSelectionHandle, resizeSelection, selectionHandles } from './selection'
 import type { SelectionHandle } from './selection'
@@ -741,7 +741,7 @@ export class SelectTool implements Tool {
     } else if (this.mode === 'marquee' && this.marq) {
       const [a, b, c, d] = this.marq
       const box: Rect = [Math.min(a, c), Math.min(b, d), Math.max(a, c), Math.max(b, d)]
-      const hit = Math.hypot(c - a, d - b) * host.view.zoom < 3 ? [] : host.doc.items.filter((it) => rectsHit(itemBounds(it), box))
+      const hit = Math.hypot(c - a, d - b) * host.view.zoom < 3 ? [] : host.doc.items.filter((it) => !concealed(it) && rectsHit(itemBounds(it), box))
       host.setSelection(expandGroups(host.doc.items, this.additive ? [...this.baseSelection, ...hit] : hit))
     } else if (this.mode === 'lasso') {
       const hit = host.doc.items.filter(it => itemInLasso(it, this.polygon))

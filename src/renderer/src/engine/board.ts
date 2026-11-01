@@ -4,7 +4,7 @@ import { effect } from '@preact/signals'
 import { Doc, History, opBounds, restyleItems } from './doc'
 import type { EditOp, HistoryState } from './doc'
 import { clamp, inflate, lerp, rectsHit, unionRect } from './geometry'
-import { cloneItem, itemBounds, paintItem, hitObject, translateItem } from './items'
+import { cloneItem, concealed, isHidden, itemBounds, paintItem, hitObject, setHiddenMode, translateItem } from './items'
 import { fitTextHeight, textAlign, textColor } from './text'
 import { transformItem } from './transforms'
 import { parseBoard, serializePages, MAX_TEXT_LENGTH, itemFromJson } from './serialize'
@@ -30,6 +30,8 @@ import type { Artwork, BoardKind, Frame, LookFrame, PageLook } from './pages'
 import { canvasToNotebook, nextFrameSlot, notebookToCanvas } from './convert'
 import { pageAt } from './shelf'
 import { followConnectors, isConnector, remapAnchors, withNewIds } from './connectors'
+import { assignStep, clearStep, hideAgain, showStep, stepsOf } from './reveals'
+import type { StepInfo } from './reveals'
 import { LabRuntime, supportedLab } from './science/runtime'
 import { activeLabId, scienceInspector } from '@/state/science'
 
@@ -646,7 +648,7 @@ export class Board implements ToolHost {
   selectAll(): void {
     if (!this.doc.items.length) return
     this.setTool('select')
-    this.setSelection(this.doc.items.slice())
+    this.setSelection(this.doc.items.filter(it => !concealed(it)))
   }
 
   deleteSelection(): void {
@@ -1599,6 +1601,91 @@ export class Board implements ToolHost {
     for (const it of pg.items) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
   }
 
+  // ── prepared reveals ────────────────────────────────────────────────────────
+  /** Preparing: hidden objects show faded so they can be arranged. Otherwise they are hidden as in class. */
+  setPreparing(on: boolean): void {
+    if (S.preparing.value === on) return
+    S.preparing.value = on
+    setHiddenMode(on ? 'ghost' : 'hide')
+    if (!on) this.setSelection(this.selection.filter(it => !concealed(it)))
+    this.refresh(null)
+    this.requestOverlay()
+  }
+
+  /** What the steps apply to: this page, or on a canvas the frame in view (else the whole canvas). */
+  private revealScope(): Item[] {
+    const f = this.paged ? null : this.frames[S.frameIndex.value]
+    if (!f) return this.doc.items
+    const r = frameRect(f)
+    return this.doc.items.filter(it => { const b = itemBounds(it), x = (b[0] + b[2]) / 2, y = (b[1] + b[3]) / 2; return x >= r[0] && x <= r[2] && y >= r[1] && y <= r[3] })
+  }
+
+  revealSteps(): StepInfo[] { return stepsOf(this.revealScope()) }
+
+  /** Replace objects as one undoable edit. */
+  private editItems(change: (items: Item[]) => Item[], label: string): boolean {
+    const before = this.doc.snapshot()
+    this.doc.replaceAll(change(this.doc.items))
+    const op = this.doc.diff(before)
+    if (!op) return false
+    this.commit(op, label)
+    this.refresh(null)
+    return true
+  }
+
+  private showSteps(n: number): boolean {
+    const scope = new Set(this.revealScope().map(it => it.id))
+    return this.editItems(items => {
+      const shown = showStep(items.filter(it => scope.has(it.id)), n)
+      const byId = new Map(shown.map(it => [it.id, it]))
+      return items.map(it => byId.get(it.id) ?? it)
+    }, 'Show the next step')
+  }
+
+  /** The next hidden step of what is on screen; false when there is none (a clicker then turns the page). */
+  nextReveal(): boolean {
+    const next = this.revealSteps().find(s => s.hidden)
+    return !!next && this.showSteps(next.n)
+  }
+
+  /** A tap on a card standing in for a hidden object shows its step. */
+  revealAt(wx: number, wy: number): boolean {
+    if (S.preparing.value || S.replaying.value) return false
+    for (let i = this.doc.items.length - 1; i >= 0; i--) {
+      const it = this.doc.items[i]
+      if (!isHidden(it) || !it.step!.cover) continue
+      const b = itemBounds(it)
+      if (wx >= b[0] && wx <= b[2] && wy >= b[1] && wy <= b[3]) return this.showSteps(it.step!.n)
+    }
+    return false
+  }
+
+  hideReveals(): void {
+    const scope = new Set(this.revealScope().map(it => it.id))
+    this.editItems(items => {
+      const hidden = hideAgain(items.filter(it => scope.has(it.id)))
+      const byId = new Map(hidden.map(it => [it.id, it]))
+      return items.map(it => byId.get(it.id) ?? it)
+    }, 'Hide the steps again')
+    this.setSelection(this.selection.filter(it => !concealed(it)))
+  }
+
+  /** The selection waits for step `n`. The teacher keeps seeing it, faded, until they finish preparing. */
+  assignReveal(n: number, name: string | undefined, cover: boolean): void {
+    this.setPreparing(true)
+    const chosen = new Set(this.selection)
+    const ids = this.selection.map(it => it.id)
+    this.editItems(items => assignStep(items, chosen, n, name, cover), 'Hide for class')
+    this.setSelection(this.doc.items.filter(it => ids.includes(it.id)))
+  }
+
+  clearReveal(): void {
+    const chosen = new Set(this.selection)
+    const ids = this.selection.map(it => it.id)
+    this.editItems(items => clearStep(items, chosen), 'Do not hide')
+    this.setSelection(this.doc.items.filter(it => ids.includes(it.id)))
+  }
+
   // ── my shelf ────────────────────────────────────────────────────────────────
   /** The part of the board the teacher can see (on a page, never beyond its edges). */
   visibleRect(): Rect {
@@ -1839,6 +1926,9 @@ export class Board implements ToolHost {
   }
 
   // ── output ──────────────────────────────────────────────────────────────────
+  /** Whether the export being made shows hidden objects. */
+  private exportHidden: 'keep' | 'show' = 'keep'
+
   /** What "this page" means when saving a picture: a notebook's page, a canvas's whole drawing. */
   get defaultScope(): PictureScope { return this.paged ? 'page' : 'content' }
 
@@ -1848,8 +1938,9 @@ export class Board implements ToolHost {
    * screens with nothing on them are left out. `split: false` keeps a long page whole.
    * Blank pages are kept, and a notebook whose pages only have paper still prints that paper.
    */
-  async exportPages(opts: { split?: boolean } = {}): Promise<ArrayBuffer[]> {
+  async exportPages(opts: { split?: boolean; hidden?: 'keep' | 'show' } = {}): Promise<ArrayBuffer[]> {
     const split = opts.split ?? true
+    this.exportHidden = opts.hidden ?? 'keep'
     const out: ArrayBuffer[] = []
     const pages = this.pageData()
     const sheet = async (items: Item[], f: Frame, back: Backdrop): Promise<void> => {
@@ -1897,8 +1988,9 @@ export class Board implements ToolHost {
    *  - content: everything drawn, cropped to it
    *  - selection: the selected objects, cropped to them
    */
-  async exportPng(opts: { scope?: PictureScope; paper?: boolean; maxScale?: number } = {}): Promise<ArrayBuffer | null> {
+  async exportPng(opts: { scope?: PictureScope; paper?: boolean; maxScale?: number; hidden?: 'keep' | 'show' } = {}): Promise<ArrayBuffer | null> {
     const scope = opts.scope ?? this.defaultScope
+    this.exportHidden = opts.hidden ?? 'keep'
     const items = scope === 'selection' ? this.selection : this.doc.items
     let rect: Rect, back: Backdrop
     if (scope === 'page') {
@@ -1926,7 +2018,10 @@ export class Board implements ToolHost {
     const ctx = cv.getContext('2d')!
     if (back) paintBackdrop(ctx, { x: r[0], y: r[1], zoom: scale }, cv.width, cv.height, 1, back, true)
     ctx.setTransform(scale, 0, 0, scale, -r[0] * scale, -r[1] * scale)
+    // Only for this one synchronous paint, so the classroom screen can never flash a hidden answer.
+    setHiddenMode(this.exportHidden === 'show' ? 'show' : 'hide')
     for (const it of items) if (rectsHit(itemBounds(it), r)) paintItem(ctx, it, 1, it.t === 'l' ? this.labs.time(it) : undefined)
+    setHiddenMode(S.preparing.value ? 'ghost' : 'hide')
     const blob = await new Promise<Blob | null>((res) => cv.toBlob(res, 'image/png'))
     return blob ? await blob.arrayBuffer() : null
   }

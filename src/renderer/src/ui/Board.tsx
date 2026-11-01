@@ -1,5 +1,5 @@
 import {
-  Archive, Axis3d, Blinds, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileText, FlaskConical, GripVertical, FilePlus2, Library, Pencil, SaveAll, Share2,
+  Archive, Axis3d, Blinds, EyeOff, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, Eye, FileText, FlaskConical, GripVertical, FilePlus2, Library, Pencil, SaveAll, Share2,
   Highlighter, MoveHorizontal, Image as ImageIcon, Laptop, LayoutGrid, LineChart, LogOut, Minus, MousePointer2, MousePointerClick, Pen, Plus,
   Presentation, GraduationCap, Redo2, ArrowDownToLine, ArrowUpToLine, Infinity as InfinityIcon, BookOpen, Frame, Focus, Ruler, Shapes, SlidersHorizontal, Sigma, Sparkles, Spotlight, Timer, Trash2, Type, Undo2, MonitorUp, Layers
 } from 'lucide-preact'
@@ -175,6 +175,7 @@ function BoardMenu(): JSX.Element {
       </Section>
       <Section title="Teach">
         <Tile icon={Spotlight} label="Spotlight" on={spotlightOn.value} onClick={close(() => (spotlightOn.value = !spotlightOn.value))} />
+        <Tile icon={EyeOff} label="Prepare reveals" on={S.preparing.value} onClick={close(() => board.setPreparing(!S.preparing.value))} />
         <Tile icon={Blinds} label="Screen cover" on={curtainOn.value} onClick={close(() => (curtainOn.value = !curtainOn.value))} />
         <Tile icon={Timer} label="Timer" on={timerOn.value} onClick={close(() => (timerOn.value = !timerOn.value))} />
         <Tile icon={Clapperboard} label="Record & replay" onClick={() => (S.popover.value = 'replay')} />

@@ -1,5 +1,5 @@
 import { boundsOfPoints, rectContains, rectsHit, segDistSq } from './geometry'
-import { itemBounds, rotatePoint, shapePolylines } from './items'
+import { concealed, itemBounds, rotatePoint, shapePolylines } from './items'
 import { pointInPolygon } from './transforms'
 import type { Item, Rect } from './types'
 import { isBox } from './types'
@@ -58,7 +58,7 @@ function segmentsMeet(a: [number, number], b: [number, number], c: [number, numb
 
 /** Select actual object geometry, avoiding empty space inside a long stroke's bounds. */
 export function itemInLasso(item: Item, polygon: [number, number][]): boolean {
-  if (polygon.length < 3 || !rectsHit(itemBounds(item), boundsOfPoints(polygon))) return false
+  if (concealed(item) || polygon.length < 3 || !rectsHit(itemBounds(item), boundsOfPoints(polygon))) return false
   let paths: [number, number][][]
   if (item.t === 's') {
     const points: [number, number][] = []

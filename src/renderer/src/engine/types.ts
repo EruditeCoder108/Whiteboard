@@ -12,10 +12,20 @@ export interface View {
 
 export type ShapeKind = 'line' | 'arrow' | 'rect' | 'ellipse' | 'diamond' | 'triangle'
 
+/** A prepared reveal: the object stays hidden in class until this step (see reveals.ts). */
+export interface RevealStep {
+  n: number
+  name?: string
+  shown?: boolean
+  /** while hidden, a card to tap stands in its place */
+  cover?: boolean
+}
+
 export interface ObjectMeta {
   group?: string
   locked?: boolean
   opacity?: number
+  step?: RevealStep
 }
 
 export interface TextStyle {

@@ -28,6 +28,7 @@ import { PageBar, ImportStatus } from '@/ui/Insert'
 import { CurtainLayer, SpotlightLayer, TimerWidget } from '@/ui/Present'
 import { editEquation, editGraph, editScale, insertFiles, scaleTarget } from '@/state/insert'
 import { ScaleEditor } from '@/ui/Scale'
+import { RevealBar } from '@/ui/Reveal'
 
 const agentForPanel = new BoardAgent(board, replay)
 
@@ -230,6 +231,7 @@ export function App(): JSX.Element {
           <AgentPanel agent={agentForPanel} />
           <ReplayPanel />
           <SelectionToolbar />
+          <RevealBar />
           <ScienceUI />
         </>
       )}

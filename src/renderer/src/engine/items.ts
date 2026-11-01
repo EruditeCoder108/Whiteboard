@@ -209,8 +209,58 @@ export function itemPath(it: Item): Path2D {
   return p
 }
 
+/**
+ * Hidden objects (prepared reveals): in class they are not there at all, or a card stands in their
+ * place. While preparing they are faded with their step number; an export can ask to show them.
+ */
+export type HiddenMode = 'hide' | 'ghost' | 'show'
+let hiddenMode: HiddenMode = 'hide'
+export const setHiddenMode = (mode: HiddenMode): void => { hiddenMode = mode }
+export const isHidden = (it: Item): boolean => !!it.step && !it.step.shown
+/** Hidden from the class right now, so nothing may touch it. */
+export const concealed = (it: Item): boolean => isHidden(it) && hiddenMode === 'hide'
+
+function paintCover(ctx: CanvasRenderingContext2D, it: Item): void {
+  const [x0, y0, x1, y1] = itemBounds(it), w = x1 - x0, h = y1 - y0, size = Math.min(w, h)
+  ctx.save()
+  ctx.fillStyle = '#dfe6ff'
+  ctx.strokeStyle = '#4262ff'
+  ctx.lineWidth = Math.max(1.5, size * .02)
+  ctx.beginPath()
+  ctx.roundRect(x0, y0, w, h, Math.min(16, size * .12))
+  ctx.fill(); ctx.stroke()
+  ctx.fillStyle = '#2b3fa8'
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+  const name = it.step?.name
+  ctx.font = `600 ${Math.max(10, size * (name ? .24 : .45))}px "Segoe UI", sans-serif`
+  ctx.fillText(name ? `${name}?` : '?', x0 + w / 2, y0 + h / 2, w * .9)
+  ctx.restore()
+}
+
+function paintStepBadge(ctx: CanvasRenderingContext2D, it: Item): void {
+  const [, y0, x1] = itemBounds(it)
+  ctx.save()
+  ctx.fillStyle = '#4262ff'
+  ctx.beginPath(); ctx.arc(x1, y0, 17, 0, Math.PI * 2); ctx.fill()
+  ctx.fillStyle = '#ffffff'
+  ctx.font = '600 20px "Segoe UI", sans-serif'
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+  ctx.fillText(String(it.step!.n), x1, y0 + 1)
+  ctx.restore()
+}
+
 /** Paint one item.  The context must already carry the world→screen transform. */
 export function paintItem(ctx: CanvasRenderingContext2D, it: Item, alpha = 1, labTime?: number): void {
+  if (isHidden(it) && hiddenMode !== 'show') {
+    if (hiddenMode === 'hide') { if (it.step!.cover) paintCover(ctx, it); return }
+    paintObject(ctx, it, alpha * .35, labTime)
+    paintStepBadge(ctx, it)
+    return
+  }
+  paintObject(ctx, it, alpha, labTime)
+}
+
+function paintObject(ctx: CanvasRenderingContext2D, it: Item, alpha: number, labTime?: number): void {
   ctx.save()
   alpha *= it.opacity ?? 1
   if (it.t !== 's' && it.angle) {
@@ -257,6 +307,7 @@ export function denseOf(it: StrokeItem): number[] {
 }
 
 export function hitCircle(it: Item, cx: number, cy: number, r: number): boolean {
+  if (concealed(it)) return false
   // Cheap reject first: the cached bounds already include width and rotation.
   const b = itemBounds(it)
   if (cx + r < b[0] || cx - r > b[2] || cy + r < b[1] || cy - r > b[3]) return false

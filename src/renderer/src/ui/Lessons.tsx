@@ -178,12 +178,16 @@ export function ExportSheet(): JSX.Element {
   const [scope, setScope] = useState<PictureScope>(board.defaultScope)
   const [paper, setPaper] = useState(true)
   const [whole, setWhole] = useState(false)
+  const [answers, setAnswers] = useState(false)
+  const hidden = answers ? 'show' as const : 'keep' as const
+  const anyHidden = board.pageData().some(pg => pg.items.some(it => it.step && !it.step.shown))
   const selection = S.selectionCount.value > 0
   const pageLabel = notebook ? 'This page' : S.frameIndex.value >= 0 ? 'This frame' : 'On screen'
-  const picture = { scope: scope === 'selection' && !selection ? 'page' as const : scope, paper }
+  const picture = { scope: scope === 'selection' && !selection ? 'page' as const : scope, paper, hidden }
   const close = (fn: () => unknown) => (): void => { S.popover.value = null; void fn() }
   return (
     <div class="popover panel ui board-sheet lesson-sheet export-sheet" data-popover-keep="">
+      {anyHidden && <Row label="Include hidden answers" hint="Off: pictures, the PDF and phones show only what the class has seen"><span class="grow" /><Switch on={answers} onChange={setAnswers} /></Row>}
       <div class="sheet-head">Picture (PNG)</div>
       <Segmented<PictureScope>
         options={[{ value: 'page', label: pageLabel }, { value: 'content', label: 'Everything' }, ...(selection ? [{ value: 'selection' as const, label: 'Selection' }] : [])]}
@@ -199,7 +203,7 @@ export function ExportSheet(): JSX.Element {
         value={whole ? 'whole' : 'screens'} onChange={v => setWhole(v === 'whole')} />
       <p class="pop-hint">A page you lengthened with “more space below” is split by screen, so each sheet stays readable.</p>
       <div class="tiles two">
-        <Tile icon={FileDown} label="Save PDF" onClick={close(() => exportPdf({ split: !whole }))} />
+        <Tile icon={FileDown} label="Save PDF" onClick={close(() => exportPdf({ split: !whole, hidden }))} />
         <Tile icon={QrCode} label="Share to phones" onClick={close(sharing.open)} />
       </div>
     </div>

@@ -130,6 +130,8 @@ export const S = {
   selectionColor: signal<string | null>(null),
   selectionWidth: signal<number | null>(null),
   popover: signal<PopoverName>(null),
+  /** prepared reveals: hidden objects show faded so they can be arranged (never saved: class mode is the default) */
+  preparing: signal(false),
   ready: signal(false),
   closing: signal(false),
   saveStatus: signal<SaveStatus>('saved'),

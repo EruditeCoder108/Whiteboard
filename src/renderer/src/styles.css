@@ -1110,3 +1110,24 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
   --hover: rgba(255, 255, 255, .08); --accent: #6c8cff; --accent-soft: rgba(108, 140, 255, .2);
   background: var(--panel); color: var(--text);
 }
+
+/* ── prepared reveals ───────────────────────────────────────────────────── */
+.reveal-bar { position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%); z-index: 17; display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 16px; max-width: calc(100% - 24px); }
+.window.board .reveal-bar { bottom: 96px; }
+.window.board.bar-left .reveal-bar { left: 24px; transform: none; }
+.window.board.bar-right .reveal-bar { left: auto; right: 24px; transform: none; }
+.reveal-bar.preparing { padding-left: 16px; font-size: 14px; font-weight: 600; }
+.reveal-bar small { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.reveal-next { display: inline-flex; align-items: center; gap: 8px; min-height: 56px; padding: 0 20px; border-radius: 12px; background: var(--accent); color: #fff; font-size: 18px; font-weight: 700; white-space: nowrap; touch-action: manipulation; }
+.reveal-next:active { transform: scale(.97); }
+.reveal-again { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 14px; border-radius: 12px; background: var(--hover); font-size: 14px; font-weight: 600; white-space: nowrap; touch-action: manipulation; }
+.reveal-options { display: flex; flex-direction: column; gap: 8px; }
+.reveal-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.reveal-chips .chip { min-height: 44px; padding: 0 12px; }
+.reveal-cover { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 13px; font-weight: 600; }
+.reveal-remove { min-height: 44px; border-radius: 10px; background: var(--hover); font-size: 13px; font-weight: 600; touch-action: manipulation; }
+.window.board.dark .reveal-bar {
+  --panel: rgba(30, 35, 46, .97); --text: #e8ebf2; --muted: #9aa3b5; --line: rgba(255, 255, 255, .12);
+  --hover: rgba(255, 255, 255, .08); --accent: #6c8cff;
+  background: var(--panel); color: var(--text);
+}

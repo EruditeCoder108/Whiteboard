@@ -1,6 +1,6 @@
 import {
   AlignCenter, AlignLeft, AlignRight, Archive, ArrowDownToLine, ArrowUpToLine, Bold, Check,
-  Copy, Ellipsis, Group, Italic, List, ListOrdered, LockKeyhole, Palette, Pencil,
+  Copy, Ellipsis, EyeOff, Group, Italic, List, ListOrdered, LockKeyhole, Palette, Pencil,
   RotateCw, Scan, Trash2, Ungroup, UnlockKeyhole, X
 } from 'lucide-preact'
 import type { JSX } from 'preact'
@@ -15,6 +15,7 @@ import type { EditableItem, Item } from '@/engine/types'
 import { isBox } from '@/engine/types'
 import { PALETTE, S } from '@/state/store'
 import { shelf } from '@/state/shelf'
+import { RevealOptions } from './Reveal'
 import { Btn, MenuItem, Row, Slider, Swatch } from './kit'
 
 const editable = (it: Item): it is EditableItem => it.t === 't' || (it.t === 'h' && it.k !== 'line' && it.k !== 'arrow')
@@ -180,7 +181,7 @@ function ObjectStyles({ items }: { items: Item[] }): JSX.Element {
 export function SelectionToolbar(): JSX.Element | null {
   const items = S.selection.value
   S.viewRevision.value
-  const [panel, setPanel] = useState<'style' | 'more' | null>(null)
+  const [panel, setPanel] = useState<'style' | 'more' | 'reveal' | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   const key = items.map(it => it.id).join(',')
   useEffect(() => setPanel(null), [key])
@@ -217,12 +218,14 @@ export function SelectionToolbar(): JSX.Element | null {
       {items.length > 1 && <Btn icon={grouped ? Ungroup : Group} title={grouped ? 'Ungroup  (Ctrl+Shift+G)' : 'Group  (Ctrl+G)'} disabled={locked} onClick={() => grouped ? board.ungroupSelection() : board.groupSelection()} />}
       <Btn icon={Copy} title="Duplicate selection  (Ctrl+D)" onClick={() => board.duplicateSelection()} />
       <Btn icon={Archive} title="Save to My shelf" onClick={() => shelf.startSelection()} />
+      <Btn icon={EyeOff} title="Hide for class" active={panel === 'reveal'} disabled={allLocked} onClick={() => setPanel(panel === 'reveal' ? null : 'reveal')} />
       <Btn icon={locked ? UnlockKeyhole : LockKeyhole} title={locked ? 'Unlock selection' : 'Lock selection'} onClick={() => board.toggleLockSelection()} />
       <Btn icon={Trash2} title="Delete selection  (Delete)" disabled={allLocked} danger onClick={() => board.deleteSelection()} />
       <Btn icon={Ellipsis} title="More selection actions" active={panel === 'more'} onClick={() => setPanel(panel === 'more' ? null : 'more')} />
     </div>
     {panel && <div class={`selection-detail panel ${panel}`} style={{ maxHeight: Math.max(80, vh - toolbarTop - 102) }}>
-      {panel === 'style' ? <ObjectStyles items={items} /> : <>
+      {panel === 'style' ? <ObjectStyles items={items} /> : panel === 'reveal' ? <RevealOptions items={items} /> : <>
+        <MenuItem icon={EyeOff} label="Hide for class" onClick={() => setPanel('reveal')} />
         <MenuItem icon={Archive} label="Save to My shelf" onClick={() => run(() => shelf.startSelection())} />
         <MenuItem icon={ArrowUpToLine} label="Bring to front" onClick={() => run(() => board.arrangeSelection('front'))} />
         <MenuItem icon={ArrowDownToLine} label="Send to back" onClick={() => run(() => board.arrangeSelection('back'))} />

@@ -1,3 +1,4 @@
+import { validStep } from './reveals'
 import { MAX_POINTS, validAxis } from './scale'
 import type { Anchor, GraphItem, ImageItem, Item, ObjectMeta, ScaleAxis, ScaleItem, ShapeItem, StrokeItem, TextItem, TextStyle, View } from './types'
 import { assetKey } from './media'
@@ -38,7 +39,7 @@ export interface BoardFile {
 }
 
 export function itemToJson(it: Item): unknown {
-  const meta: ObjectMeta = { group: it.group, locked: it.locked, opacity: it.opacity }
+  const meta: ObjectMeta = { group: it.group, locked: it.locked, opacity: it.opacity, step: it.step }
   if (it.t === 'l') return { ...it, p: [...it.p], params: { ...it.params }, reveal: { ...it.reveal }, ...(it.gesture ? { gesture: it.gesture.map(p => ({ ...p })) } : {}) }
   if (it.t === 'i') return { t: 'i', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, src: it.src, aspect: it.aspect, latex: it.latex, ...meta }
   if (it.t === 'n') return { t: 'n', id: it.id, c: it.c, w: it.w, p: it.p.map(r2), angle: it.angle, x: { ...it.x }, y: it.y && { ...it.y }, grid: it.grid, equal: it.equal, points: it.points?.map(q => [...q]), coords: it.coords, ...meta }
@@ -79,6 +80,9 @@ function objectMeta(o: Record<string, unknown>): ObjectMeta | null {
   if (o.group !== undefined) meta.group = o.group as string
   if (o.locked !== undefined) meta.locked = o.locked as boolean
   if (o.opacity !== undefined) meta.opacity = o.opacity as number
+  // A bad step only loses the step, never the object: better a visible answer than a lost one.
+  const step = validStep(o.step)
+  if (step) meta.step = step
   return meta
 }
 

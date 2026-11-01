@@ -166,6 +166,9 @@ export class InputRouter {
     if (this.tool.allowsRadial) this.armLongPress(e, p)
   }
 
+  /** The pointer that just opened a card, until it lifts. */
+  private tapped: number | null = null
+
   /** Contact sizes of recent touches: what a fingertip looks like on this particular screen. */
   private touchSizes: number[] = []
 
@@ -287,6 +290,13 @@ export class InputRouter {
     if (S.editing.value) this.board.commitText()
     S.popover.value = null
 
+    // A card standing in for a hidden answer opens to a tap, with a finger or whatever tool is in hand;
+    // the rest of that touch is not a stroke.
+    if (this.mode === 'idle' && !this.touches.size && !this.space && e.button === 0 && activeTool.value !== 'hand') {
+      const p = this.toPtr(e)
+      if (this.board.revealAt(p.wx, p.wy)) { this.tapped = e.pointerId; return }
+    }
+
     if (e.pointerType === 'touch') {
       if (this.penRecent()) return // palm
       const r = this.el.getBoundingClientRect()
@@ -339,6 +349,7 @@ export class InputRouter {
   }
 
   private onMove(e: PointerEvent): void {
+    if (this.tapped === e.pointerId) return
     const events = e.getCoalescedEvents?.() ?? []
     const list = events.length ? events : [e]
 
@@ -415,6 +426,7 @@ export class InputRouter {
   }
 
   private onUp(e: PointerEvent): void {
+    if (this.tapped === e.pointerId) { this.tapped = null; return }
     if (e.pointerType === 'touch') {
       this.touches.delete(e.pointerId)
       if (this.mode === 'pinch') {

@@ -32,6 +32,7 @@
     "e2e:shelf": "electron-vite build && node e2e/shelf.mjs",
     "e2e:connectors": "electron-vite build && node e2e/connectors.mjs",
     "e2e:scale": "electron-vite build && node e2e/scale.mjs",
+    "e2e:reveals": "electron-vite build && node e2e/reveals.mjs",
     "e2e:papers": "electron-vite build && node e2e/papers.mjs",
     "e2e:replay": "electron-vite build && node e2e/replay.mjs",
     "e2e:canvas": "electron-vite build && node e2e/canvas-audit.mjs",
