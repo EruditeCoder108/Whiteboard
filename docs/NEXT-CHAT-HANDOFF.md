@@ -1,8 +1,20 @@
 # Next chat handoff
 
-**Updated 1 November 2026 (Step 2 finished; 1.6.0-beta.10).** Read this first in every new chat, then update it before the chat ends
+**Updated 1 November 2026 (Step 2 built; only the Note 3 study left; 1.6.0-beta.10).** Read this first in every new chat, then update it before the chat ends
 (see the last section). Paths are relative to the repository root
 `D:\Projects 2\whiteboard\app` unless they start with a drive letter.
+
+## Start here: the one task waiting
+
+**The only thing left from the current plan is the Note 3 study.** The owner has completed it. The result is one PDF:
+
+`D:\Projects 2\whiteboard\note3-study\study-export.pdf`
+
+- **Read that PDF. Do not open, list or view the images in the `note3-study` folder.** There are hundreds, and they will bloat the chat. The older `REPORT.md` there is an unfinished draft from the second agent: the PDF replaces it.
+- **The PDF is large (about 71 MB).** Pull out its text first and read it in small page ranges. Look at a page as a picture only when the text does not say enough.
+- Then act on it as the owner directs in the chat, and close the Note 3 line in `docs/CHECKLIST.md` when that is done.
+- **Everything after that is the owner's call.** They will say what comes next. Do not start Step 3, the big tracks or second-agent tasks on your own. The rest of this file is how we work and how the code is built, not a list of orders.
+- **Branch:** this file is on `feature/note3-study`, which is where the study work goes. Do not merge it for one small change; see §6 for when PRs and installs happen.
 
 ---
 
@@ -42,37 +54,22 @@ The gesture ring is a separate college project and is **not** part of the produc
 - **`docs/CHECKLIST.md` is the owner's plain-language progress list and the plan.** Step 1 is done (apart from
   three items moved to the end of Step 2). Tick items (✅ / 🔄 / ⬜) whenever a milestone starts or finishes; keep it
   short and jargon-free. `FEATURES.md` stays the detailed feature list.
-- `main` = **1.6.0-beta.10**, installed on the owner's laptop. **Step 2 is finished** (PRs #11–#14): My shelf, attached arrows, number line and axes, tables, reveals, light/dark mode, print-friendly PDFs, export preview, calculator, periodic table, writing strips. **Next is Step 3 (real-panel testing).** The only open Step 2 line is the Note 3 study, whose report the second agent has not finished. Built before them (see `CHANGELOG.md`):
+- `main` = **1.6.0-beta.10**, installed on the owner's laptop. **All of Step 2 is built and merged** (PRs #11–#14): My shelf, attached arrows, number line and axes, tables, reveals, light/dark mode, print-friendly PDFs, export preview, calculator, periodic table, writing strips. Only the Note 3 line stays open (see "Start here"). Built before it (see `CHANGELOG.md`):
   - lesson integrity (F1–F6, F9; PR #4);
   - Background & paper (§6; PR #5);
   - Share to phones (second agent; PR #6);
   - textured board surfaces (PR #7);
   - My lessons + autosave + page sections (PR #8);
   - Capture to lesson (second agent; PR #9).
-- **Owner's direction (2026-11-01):** a *professional* smart-board app. Finish the checklist **up to the end of
-  Step 3 properly (not rushed)**, then make a **new checklist for the big tracks** (Lesson Kit library, lecture
-  recording, AI notes). The order:
-  - **Step 2 next:** reusable teaching content (My shelf, tables, attached arrows, number line and axes, reveals).
-  - **End of Step 2:** the three deferred items:
-    - light/dark mode for the whole app, done "intelligently": Light / Dark / Auto that follows the board, with
-      print-friendly PDFs of dark boards as part of it;
-    - acting on the Note 3 study;
-    - export preview (polish).
-  - **Step 3:** real-panel testing.
-  - Board textures are "almost enough"; tune them only if asked.
+- **Owner's direction (2026-11-01):** a *professional* smart-board app, finished properly and not rushed. On the checklist, Step 3 is real-panel testing and a new checklist for the big tracks (Lesson Kit library, lecture recording, AI notes) comes after it. **The owner decides what follows the Note 3 study.** Board textures are "almost enough"; tune them only if asked.
 - **A second agent (ChatGPT) works in parallel** from written briefs in `docs/agent-tasks/` (the owner pastes them).
   - It works in its own worktree (`D:\Projects 2\whiteboard\app-<task>`), pushes its branch and never merges.
   - The lead reviews, merges through a PR, and writes the CHANGELOG/FEATURES/CHECKLIST entries. The owner now trusts
     it: review lightly (safety-critical parts plus the merge), then polish.
   - Done: `qr-share.md` and `capture.md`.
-  - **`note3-study.md` is unfinished:** `D:\Projects 2\whiteboard\note3-study\REPORT.md` (no code) is marked "in progress",
-    last written 1 Nov 12:32, with most in-use checks listed as "Not yet checked". When the owner pastes its summary, read the
-    report and turn its "Top 10" into checklist items (Step 2 or the end of Step 2).
-  - The lead built Tables itself at the owner's request, so the second agent has no brief waiting. Good next tasks for it: logarithmic, polar and map papers (mostly new files).
-  - **Keep it busy:** when it finishes, give it the next independent Step 2 item, with files that don't overlap
-    yours, in a new brief in `docs/agent-tasks/`.
-- **Note 3 is installed on this PC** (Start menu name "Note"; its window belongs to `note.exe` /
-  `easirunner.exe`). The second agent controls it for the study; the lead should not drive it at the same time.
+  - Its Note 3 study is superseded by the owner's own PDF (see "Start here"). The lead built Tables at the owner's request.
+  - **No brief is waiting.** Write one only when the owner asks. A good independent task if they do: logarithmic, polar and map papers (mostly new files).
+- **Note 3 is installed on this PC** (Start menu name "Note"; its window belongs to `note.exe` / `easirunner.exe`). Do not drive it unless the owner asks: the study is done.
 - **Deep dive progress:**
   - **Done:** §7 F1–F6 and F9 (titles + sections); §6 (all of 6.2–6.8); §9 Capture, local QR share, organised lessons
     with autosave.
@@ -91,45 +88,21 @@ The gesture ring is a separate college project and is **not** part of the produc
 - **Never tested on a real touch panel.** Swipe feel, palm threshold, soft-pen width, IR pens and tile sizes are
   unverified on hardware (Step 3).
 
-## 4. What to do next (recommended order)
+## 4. What to do next
 
-**The owner's Note3 deep dive (`docs/NOTE3-COMPETITIVE-DEEP-DIVE-2026-11-01.md`) drives the next chats.**
-Read the whole document first, not just §7. Work through it iteratively, one milestone per branch:
-1. Fix its concrete findings (§7, F1–F9; A below).
-2. Then build what it says we're missing:
-   - the gap inventory (§5);
-   - backgrounds, wallpapers and grids (§6);
-   - teaching tools and reusable content (§8);
-   - the before / during / after class lesson workflow (§9).
-3. Use its priorities and its "required outcome" for each item.
-4. After each milestone:
-   - tick off what's done in `docs/FEATURES.md`;
-   - note in §3 below which deep-dive sections are complete;
-   - pick the next section.
-5. Where the deep dive and `MASTER-PLAN.md` disagree on order, the deep dive's "make a whole lesson
-   dependable first" wins. The library (Track B) and AI notes (Track C) come after.
+**First the Note 3 study ("Start here" above). After that the owner says what to do.** The notes below are background for when they do.
 
-**A. Next milestones: follow `docs/CHECKLIST.md` in order, one branch each, and tell the owner in plain words after
-each.** Step 2 is the deep dive's §8 ("Teaching tools and reusable content"); read §8.1–8.6 for each item's
-required outcome:
-1. **My shelf**: done.
-2. **Tables**: done.
-3. **Attached arrows**: done.
-4. **Number line and coordinate axes**: done.
-5. **Prepared reveals (done)**: hide an answer behind a cover that is tapped away during class.
-6. **End of Step 2**:
-   - light/dark mode for the whole app (with print-friendly PDFs of dark boards);
-   - turn the Note 3 study's top items into work;
-   - export preview.
-7. **Step 3**: real-panel acceptance with the owner (pen/palm, two writers F7, scaling, a slow PC).
+The owner's deep dive (`docs/NOTE3-COMPETITIVE-DEEP-DIVE-2026-11-01.md`) has been the working guide: use its priorities and its "required outcome" for each item. Where it and `MASTER-PLAN.md` disagree on order, its "make a whole lesson dependable first" wins.
 
-Then **make a new checklist for the big tracks** (B below) with the owner.
+**A. On the checklist:**
+- **Step 3:** real-panel acceptance with the owner (pen/palm, two writers F7, scaling, a slow PC). It needs a panel.
+- Then a new checklist for the big tracks (B below), made with the owner.
+
 The look of a page is `PageLook` (`engine/pages.ts`): paper, color, title, origin, spacing, strength, lines, art.
 `engine/scene.ts` turns it into a `Backdrop` painted everywhere; `engine/grid.ts` plans each paper as `PaperPass`es
 (testable without a canvas). Extend these; never add a parallel paper path.
-Keep working iteratively unless the owner redirects.
 
-**B. Then the owner picks the next big track:**
+**B. The big tracks, when the owner picks one:**
 - **Track B, Lesson Kit** (the biggest differentiator): see `MASTER-PLAN.md` §2–4. The first wave is a 3D heart,
   mitosis, ray optics, 3D glassware, 30 Class 10 diagrams and maths tools. One shared Three.js
   renderer; art made in real art tools, motion in code, science as formulas. The old 14 science labs
@@ -220,7 +193,8 @@ Electron 44 + electron-vite, Preact + `@preact/signals`, Canvas2D, TypeScript.
 - **Smart board first:** big targets, everything reachable at the bottom and sides, no hover-only UI,
   internals hidden.
 - Free and open-source assets only (CC0/PD/CC BY/CC BY-SA; never NC/ND). No AI-slop visuals.
-- **One PR and one laptop install per whole checklist step, not per item, and do not stop to ask between items** (owner, 1 Nov 2026): spend tokens and usage on building the app.
+- **One PR and one laptop install per whole checklist step, not per item, and do not stop to ask between items** (owner, 1 Nov 2026): spend tokens and usage on building the app. Mid-task, just continue.
+- **Keep context small:** never view whole folders of images or large files when the text or a small part will do (the owner has asked for this by name).
 - **When a chat gets long and the next task is new, not a continuation:** update this file and give
   the owner a short starter prompt for the new chat.
 

@@ -31,7 +31,7 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 
 **End of Step 2 (moved here from Step 1):**
 - ✅ Light and dark mode for the whole app (toolbars, menus, sheets), plus print-friendly PDFs of dark boards
-- 🔄 Study of the whole Note 3 app; then build its best ideas. *Built from its report so far: calculator, periodic table, writing strips. The report itself is not finished (second agent).*
+- 🔄 Study of the whole Note 3 app; then build its best ideas. *The owner has finished the study (`note3-study\study-export.pdf`); it goes to the next chat. Built so far: calculator, periodic table, writing strips.*
 - ✅ Export preview: see the pages before saving the PDF, and leave some out
 
 ## Step 3: tested on a real smart board
