@@ -802,6 +802,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .paper-group { display: flex; flex-direction: column; gap: 2px; }
 .paper-group-name { font-size: 10px; color: var(--muted); padding: 2px 2px 0; }
 .paper-group .papers { grid-template-columns: repeat(5, 1fr); }
+.surfaces { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.tune-note { font-size: 11px; color: var(--muted); }
 .paper-tune { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 12px; background: var(--hover); }
 .tune-row { display: flex; align-items: center; gap: 8px; min-height: 38px; }
 .tune-row .seg { flex: 1; }

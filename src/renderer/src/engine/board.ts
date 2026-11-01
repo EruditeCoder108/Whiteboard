@@ -24,6 +24,7 @@ import { DEFAULT_BOARD_COLOR, sameColor } from './colour'
 import type { Paper, PaperStyle } from './grid'
 import { backdropOf, paintBackdrop, styleOf } from './scene'
 import type { Backdrop } from './scene'
+import type { Texture } from './texture'
 import { ART_DEFAULTS, DEFAULT_FRAME, MAX_EXTENT, MAX_TITLE, PAGE_H, PAGE_W, STYLE_KEYS, clampToFrame, fitZoom, frameForContent, frameRect, frameView, scrollOf } from './pages'
 import type { Artwork, BoardKind, Frame, LookFrame, PageLook } from './pages'
 import { canvasToNotebook, nextFrameSlot, notebookToCanvas } from './convert'
@@ -34,7 +35,7 @@ import { activeLabId, scienceInspector } from '@/state/science'
 interface PageRec extends PageLook { items: Item[]; view: View; history: HistoryState; frame?: Frame }
 
 /** A snapshot of the lesson's structure, to put back after a page or board-level change. */
-interface Structure { pages: PageRec[]; pageIndex: number; kind: BoardKind; frames: LookFrame[]; color: string }
+interface Structure { pages: PageRec[]; pageIndex: number; kind: BoardKind; frames: LookFrame[]; color: string; texture: Texture }
 
 /** A paper style as look fields: only what differs from the preset. */
 function styleLook(s: PaperStyle): PageLook {
@@ -79,6 +80,8 @@ export class Board implements ToolHost {
   private look: PageLook = { paper: 'none' }
   /** the board colour every page shows unless it sets its own */
   private lessonColor = DEFAULT_BOARD_COLOR
+  /** the surface texture every page shows unless it sets its own */
+  private lessonTexture: Texture = 'none'
   /** notebook: pages of fixed sheets; canvas: one endless page, optionally with frames */
   private boardKind: BoardKind = 'canvas'
   /** canvas only: sheet-sized frames, stepped through like slides; each may set its own look */
@@ -184,6 +187,7 @@ export class Board implements ToolHost {
     })
     const stopGrid = effect(() => {
       S.grid.value
+      S.bgAlpha.value // the texture fades with a see-through board
       isDarkBg.value
       this.dirtyBlit = true
       this.schedule()
@@ -531,10 +535,11 @@ export class Board implements ToolHost {
 
   private blit(preview: boolean): void {
     const f = this.sheet
-    const gridKey = `${this.view.x},${this.view.y},${this.view.zoom},${S.bgColor.value},${this.lookRev},${this.boardKind},${f.x},${f.y},${f.extent},${this.framesRev}`
+    const gridKey = `${this.view.x},${this.view.y},${this.view.zoom},${S.bgColor.value},${S.bgAlpha.value},${this.lookRev},${this.boardKind},${f.x},${f.y},${f.extent},${this.framesRev}`
     if (gridKey !== this.gridKey) {
-      // The picture and paper of this page (or of the canvas) over the board colour, which the window supplies.
-      const back = this.paged ? this.pageBackdrop(this.look, this.sheet) : { ...this.surfaceBackdrop(), adapt: true }
+      // The texture, picture and paper of this page (or of the canvas) over the board colour, which the
+      // window supplies. A see-through board fades its texture along with its colour.
+      const back = { ...(this.paged ? this.pageBackdrop(this.look, this.sheet) : { ...this.surfaceBackdrop(), adapt: true }), textureAlpha: S.bgAlpha.value / 100 }
       paintBackdrop(this.gctx, this.view, this.w, this.h, this.dpr, back, false)
       if (this.paged) this.paintDesk()
       else if (this.frames.length) this.paintFrames()
@@ -932,7 +937,7 @@ export class Board implements ToolHost {
    */
   private structure(): Structure {
     const live: PageRec = { items: this.doc.items, view: this.view, history: this.history.peek(), ...this.look, frame: this.sheet }
-    return { pages: this.pages.map((pg, i) => i === this.pageIndex ? live : pg), pageIndex: this.pageIndex, kind: this.boardKind, frames: this.frames.map(f => ({ ...f })), color: this.lessonColor }
+    return { pages: this.pages.map((pg, i) => i === this.pageIndex ? live : pg), pageIndex: this.pageIndex, kind: this.boardKind, frames: this.frames.map(f => ({ ...f })), color: this.lessonColor, texture: this.lessonTexture }
   }
 
   private restoreStructure(s: Structure): void {
@@ -942,6 +947,7 @@ export class Board implements ToolHost {
     this.pages = s.pages.slice()
     this.frames = s.frames.map(f => ({ ...f }))
     this.lessonColor = s.color
+    this.lessonTexture = s.texture
     this.setKind(s.kind)
     this.showPage(Math.min(s.pageIndex, this.pages.length - 1))
     this.changed()
@@ -965,26 +971,42 @@ export class Board implements ToolHost {
   private syncHere(): void {
     const f = !this.paged ? this.frames[S.frameIndex.value] : undefined
     const b = f ? this.frameBackdrop(f) : this.paged ? this.pageBackdrop(this.look, this.sheet) : this.surfaceBackdrop()
-    const next: Here = { paper: b.paper, color: b.color, unit: f ? 'frame' : this.paged ? 'page' : null, style: b.style, art: b.art ?? null }
+    const next: Here = { paper: b.paper, color: b.color, texture: b.texture ?? 'none', unit: f ? 'frame' : this.paged ? 'page' : null, style: b.style, art: b.art ?? null }
     const cur = S.here.value
-    if (cur.paper !== next.paper || cur.color !== next.color || cur.unit !== next.unit || cur.art !== next.art ||
+    if (cur.paper !== next.paper || cur.color !== next.color || cur.texture !== next.texture || cur.unit !== next.unit || cur.art !== next.art ||
       cur.style.spacing !== next.style.spacing || cur.style.strength !== next.style.strength || cur.style.lines !== next.style.lines) S.here.value = next
   }
 
   /** Board colour. By default for the whole lesson; `onlyHere` sets just this page or frame. */
-  setColor(color: string, onlyHere = false): void {
+  setColor(color: string, onlyHere = false): void { this.setSurface({ color }, onlyHere) }
+
+  /**
+   * The board surface: its colour and texture (a chalkboard is a dark colour with chalk texture). By
+   * default for the whole lesson; `onlyHere` sets just this page or frame. A page that matches the
+   * lesson again drops its own setting, so it follows later lesson-wide changes.
+   */
+  setSurface(patch: { color?: string; texture?: Texture }, onlyHere = false): void {
     const snap = this.structure()
     const f = !this.paged ? S.frameIndex.value : -1
-    const same = sameColor(color, this.lessonColor)
-    if (onlyHere && this.paged) this.look = same ? without(this.look, 'color') : { ...this.look, color }
-    else if (onlyHere && f >= 0) this.frames[f] = same ? without(this.frames[f], 'color') : { ...this.frames[f], color }
-    else {
-      this.lessonColor = color
-      this.look = without(this.look, 'color')
-      this.pages = this.pages.map(pg => without(pg, 'color'))
-      this.frames = this.frames.map(fr => without(fr, 'color'))
+    const own = <T extends PageLook>(o: T): T => {
+      let out = o
+      if (patch.color !== undefined) out = sameColor(patch.color, this.lessonColor) ? without(out, 'color') : { ...out, color: patch.color }
+      if (patch.texture !== undefined) out = patch.texture === this.lessonTexture ? without(out, 'texture') : { ...out, texture: patch.texture }
+      return out
     }
-    this.lookChanged(onlyHere ? 'Changed the colour of one page' : 'Changed the board colour', snap)
+    if (onlyHere && this.paged) this.look = own(this.look)
+    else if (onlyHere && f >= 0) this.frames[f] = own(this.frames[f])
+    else {
+      const keys: (keyof PageLook)[] = []
+      if (patch.color !== undefined) { this.lessonColor = patch.color; keys.push('color') }
+      if (patch.texture !== undefined) { this.lessonTexture = patch.texture; keys.push('texture') }
+      this.look = without(this.look, ...keys)
+      this.pages = this.pages.map(pg => without(pg, ...keys))
+      this.frames = this.frames.map(fr => without(fr, ...keys))
+    }
+    const label = patch.texture === undefined ? onlyHere ? 'Changed the colour of one page' : 'Changed the board colour'
+      : onlyHere ? 'Changed the board of one page' : 'Changed the board'
+    this.lookChanged(label, snap)
   }
 
   /**
@@ -1253,6 +1275,7 @@ export class Board implements ToolHost {
     this.onPageChange?.()
     this.labs.clear(); this.labDraft.clear(); activeLabId.value = null
     this.lessonColor = S.defaultColor.value
+    this.lessonTexture = S.defaultTexture.value
     this.frames = []
     this.pages = [{ items: [], view: { x: -80, y: -80, zoom: 1 }, history: { undo: [], redo: [] }, paper: S.defaultPaper.value, ...styleLook(defaultStyle()) }]
     this.undoSlot = null
@@ -1351,9 +1374,9 @@ export class Board implements ToolHost {
    * Backdrops: of a notebook page on its sheet, of the canvas itself, and of a canvas frame (its own
    * look, else the canvas paper, still anchored where the canvas paper is).
    */
-  private pageBackdrop(look: PageLook, sheet: Frame = DEFAULT_FRAME): Backdrop { return backdropOf({ color: this.lessonColor, paper: 'none' }, look, frameRect(sheet)) }
-  private surfaceBackdrop(): Backdrop { return backdropOf({ color: this.lessonColor, paper: 'none' }, { ...this.look, paper: this.look.paper ?? 'none' }) }
-  private frameBackdrop(f: LookFrame): Backdrop { return backdropOf({ ...without(this.look, 'art', 'color'), color: this.lessonColor, paper: this.look.paper ?? 'none' }, f, frameRect(f)) }
+  private pageBackdrop(look: PageLook, sheet: Frame = DEFAULT_FRAME): Backdrop { return backdropOf({ color: this.lessonColor, texture: this.lessonTexture, paper: 'none' }, look, frameRect(sheet)) }
+  private surfaceBackdrop(): Backdrop { return backdropOf({ color: this.lessonColor, texture: this.lessonTexture, paper: 'none' }, { ...this.look, paper: this.look.paper ?? 'none' }) }
+  private frameBackdrop(f: LookFrame): Backdrop { return backdropOf({ ...without(this.look, 'art', 'color', 'texture'), color: this.lessonColor, texture: this.lessonTexture, paper: this.look.paper ?? 'none' }, f, frameRect(f)) }
 
   /** Canvas: frame outlines with their numbers, quiet enough to draw over. */
   private paintFrames(): void {
@@ -1538,7 +1561,7 @@ export class Board implements ToolHost {
     })
   }
 
-  private meta(): BoardMeta { return { kind: this.boardKind, frames: this.frames, color: this.lessonColor } }
+  private meta(): BoardMeta { return { kind: this.boardKind, frames: this.frames, color: this.lessonColor, texture: this.lessonTexture } }
 
   /** Portable JSON with pictures embedded. */
   serialize(): string { return serializePages(this.pageData(), this.pageIndex, true, this.meta()).json }
@@ -1564,6 +1587,8 @@ export class Board implements ToolHost {
     const fallbackPaper: Paper = opts.undoable ? this.look.paper ?? 'none' : S.defaultPaper.value
     const fallback = parsed.view ?? this.view
     this.lessonColor = parsed.color ?? (portable || !opts.undoable ? S.defaultColor.value : this.lessonColor)
+    // A page-format file says what texture it has ('none' when it has none); older files keep what is here.
+    this.lessonTexture = parsed.texture ?? (opts.undoable ? this.lessonTexture : S.defaultTexture.value)
     this.pages = (parsed.pages ?? [{ items: parsed.items, view: parsed.view }]).map((pg: PageData) => ({
       ...pg, paper: pg.paper ?? (portable ? 'none' : fallbackPaper), view: pg.view ?? fallback, history: { undo: [], redo: [] }
     }))

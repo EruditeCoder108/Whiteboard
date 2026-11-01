@@ -5,6 +5,7 @@ import { clipboardImage } from './insert'
 import { S, showToast, styleKey, SIZE_RANGE } from './store'
 import type { BoardKind, GridMode, Layout, ToolName } from './store'
 import type { PictureScope } from '@/engine/board'
+import type { Texture } from '@/engine/texture'
 import { clamp } from '@/engine/geometry'
 import { exportName, lesson } from './lesson'
 
@@ -96,8 +97,15 @@ export const actions = {
 
   /** Board colour for the whole lesson, or (`onlyHere`) for this page or frame alone. */
   setBackground(color: string, onlyHere = false): void {
-    board.setColor(color, onlyHere)
-    if (!onlyHere) S.defaultColor.value = color
+    actions.setSurface({ color }, onlyHere)
+  },
+
+  /** Board surface (colour and/or texture); a lesson-wide choice is also what new lessons start with. */
+  setSurface(patch: { color?: string; texture?: Texture }, onlyHere = false): void {
+    board.setSurface(patch, onlyHere)
+    if (onlyHere) return
+    if (patch.color !== undefined) S.defaultColor.value = patch.color
+    if (patch.texture !== undefined) S.defaultTexture.value = patch.texture
   },
 
   toggleUi(): void {

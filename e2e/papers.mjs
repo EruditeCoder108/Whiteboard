@@ -121,6 +121,32 @@ try {
   await page.waitForTimeout(200)
   check('a notebook page keeps its paper fixed to the page', (await lines()) > 10)
 
+  // ── board surfaces: colour + texture ─────────────────────────────────────
+  await fw(page, w => { w.board.newLesson('notebook'); w.board.setPaper('none') })
+  await openSheet()
+  await page.getByRole('button', { name: 'Chalkboard', exact: true }).click()
+  const chalk = await fw(page, w => ({ ...w.S.here.value, pen: w.S.penColor.value, def: w.S.defaultTexture.value }))
+  check('Chalkboard gives the lesson a dark chalk surface and white chalk ink', chalk.texture === 'chalk' && chalk.color === '#262a2e' && chalk.pen === '#ffffff' && chalk.def === 'chalk', JSON.stringify(chalk))
+  /** How many different colours a band across the page export has: 1 on a flat board, many on a textured one. */
+  const variety = async () => fw(page, async w => {
+    const bytes = new Uint8Array(await w.board.exportPng({ scope: 'page' }))
+    const bmp = await createImageBitmap(new Blob([bytes], { type: 'image/png' }))
+    const cv = new OffscreenCanvas(bmp.width, bmp.height); const ctx = cv.getContext('2d'); ctx.drawImage(bmp, 0, 0)
+    const d = ctx.getImageData(0, Math.floor(bmp.height / 2), bmp.width, 4).data, seen = new Set()
+    for (let i = 0; i < d.length; i += 4) seen.add(d[i] << 16 | d[i + 1] << 8 | d[i + 2])
+    return seen.size
+  })
+  check('the texture is in the exported picture too', await variety() > 20)
+  await page.getByRole('button', { name: 'Smooth', exact: true }).click()
+  check('Smooth keeps the colour and takes the texture away', (await fw(page, w => w.S.here.value.texture)) === 'none' && await variety() <= 2)
+  await page.getByRole('button', { name: 'Green board', exact: true }).click()
+  await fw(page, w => w.board.addPage())
+  await page.getByRole('button', { name: 'Only this page' }).click()
+  await page.getByRole('button', { name: 'Slate', exact: true }).first().click()
+  const surfaces = await fw(page, w => { const f = JSON.parse(w.board.serialize()); return { root: f.texture, color: f.color, pages: f.pages.map(p => p.texture ?? null) } })
+  check('the lesson keeps its surface in the file, and a page can have its own', surfaces.root === 'chalk' && surfaces.color === '#22423a' && surfaces.pages.join() === ',slate', JSON.stringify(surfaces))
+  await page.keyboard.press('Escape')
+
   check('no renderer errors', logs.filter(l => /pageerror|\[error\]/.test(l)).length === 0, logs.join(' | '))
 } finally { await app.close().catch(() => {}) }
 process.exit(summary() ? 1 : 0)

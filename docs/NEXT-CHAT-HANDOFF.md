@@ -33,13 +33,18 @@ The gesture ring is a separate college project and is **not** part of the produc
 | Release history | `CHANGELOG.md` |
 | GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#3 merged, lesson integrity on branch `feature/lesson-integrity` |
 | Installed app (owner's laptop) | `%LOCALAPPDATA%\Programs\Floating Whiteboard` (per-user NSIS install, Start menu + desktop shortcut) |
-| Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.3.exe` (ignored by git) |
+| Latest installer | `dist\Floating Whiteboard Setup 1.6.0-beta.4.exe` (ignored by git) |
 | Older unrelated projects in the parent folder | `..\android-library`, `..\*.pyw` (the original Python board). Leave them alone. |
 
 ## 3. State right now
 
-- `main` holds 1.6.0-beta.3: Lesson integrity (PR #4), **Background & paper** (§6, PR #5) and **Share to phones**
-  (local Wi-Fi + QR, built by the second agent, reviewed and merged). See `CHANGELOG.md`.
+- `main` holds 1.6.0-beta.4: Lesson integrity (PR #4), **Background & paper** (§6, PR #5), **Share to phones**
+  (local Wi-Fi + QR, built by the second agent, PR #6) and **board surfaces** (textured chalkboard/green/slate/paper,
+  `engine/texture.ts`). See `CHANGELOG.md`.
+- **The owner offered to install Note 3** (trial) so its board surfaces can be studied with computer use. They
+  said Note 3's boards "feel organic" (textured blackboard, grey-green board, many customisable backgrounds). If
+  it's installed, compare our surfaces side by side and tune `engine/texture.ts` (cloud/grain amounts) and the
+  `SURFACES` colours in `state/store.ts`. Add more surfaces there; never add image files for textures.
 - **A second agent (ChatGPT) works in parallel** from written briefs in `docs/agent-tasks/`. It works in its own
   worktree (`D:\Projects 2\whiteboard\app-<task>`), pushes its branch, never merges. The lead reviews (security,
   the file list it was given, tests), merges through a PR, and writes the changelog/FEATURES/handoff entries.
@@ -128,6 +133,9 @@ Electron 44 + electron-vite, Preact + `@preact/signals`, Canvas2D, TypeScript.
   view; strength scales alpha (capped at .7, always lighter than ink). Writing papers on the open canvas use
   `writingLevels(zoom)` (power-of-two sizes with a crossfade); pages/frames/exports never adapt, so print matches.
   Graph/isometric keep a fixed scale and only fade. Layouts need the page's screens (`cells`).
+- **Board surface** = colour + texture. `lessonTexture` (file root `texture`) with a per-page/frame `look.texture`
+  override, exactly like colour; `board.setSurface({color, texture}, onlyHere)`. `texture.ts` makes two seamless
+  layers in code (grain tile 1:1, cloud tile drawn ×7) and paints them at screen scale, anchored to the world.
 - **Background picture** (`look.art`): stored in the assets table like pictures (`art.a` key), placed per screen of
   the sheet by `artTargets`/`placeArt`. Not inherited by new pages or frames. `board.setArt`, `pictureToBackground`,
   `state/background.ts`.

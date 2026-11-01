@@ -8,6 +8,8 @@ export type EraserMode = 'stroke' | 'pixel'
 import { PAPERS, PRESET, SPACING_RANGE, STRENGTH_RANGE } from '@/engine/grid'
 import type { Paper, PaperStyle } from '@/engine/grid'
 import type { Artwork } from '@/engine/pages'
+import { TEXTURES } from '@/engine/texture'
+import type { Texture } from '@/engine/texture'
 import { isBoardColor, isDarkColor, luminance } from '@/engine/colour'
 export { luminance } from '@/engine/colour'
 /** the visible page's background paper */
@@ -29,18 +31,26 @@ export const RADIAL_COLORS = [
   '#111827', '#e5484d', '#f28c28', '#f5c518', '#2fa66a', '#2f6bff', '#8a4fff', '#ffffff'
 ]
 /** What the paper picker shows and edits: the page or frame in view, as it is painted. */
-export interface Here { paper: GridMode; color: string; unit: 'page' | 'frame' | null; style: PaperStyle; art: Artwork | null }
+export interface Here { paper: GridMode; color: string; texture: Texture; unit: 'page' | 'frame' | null; style: PaperStyle; art: Artwork | null }
+
+/**
+ * Ready-made board surfaces: a colour with a texture. The texture only lightens and darkens, so it also
+ * works on a colour of the teacher's own.
+ */
+export const SURFACES: { name: string; color: string; texture: Texture }[] = [
+  { name: 'Whiteboard', color: '#ffffff', texture: 'none' },
+  { name: 'Chalkboard', color: '#262a2e', texture: 'chalk' },
+  { name: 'Green board', color: '#22423a', texture: 'chalk' },
+  { name: 'Slate', color: '#353b42', texture: 'slate' },
+  { name: 'Navy board', color: '#1f2a3f', texture: 'chalk' },
+  { name: 'Paper', color: '#f8f3e6', texture: 'paper' },
+  { name: 'Brown paper', color: '#d8c3a0', texture: 'paper' },
+  { name: 'Cool grey', color: '#eef1f6', texture: 'none' }
+]
 
 /** How the paper of a new lesson is drawn. */
 export const defaultStyle = (): PaperStyle => ({ spacing: S.defaultSpacing.value, strength: S.defaultStrength.value, ...(S.defaultLines.value ? { lines: S.defaultLines.value } : {}) })
 
-export const BACKGROUNDS: { color: string; name: string }[] = [
-  { color: '#ffffff', name: 'White' },
-  { color: '#fbf6e9', name: 'Paper' },
-  { color: '#eef1f6', name: 'Cool gray' },
-  { color: '#1f232b', name: 'Blackboard' },
-  { color: '#1d3b33', name: 'Green board' }
-]
 
 export const SIZE_RANGE = {
   pen: [1, 30],
@@ -61,6 +71,7 @@ export const S = {
   /** Where the colour and paper of a new lesson come from: the teacher's last choice. */
   defaultPaper: signal<GridMode>('none'),
   defaultColor: signal('#ffffff'),
+  defaultTexture: signal<Texture>('none'),
   /** …and how its paper is drawn (1 = the preset; '' = the usual line colour) */
   defaultSpacing: signal(1),
   defaultStrength: signal(1),
@@ -86,7 +97,7 @@ export const S = {
   grid: signal<GridMode>('none'),
   bgColor: signal('#ffffff'),
   /** The look of the page or canvas frame in view, and which of the two it is (null: the canvas itself). */
-  here: signal<Here>({ paper: 'none', color: '#ffffff', unit: null, style: { ...PRESET }, art: null }),
+  here: signal<Here>({ paper: 'none', color: '#ffffff', texture: 'none', unit: null, style: { ...PRESET }, art: null }),
   /** Counts every change to the lesson; compared with the count at the last save to tell if it is saved. */
   contentRevision: signal(0),
   /** What the undo for the last page or board change would restore ('' when there is none). */
@@ -169,7 +180,7 @@ export function showToast(text: string, ms = 2200, action?: ToastAction): void {
 // ── persistence ───────────────────────────────────────────────────────────────
 const PERSISTED = [
   'tool', 'lastShape', 'penColor', 'penSize', 'markerColor', 'markerSize', 'eraserSize',
-  'eraserMode', 'defaultPaper', 'defaultColor', 'defaultSpacing', 'defaultStrength', 'defaultLines', 'bgAlpha', 'smoothing', 'pressure', 'fingerDraw', 'onTop',
+  'eraserMode', 'defaultPaper', 'defaultColor', 'defaultTexture', 'defaultSpacing', 'defaultStrength', 'defaultLines', 'bgAlpha', 'smoothing', 'pressure', 'fingerDraw', 'onTop',
   'radialEnabled', 'radialDelay', 'layout', 'layoutChosen', 'barSide', 'palmErase', 'palmSize'
 ] as const
 
@@ -192,7 +203,7 @@ export function applySettings(raw: unknown): void {
     if (typeof value !== typeof sig.value) continue
     const enums: Partial<Record<typeof PERSISTED[number], readonly string[]>> = {
       tool: ['select', 'lasso', 'text', 'sticky', 'hand', 'pen', 'marker', 'eraser', 'laser', ...SHAPE_TOOLS],
-      lastShape: SHAPE_TOOLS, eraserMode: ['stroke', 'pixel'], defaultPaper: PAPERS,
+      lastShape: SHAPE_TOOLS, eraserMode: ['stroke', 'pixel'], defaultPaper: PAPERS, defaultTexture: TEXTURES,
       layout: ['board', 'laptop'], barSide: ['left', 'center', 'right']
     }
     if (enums[k] && !enums[k]!.includes(value as string)) continue

@@ -4,6 +4,8 @@ import type { Paper, PaperStyle } from './grid'
 import { decodedImage } from './media'
 import { PAGE_H, PAGE_W } from './pages'
 import type { Artwork, PageLook } from './pages'
+import { paintTexture } from './texture'
+import type { Texture } from './texture'
 import type { Rect, View } from './types'
 
 /**
@@ -12,7 +14,11 @@ import type { Rect, View } from './types'
  * Screen, thumbnails, the page map, PNG and PDF all paint it through `paintBackdrop`, so they agree.
  * `adapt`: the open canvas on screen, where writing papers follow the zoom.
  */
-export interface Backdrop { color: string; paper: Paper; origin: [number, number]; style: PaperStyle; art?: Artwork; sheet?: Rect; adapt?: boolean }
+export interface Backdrop {
+  color: string; paper: Paper; origin: [number, number]; style: PaperStyle; art?: Artwork; sheet?: Rect; adapt?: boolean
+  /** the board's surface texture, and how much of it shows (the see-through board fades it with its colour) */
+  texture?: Texture; textureAlpha?: number
+}
 
 /** The paper settings of a look, the preset where it sets none. */
 export const styleOf = (look: PageLook): PaperStyle => ({ spacing: look.spacing ?? 1, strength: look.strength ?? 1, ...(look.lines ? { lines: look.lines } : {}) })
@@ -23,9 +29,11 @@ export const styleOf = (look: PageLook): PaperStyle => ({ spacing: look.spacing 
  */
 export function backdropOf(base: PageLook & { color: string; paper: Paper }, look: PageLook = {}, sheet?: Rect): Backdrop {
   const own = !!look.paper
+  const texture = look.texture ?? base.texture ?? 'none'
   return {
     color: look.color ?? base.color, paper: look.paper ?? base.paper, origin: own ? look.origin ?? [0, 0] : base.origin ?? [0, 0],
-    style: own ? styleOf(look) : styleOf(base), ...(look.art ? { art: look.art } : {}), ...(sheet ? { sheet } : {})
+    style: own ? styleOf(look) : styleOf(base), ...(look.art ? { art: look.art } : {}), ...(sheet ? { sheet } : {}),
+    ...(texture !== 'none' ? { texture } : {})
   }
 }
 
@@ -75,6 +83,8 @@ export function paintBackdrop(ctx: CanvasRenderingContext2D, view: View, w: numb
     ctx.fillStyle = b.color
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
   } else ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+  // The grain keeps its size on screen and moves with the board (its origin follows the world origin).
+  if (b.texture) paintTexture(ctx, b.texture, -view.x * view.zoom * dpr, -view.y * view.zoom * dpr, dpr, b.textureAlpha ?? 1)
   const visible: Rect = [view.x, view.y, view.x + w / view.zoom, view.y + h / view.zoom]
   const img = b.art && decodedImage(b.art.src)
   if (b.art && img) {

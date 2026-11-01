@@ -70,6 +70,7 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 | **Page sorter:** thumbnails, reorder, duplicate, delete | ✅ |
 | **Page map** for a long page (drag to scroll) | ✅ |
 | **Background library, per page:** white, black and green chalkboard, ruled, four-line English, Hindi writing lines, graph paper, squares, dots, music staff | ✅ |
+| Realistic board surfaces: chalkboard, green board, slate, navy board, paper, brown paper (texture + colour, any combination; whole lesson or one page) | ✅ |
 | Isometric dots and grid; lesson layouts (two columns, three columns, worked example, exit ticket) | ✅ |
 | Paper spacing, strength and line colour, for this page or all pages; restore as designed | ✅ |
 | Writing papers follow the zoom on a canvas (no stretched or crowded lines); graph paper keeps its scale | ✅ |
