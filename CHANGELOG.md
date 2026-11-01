@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.6.0-beta.10 — Reveals, light and dark mode, export preview, classroom tools — 2026-11-01
+
+- **Prepared reveals:** select something and tap the hide button to keep it hidden in class until its step.
+  - Steps can be named (Question, Hint, Answer, Explanation). While preparing, hidden objects show faded with their step number.
+  - In class one large **Next** button shows them in order, and a clicker's Page Down goes through a page's steps before turning it.
+  - A step can show a card to tap instead, which opens with a finger or any tool in hand.
+  - What has been shown is saved with the lesson; **Hide again** resets it for the next class.
+  - Pictures, PDFs and phones keep hidden answers hidden unless you ask for them.
+- **Light and dark mode for the whole app** (Settings › Appearance): Auto follows the board, or choose Light or Dark, on both layouts. Every toolbar, menu and sheet is checked to stay readable.
+- **Export preview:** Save PDF now shows the real sheets first. Tap a sheet to leave it out.
+- **Print-friendly PDFs of dark boards:** white paper and readable ink, to save toner. The lesson itself does not change.
+- **Calculator:** large, movable, angles in degrees, and it can write its answer on the board.
+- **Periodic table:** all 118 elements by family; tap one to see it large; put one or the whole table on the board. Works offline.
+- **Writing strips** (Subjects › English, Hindi): a four-line or Hindi band as an object, for a short exercise without changing the whole page.
+- The "Start recording" button had white text on a near-white background; it now reads properly. The laptop settings panel is wider, so its contents fit.
+
 ## 1.6.0-beta.9 — Number line and coordinate axes — 2026-11-01
 
 - **Number line and coordinate axes as real objects** (More menu, Subjects › Maths and Physics, laptop Insert menu).
