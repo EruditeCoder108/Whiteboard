@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.0-beta.4 — board surfaces — 2026-11-01
+
+- **Boards that look like real boards.** The Background & paper sheet starts with eight surfaces:
+  Whiteboard, Chalkboard, Green board, Slate, Navy board, Paper, Brown paper and Cool grey.
+  - A chalkboard shows soft clouds of old chalk, faint eraser sweeps and a fine grain. Slate has
+    mineral flecks; paper has faint fibres and gentle unevenness.
+  - Textures are quiet, so writing stays clear, and the grain stays fine at any zoom.
+  - **Texture** (Smooth, Chalk, Slate or Paper) and **Own colour** combine, so any colour can be a chalkboard.
+  - Surfaces apply to the whole lesson, or to **Only this page**.
+  - The surface is saved in the lesson, appears in pictures and PDFs, and fades with the board in "write over screen".
+  - Textures are made in code: no image files, the same on every PC, and seamless (no visible repeat).
+
 ## 1.6.0-beta.3 — Background & paper (Note 3 deep dive §6) — 2026-11-01
 
 - **Writing papers no longer stretch or crowd when you zoom a canvas.** Ruled, four-line, Hindi and

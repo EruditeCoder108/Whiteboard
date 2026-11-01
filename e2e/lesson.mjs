@@ -34,14 +34,14 @@ try {
   await page.getByRole('button', { name: 'Background' }).click()
   await page.getByRole('button', { name: 'Green board' }).click()
   const dark = await fw(page, w => ({ bg: w.S.bgColor.value, pen: w.S.penColor.value, def: w.S.defaultColor.value }))
-  check('choosing the green board makes the lesson green, keeps ink readable and remembers it for new lessons', dark.bg === '#1d3b33' && dark.pen === '#ffffff' && dark.def === '#1d3b33', JSON.stringify(dark))
+  check('choosing the green board makes the lesson green, keeps ink readable and remembers it for new lessons', dark.bg === '#22423a' && dark.pen === '#ffffff' && dark.def === '#22423a', JSON.stringify(dark))
   await page.keyboard.press('Escape')
   await ink()
   await stub(darkFile, null)
   await page.keyboard.press('Control+s')
   await page.waitForFunction(() => window.__fw.lessonState.lessonPath.value !== null)
   const saved = JSON.parse(readFileSync(darkFile, 'utf8'))
-  check('Ctrl+S saves the lesson as a file (not a picture) and the file carries the board colour', saved.version === 4 && saved.color === '#1d3b33' && saved.pages[0].items.length === 1, JSON.stringify({ v: saved.version, c: saved.color }))
+  check('Ctrl+S saves the lesson as a file (not a picture) and the file carries the board colour and texture', saved.version === 4 && saved.color === '#22423a' && saved.texture === 'chalk' && saved.pages[0].items.length === 1, JSON.stringify({ v: saved.version, c: saved.color, t: saved.texture }))
   check('after saving, the lesson is clean and listed under recent lessons', await fw(page, async w => !w.lessonState.lessonDirty.value && (await window.api.lessons.recent())[0].name === 'Dark lesson'))
 
   // saving again goes to the same file without asking
@@ -72,7 +72,7 @@ try {
   await page.keyboard.press('Control+o')
   await page.waitForFunction(() => window.__fw.lessonState.lessonPath.value !== null)
   const reopened = await fw(page, w => ({ bg: w.S.bgColor.value, def: w.S.defaultColor.value, ink: w.board.doc.items.length, name: w.lessonState.lessonName.value }))
-  check('a dark lesson reopens dark under a light preference, and does not change the preference (F1)', reopened.bg === '#1d3b33' && reopened.def === '#ffffff' && reopened.ink === 2 && reopened.name === 'Dark lesson', JSON.stringify(reopened))
+  check('a dark lesson reopens dark under a light preference, and does not change the preference (F1)', reopened.bg === '#22423a' && reopened.def === '#ffffff' && reopened.ink === 2 && reopened.name === 'Dark lesson', JSON.stringify(reopened))
 
   // ── F3: each page keeps its own paper through Canvas and back ──────────────
   await fw(page, w => w.board.newLesson('notebook'))

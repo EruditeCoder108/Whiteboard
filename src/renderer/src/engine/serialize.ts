@@ -2,6 +2,8 @@ import type { GraphItem, ImageItem, Item, ObjectMeta, ShapeItem, StrokeItem, Tex
 import { assetKey } from './media'
 import { artJson, hasLook, isBoardKind, lookJson, validArt, validLook, validLookFrame } from './pages'
 import type { Artwork, BoardKind, Frame, LookFrame, PageLook } from './pages'
+import { isTexture } from './texture'
+import type { Texture } from './texture'
 import { isBoardColor, sameColor, DEFAULT_BOARD_COLOR } from './colour'
 import { isDefaultFrame, validFrame } from './pages'
 import { newId } from './types'
@@ -200,7 +202,7 @@ export interface PageData extends PageLook { items: Item[]; view?: View; frame?:
  * What kind of board this is; a canvas also keeps its frames. `color` is the lesson's board
  * colour: every page shows it unless the page sets its own.
  */
-export interface BoardMeta { kind: BoardKind; frames: LookFrame[]; color?: string }
+export interface BoardMeta { kind: BoardKind; frames: LookFrame[]; color?: string; texture?: Texture }
 
 /**
  * Notebooks, framed canvases, boards with pictures and anything with an appearance of its own
@@ -210,7 +212,7 @@ export interface BoardMeta { kind: BoardKind; frames: LookFrame[]; color?: strin
  */
 export function serializePages(pages: PageData[], page: number, inline: boolean, meta: BoardMeta = { kind: 'canvas', frames: [] }): { json: string; assets: Record<string, string> } {
   const plain = meta.kind === 'canvas' && !meta.frames.length && pages.length === 1
-  const bare = !hasLook(pages[0]) && (!meta.color || sameColor(meta.color, DEFAULT_BOARD_COLOR))
+  const bare = !hasLook(pages[0]) && (!meta.color || sameColor(meta.color, DEFAULT_BOARD_COLOR)) && (!meta.texture || meta.texture === 'none')
   if (plain && bare && !pages[0].items.some(it => it.t === 'i') && (!pages[0].frame || isDefaultFrame(pages[0].frame))) return { json: serializeBoard(pages[0].items, pages[0].view), assets: {} }
   const assets: Record<string, string> = {}
   // A background picture is stored with the other pictures, under its content key.
@@ -234,7 +236,8 @@ export function serializePages(pages: PageData[], page: number, inline: boolean,
   }))
   const frames = meta.kind === 'canvas' && meta.frames.length ? { frames: meta.frames.map(f => ({ x: r2(f.x), y: r2(f.y), extent: f.extent, ...look(f) })) } : {}
   const color = meta.color && isBoardColor(meta.color) ? { color: meta.color } : {}
-  const file = { format: FORMAT, version: PAGES_VERSION, kind: meta.kind, ...color, ...frames, page, pages: pageJson, ...(inline ? { assets } : { assetKeys: Object.keys(assets) }) }
+  const texture = meta.texture && meta.texture !== 'none' ? { texture: meta.texture } : {}
+  const file = { format: FORMAT, version: PAGES_VERSION, kind: meta.kind, ...color, ...texture, ...frames, page, pages: pageJson, ...(inline ? { assets } : { assetKeys: Object.keys(assets) }) }
   return { json: JSON.stringify(file), assets }
 }
 
@@ -251,6 +254,8 @@ export interface ParsedBoard {
   frames?: LookFrame[]
   /** the lesson's board colour; files from before it was saved have none */
   color?: string
+  /** the lesson's board texture ('none' when the file has none) */
+  texture?: Texture
 }
 
 const isAssetKey = (v: unknown): v is string => typeof v === 'string' && /^[0-9a-f]{16,32}$/.test(v)
@@ -295,7 +300,7 @@ function parsePages(f: Record<string, unknown>, externalAssets: boolean): Parsed
   // Files from before board kinds: several pages read as a notebook, one page as a canvas.
   const kind: BoardKind = isBoardKind(f.kind) ? f.kind : pages.length > 1 ? 'notebook' : 'canvas'
   const frames = kind === 'canvas' && Array.isArray(f.frames) ? (f.frames as unknown[]).slice(0, MAX_PAGES).map(v => { const fr = validLookFrame(v); return fr && { ...fr, ...art(v) } }).filter((x): x is LookFrame => !!x) : []
-  return { items: pages[page].items, view: pages[page].view, skipped, legacy: false, pages, page, kind, frames, color: isBoardColor(f.color) ? f.color : undefined }
+  return { items: pages[page].items, view: pages[page].view, skipped, legacy: false, pages, page, kind, frames, color: isBoardColor(f.color) ? f.color : undefined, texture: isTexture(f.texture) ? f.texture : 'none' }
 }
 
 function parseView(v: unknown, legacy: boolean): View | undefined {

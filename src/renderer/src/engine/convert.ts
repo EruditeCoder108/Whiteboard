@@ -54,6 +54,7 @@ export function notebookToCanvas(pages: ({ items: Item[]; frame?: Frame } & Page
     const frame: LookFrame = { x, y: 0, extent: f.extent }
     if (pg.paper) { frame.paper = pg.paper; Object.assign(frame, paperStyle(pg)); const origin = moved(pg.origin, dx, dy); if (origin) frame.origin = origin }
     if (pg.color) frame.color = pg.color
+    if (pg.texture) frame.texture = pg.texture
     if (pg.title) frame.title = pg.title
     if (pg.art) frame.art = pg.art // placed on the sheet, so it moves with it
     frames.push(frame)
@@ -105,6 +106,7 @@ export function canvasToNotebook(items: Item[], frames: LookFrame[], surface: Pa
     const origin = moved(f.paper ? f.origin : base.origin, -f.x, -f.y)
     if (origin) page.origin = origin
     if (f.color) page.color = f.color
+    if (f.texture) page.texture = f.texture
     if (f.title) page.title = f.title
     if (f.art) page.art = f.art
     else if (i === 0) Object.assign(page, surfaceArt)

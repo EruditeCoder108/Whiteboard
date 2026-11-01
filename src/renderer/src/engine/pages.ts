@@ -1,6 +1,8 @@
 import { isBoardColor } from './colour'
 import { clamp } from './geometry'
 import { SPACING_RANGE, STRENGTH_RANGE, isPaper } from './grid'
+import { isTexture } from './texture'
+import type { Texture } from './texture'
 import type { Paper } from './grid'
 import type { Rect, View } from './types'
 
@@ -95,6 +97,8 @@ export const ART_DEFAULTS: Omit<Artwork, 'src'> = { fit: 'fit', opacity: 1, alig
 export interface PageLook {
   paper?: Paper; color?: string; title?: string; origin?: [number, number]
   spacing?: number; strength?: number; lines?: string; art?: Artwork
+  /** the board surface's texture for this page only (like `color`); 'none' can override a textured lesson */
+  texture?: Texture
 }
 /** The settings that describe how the paper is drawn; they travel with the paper. */
 export const STYLE_KEYS = ['spacing', 'strength', 'lines'] as const
@@ -119,6 +123,7 @@ export function validLook(v: unknown): PageLook {
   if (inRange(o.spacing, SPACING_RANGE) && o.spacing !== 1) look.spacing = o.spacing
   if (inRange(o.strength, STRENGTH_RANGE) && o.strength !== 1) look.strength = o.strength
   if (isBoardColor(o.lines)) look.lines = o.lines
+  if (isTexture(o.texture)) look.texture = o.texture
   return look
 }
 
@@ -149,6 +154,7 @@ export function lookJson(look: PageLook): Omit<PageLook, 'art'> {
   if (look.spacing !== undefined && look.spacing !== 1) out.spacing = r2(look.spacing)
   if (look.strength !== undefined && look.strength !== 1) out.strength = r2(look.strength)
   if (look.lines) out.lines = look.lines
+  if (look.texture) out.texture = look.texture
   return out
 }
 

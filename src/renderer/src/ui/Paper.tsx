@@ -3,14 +3,15 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { ImagePlus, Images, Minus, Plus, RotateCcw, Trash2 } from 'lucide-preact'
 import { sameColor } from '@/engine/colour'
 import { board } from '@/engine/instance'
-import { SPACING_RANGE, hasSpacing, isLayout } from '@/engine/grid'
+import { PRESET, SPACING_RANGE, hasSpacing, isLayout } from '@/engine/grid'
+import type { Texture } from '@/engine/texture'
 import type { Paper, PaperStyle } from '@/engine/grid'
 import { PAGE_H, PAGE_W } from '@/engine/pages'
 import type { ArtFit, ArtSpan } from '@/engine/pages'
 import { paintBackdrop } from '@/engine/scene'
 import { actions } from '@/state/actions'
 import { background, selectedPicture } from '@/state/background'
-import { BACKGROUNDS, S } from '@/state/store'
+import { SURFACES, S } from '@/state/store'
 import { Segmented, Slider, Swatch, Tile } from './kit'
 
 const PAPER_GROUPS: [string, [Paper, string][]][] = [
@@ -18,6 +19,7 @@ const PAPER_GROUPS: [string, [Paper, string][]][] = [
   ['Maths', [['lines', 'Squares'], ['graph', 'Graph paper'], ['dots', 'Dots'], ['isodots', 'Isometric dots'], ['isogrid', 'Isometric grid']]],
   ['Music and lesson layouts', [['music', 'Music'], ['compare', 'Two columns'], ['predict', 'Three columns'], ['worked', 'Worked example'], ['exit', 'Exit ticket']]]
 ]
+const TEXTURE_NAMES: [Texture, string][] = [['none', 'Smooth'], ['chalk', 'Chalk'], ['slate', 'Slate'], ['paper', 'Paper']]
 const SPACINGS: [string, number][] = [['Small', .75], ['Medium', 1], ['Large', 1.5]]
 const STRENGTHS: [string, number][] = [['Faint', .55], ['Normal', 1], ['Strong', 1.7]]
 /** Line colours that read well on light and dark boards; "Usual" is the paper's own. */
@@ -40,6 +42,19 @@ function PaperSample({ paper, color, style, layout }: { paper: Paper; color: str
     paintBackdrop(ctx, { x: layout ? 0 : -8, y: layout ? (PAGE_H - h / zoom) / 2 : -8, zoom }, w, h, dpr,
       { color, paper, origin: [0, 0], style, ...(layout ? { sheet: [0, 0, PAGE_W, PAGE_H] as [number, number, number, number] } : {}) }, true)
   }, [paper, color, style.spacing, style.strength, style.lines, layout])
+  return <canvas ref={ref} class="paper-prev" aria-hidden="true" />
+}
+
+/** A board surface as it looks behind writing: its colour and texture, close up. */
+function SurfaceSample({ color, texture }: { color: string; texture: Texture }): JSX.Element {
+  const ref = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const cv = ref.current
+    if (!cv) return
+    const dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 72, h = cv.clientHeight || 54
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr)
+    paintBackdrop(cv.getContext('2d')!, { x: 0, y: 0, zoom: 1 }, w, h, dpr, { color, paper: 'none', origin: [0, 0], style: PRESET, texture }, true)
+  }, [color, texture])
   return <canvas ref={ref} class="paper-prev" aria-hidden="true" />
 }
 
@@ -71,7 +86,8 @@ export function PaperPicker(): JSX.Element {
   const here = S.here.value
   const { style, art } = here
   const noun = here.unit === 'frame' ? 'frame' : 'page'
-  const colour = (c: string): void => actions.setBackground(c, onlyHere && here.unit !== null)
+  const surface = (patch: { color?: string; texture?: Texture }): void => actions.setSurface(patch, onlyHere && here.unit !== null)
+  const colour = (color: string): void => surface({ color })
   const tune = (patch: Parameters<typeof actions.setPaperStyle>[0]): void => actions.setPaperStyle(patch, everywhere)
   const spacing = (v: number): void => tune({ spacing: Math.round(Math.min(SPACING_RANGE[1], Math.max(SPACING_RANGE[0], v)) * 100) / 100 })
   const picture = selectedPicture()
@@ -79,17 +95,35 @@ export function PaperPicker(): JSX.Element {
   return (
     <>
       <HerePreview />
-      <div class="pop-sub">Board colour</div>
-      <div class="swatches">
-        {BACKGROUNDS.map((b) => (
-          <Swatch key={b.color} color={b.color} title={b.name} selected={sameColor(here.color, b.color)} onClick={() => colour(b.color)} />
-        ))}
-        <label class="swatch custom nodrag" title="Custom background…">
-          <Plus size={14} strokeWidth={2} />
-          <input type="color" value={here.color} onChange={(e) => colour((e.target as HTMLInputElement).value)} />
-        </label>
+      <div class="pop-sub paper-head">
+        <span>Board <i>({onlyHere && here.unit ? `this ${noun}` : 'the whole lesson'})</i></span>
+        {here.unit && <button type="button" class={`chip nodrag ${onlyHere ? 'on' : ''}`} aria-pressed={onlyHere} onClick={() => setOnlyHere(!onlyHere)}>Only this {noun}</button>}
       </div>
-      {here.unit && <button type="button" class={`chip nodrag ${onlyHere ? 'on' : ''}`} aria-pressed={onlyHere} onClick={() => setOnlyHere(!onlyHere)}>Only this {noun}</button>}
+      <div class="surfaces">
+        {SURFACES.map(s => {
+          const on = sameColor(here.color, s.color) && here.texture === s.texture
+          return (
+            <button type="button" key={s.name} class={`paper-tile nodrag ${on ? 'on' : ''}`} aria-pressed={on} onClick={() => surface({ color: s.color, texture: s.texture })}>
+              <SurfaceSample color={s.color} texture={s.texture} />
+              <span>{s.name}</span>
+            </button>
+          )
+        })}
+      </div>
+      <div class="paper-tune">
+        <div class="tune-row">
+          <span class="tune-label">Texture</span>
+          <Segmented<Texture> options={TEXTURE_NAMES.map(([value, label]) => ({ value, label }))} value={here.texture} onChange={texture => surface({ texture })} />
+        </div>
+        <div class="tune-row">
+          <span class="tune-label">Own colour</span>
+          <label class="swatch custom nodrag" title="A board colour of your own (keeps the texture)">
+            <Plus size={14} strokeWidth={2} />
+            <input type="color" value={here.color} onChange={(e) => colour((e.target as HTMLInputElement).value)} />
+          </label>
+          <span class="tune-note">The texture stays; only the colour changes.</span>
+        </div>
+      </div>
 
       <div class="pop-sub paper-head">
         <span>Paper <i>({scope}, and new lessons)</i></span>

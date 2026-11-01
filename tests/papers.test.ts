@@ -8,6 +8,7 @@ import { parseBoard, serializePages } from '@/engine/serialize'
 import type { PageData } from '@/engine/serialize'
 import type { Rect, StrokeItem, View } from '@/engine/types'
 import { S, applySettings, snapshotSettings } from '@/state/store'
+import { cloudTile, textureTile, tileNoise } from '@/engine/texture'
 
 const W = 1600, H = 900
 const view = (zoom: number, x = 0, y = 0): View => ({ x, y, zoom })
@@ -219,6 +220,43 @@ describe('conversion keeps the paper settings and the picture', () => {
   it('frames that show the canvas paper take its settings when they become pages', () => {
     const back = canvasToNotebook([ink], [{ x: 0, y: 0, extent: 1 }], { paper: 'ruled', spacing: 2 })
     expect(back[0]).toMatchObject({ paper: 'ruled', spacing: 2 })
+  })
+})
+
+describe('board surfaces', () => {
+  it('the texture tiles join up with themselves on every side (no seams on the board)', () => {
+    for (const [cx, cy] of [[3, 3], [1, 7], [128, 128]]) for (const p of [0, 17.5, 200]) {
+      expect(tileNoise(p, 0, 256, cx, cy, 7)).toBeCloseTo(tileNoise(p + 256, 0, 256, cx, cy, 7), 9)
+      expect(tileNoise(0, p, 256, cx, cy, 7)).toBeCloseTo(tileNoise(0, p + 256, 256, cx, cy, 7), 9)
+    }
+  })
+
+  it('textures are quiet: on average they barely change the board, so ink keeps its contrast', () => {
+    const mean = (rgba: Uint8ClampedArray): number => { let s = 0; for (let i = 3; i < rgba.length; i += 4) s += rgba[i]; return s / (rgba.length / 4) / 255 }
+    for (const kind of ['chalk', 'slate', 'paper'] as const) {
+      expect(mean(textureTile(kind, 128))).toBeLessThan(.06)
+      expect(mean(cloudTile(kind, 64))).toBeLessThan(.06)
+      expect(mean(textureTile(kind, 128))).toBeGreaterThan(0)
+    }
+    expect(mean(textureTile('none', 64))).toBe(0)
+  })
+
+  it('the same texture every time, on every PC', () => {
+    expect(textureTile('chalk', 64)).toEqual(textureTile('chalk', 64))
+  })
+
+  it('the lesson keeps its texture, and a page can have its own', () => {
+    const json = serializePages([{ items: [ink], paper: 'none' }, { items: [], paper: 'none', texture: 'none' }], 0, true, { kind: 'notebook', frames: [], color: '#22423a', texture: 'chalk' }).json
+    const parsed = parseBoard(json)!
+    expect(parsed.texture).toBe('chalk')
+    expect(parsed.pages!.map(p => p.texture)).toEqual([undefined, 'none'])
+    expect(parseBoard(JSON.stringify({ format: 'floating-whiteboard', version: 4, kind: 'notebook', page: 0, pages: [{ items: [ink] }], assets: {} }))!.texture).toBe('none')
+    expect(JSON.parse(serializePages([{ items: [ink], paper: 'none' }], 0, true, { kind: 'canvas', frames: [], texture: 'paper' }).json).version).toBe(4)
+  })
+
+  it('a frame shows the lesson texture unless it sets its own', () => {
+    expect(backdropOf({ color: '#22423a', paper: 'none', texture: 'chalk' }, {}).texture).toBe('chalk')
+    expect(backdropOf({ color: '#22423a', paper: 'none', texture: 'chalk' }, { texture: 'none' }).texture).toBeUndefined()
   })
 })
 
