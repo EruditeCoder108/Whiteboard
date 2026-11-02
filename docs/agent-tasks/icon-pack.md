@@ -60,4 +60,4 @@ Then run:
 node build/make-pack.cjs "D:\Projects 2\whiteboard\art-masters-modern" modern
 ```
 
-This writes `src/renderer/src/assets/art-modern/`, and the app then offers the pack in Settings › Icons without any code change. Copy the `test` folder out of the masters folder before running this if it would get in the way. Note where each image came from in `src/renderer/src/assets/art-modern/SOURCES.md`, as the existing `assets/art/SOURCES.md` does. Run `npm run build`, open the app, choose the pack, and check the toolbar, the More menu and the radial menu (press and hold) on both a white and a dark board. Commit, push and report.
+This writes `src/renderer/src/assets/art-modern/`, and the app then offers the pack in Settings › Icons without any code change. Note where each image came from in `src/renderer/src/assets/art-modern/SOURCES.md`, as the existing `assets/art/SOURCES.md` does. Run `npm run build`, open the app, choose the pack, and check the toolbar, the More menu and the radial menu (press and hold) on both a white and a dark board. Commit, push and report.

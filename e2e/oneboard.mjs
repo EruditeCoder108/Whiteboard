@@ -183,10 +183,10 @@ try {
   await place('evaporating-dish', 500, 500)
   await fw(page, w => { w.board.setSelection([w.board.doc.items[0]]) })
   await page.waitForTimeout(200)
-  await page.locator('.selection-tools').getByRole('button', { name: 'Set', exact: true }).click()
+  await page.locator('.selection-tools').getByRole('button', { name: 'Change its settings' }).click()
   await page.waitForTimeout(200)
   const settings = await page.evaluate(() => { const d = document.querySelector('.selection-detail').getBoundingClientRect(), b = document.querySelector('.boardbar').getBoundingClientRect(); return { detail: d.bottom, bar: b.top, top: d.top } })
-  check('a part\'s settings end above the toolbar', clear.detail <= clear.bar, JSON.stringify(clear))
+  check('a part\'s settings end above the toolbar', settings.detail <= settings.bar, JSON.stringify(settings))
   await fw(page, w => { w.board.setSelection([]) })
 
   check('no renderer errors', !logs.some(l => /pageerror|\[error\]/.test(l)), logs.filter(l => /pageerror|\[error\]/.test(l)).slice(0, 4).join(' | '))
