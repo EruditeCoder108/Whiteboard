@@ -97,7 +97,7 @@ try {
   const compact = await page.getByTestId('science-library').evaluate(el => { const r = el.getBoundingClientRect(); return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, w: innerWidth, h: innerHeight, noHorizontalScroll: el.scrollWidth <= el.clientWidth + 1 } })
   check('Library stays inside the minimum window without horizontal scrolling', compact.left >= 0 && compact.top >= 28 && compact.right <= compact.w && compact.bottom <= compact.h && compact.noHorizontalScroll)
   evidence.compact = compact
-  await page.getByRole('combobox', { name: 'Animation subject', exact: true }).selectOption('chemistry'); await page.getByRole('searchbox', { name: 'Search animations' }).fill('vinegar')
+  await page.getByRole('button', { name: /^Chemistry\s*\d+$/ }).click(); await page.getByRole('searchbox', { name: 'Search animations' }).fill('vinegar')
   await page.getByRole('button', { name: 'Insert Colour-change reaction lab', exact: true }).scrollIntoViewIfNeeded()
   const actionBounds = await page.getByRole('button', { name: 'Insert Colour-change reaction lab', exact: true }).evaluate(el => { const a = el.getBoundingClientRect(), c = el.closest('.science-library-content').getBoundingClientRect(); return { top: a.top, bottom: a.bottom, contentTop: c.top, contentBottom: c.bottom } })
   evidence.compactAction = actionBounds

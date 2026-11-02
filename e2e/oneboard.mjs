@@ -144,6 +144,38 @@ try {
   check('in a small window the page still clears the toolbar', top2 + small2.bottom <= bar2 + 1, JSON.stringify({ small2, bar2, top2 }))
   await shot('window')
 
+  // ── icon packs ─────────────────────────────────────────────────────────────
+  check('a canvas keeps its zoom buttons below the window strip', await fw(page, w => { w.board.newLesson('canvas') }).then(() => page.waitForTimeout(250)).then(() => page.evaluate(() => document.querySelector('.zoombar').getBoundingClientRect().top >= document.querySelector('.window-bar').getBoundingClientRect().bottom)))
+  await fw(page, w => { w.board.newLesson('notebook'); w.S.iconPack.value = 'pictures'; w.S.popover.value = 'settings' })
+  await page.waitForTimeout(200)
+  check('settings offers the icon packs', await page.getByRole('button', { name: 'Simple lines', exact: true }).count() + await page.getByRole('radio', { name: 'Simple lines', exact: true }).count() === 1)
+  const pictures = await page.locator('.boardbar img.art').count()
+  await fw(page, w => { w.S.iconPack.value = 'plain'; w.S.popover.value = null })
+  await page.waitForTimeout(200)
+  check('simple lines takes the pictures away', pictures >= 8 && await page.locator('.boardbar img.art').count() === 0 && await page.locator('.boardbar svg').count() >= 10)
+  await gesture(page, [[300, 300]], { up: false }); await page.waitForTimeout(650)
+  check('the radial menu has marks in it too', await page.locator('.radial image').count() === 0 && await page.locator('.radial svg').count() >= 8)
+  await page.evaluate(() => document.querySelector('.stage').dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1, pointerType: 'mouse', clientX: 300, clientY: 300, buttons: 0, button: 0 })))
+  await page.keyboard.press('Escape')
+  await fw(page, w => { w.S.iconPack.value = 'pictures'; w.board.setSelection([]) })
+
+  // ── pouring ────────────────────────────────────────────────────────────────
+  const place = (kind, x, y) => fw(page, (w, a) => { const it = w.apparatus.newPart(w.apparatus.partOf(a.kind), a.x, a.y, 1, {}); w.board.insertSaved([it]); w.board.setSelection([]); return it.id }, { kind, x, y })
+  const cap = (id) => fw(page, (w, id) => { const it = w.board.doc.items.find(i => i.id === id), part = w.apparatus.partOf(it.kind), v = w.board.view; return [((it.p[0] + 70 / part.w * (it.p[2] - it.p[0])) - v.x) * v.zoom, ((it.p[1] + 34 / part.h * (it.p[3] - it.p[1])) - v.y) * v.zoom] }, id)
+  const levels = () => fw(page, w => w.board.doc.items.filter(i => i.t === 'a').map(i => Math.round(i.params.ml)))
+  const poursInto = async (kind) => {
+    await fw(page, w => { w.board.newLesson('notebook'); w.board.setTool('pen') })
+    await page.waitForTimeout(150)
+    const bottle = await place('reagent-bottle', 600, 20); await place(kind, 600, 320)
+    const before = await levels()
+    await gesture(page, [await cap(bottle)], { type: 'pen' }); await page.waitForTimeout(250)
+    const after = await levels()
+    return after[0] === before[0] - 10 && after[1] === before[1] + 10
+  }
+  check('a bottle pours 10 mL into a beaker, with the pen in hand', await poursInto('beaker'))
+  check('and into another bottle', await poursInto('reagent-bottle'))
+  check('and into a burette', await poursInto('burette'))
+
   check('no renderer errors', !logs.some(l => /pageerror|\[error\]/.test(l)), logs.filter(l => /pageerror|\[error\]/.test(l)).slice(0, 4).join(' | '))
 } catch (error) {
   check('the suite ran to the end', false, String(error).slice(0, 700))

@@ -152,8 +152,8 @@ export class ApparatusWorld {
     const dark = appHooks.dark()
     let moving = false
     const vessels = parts.filter(isVessel)
-    /** The vessel whose mouth is under this point. */
-    const under = (x: number, y: number): ApparatusItem | undefined => vessels.find(v => { const b = itemBounds(v); return x >= b[0] && x <= b[2] && y <= b[1] + (b[3] - b[1]) * .55 && y >= b[1] - 260 })
+    /** The vessel whose mouth is under this point. A bottle can also fill another bottle or a burette. */
+    const under = (x: number, y: number, from?: ApparatusItem): ApparatusItem | undefined => [...vessels, ...(from ? parts.filter(v => v !== from && (v.kind === 'reagent-bottle' || v.kind === 'burette')) : [])].find(v => { const b = itemBounds(v); return x >= b[0] && x <= b[2] && y <= b[1] + (b[3] - b[1]) * .55 && y >= b[1] - 260 })
     for (const it of parts) {
       const q = it.params, part = partOf(it.kind)
       if (!part) continue
@@ -171,9 +171,9 @@ export class ApparatusWorld {
       }
       if (it.kind === 'reagent-bottle' && q.pour > 0) {
         const b = itemBounds(it)
-        const target = under((b[0] + b[2]) / 2, b[3])
+        const target = under((b[0] + b[2]) / 2, b[3], it)
         if (target) pour(q as unknown as Liquid, target.params as unknown as Liquid, 10 * q.pour)
-        else appHooks.toast('Stand the bottle above something to pour into')
+        else appHooks.toast('Move the bottle right above a beaker, flask, tube or another bottle, then tap its cap')
         q.pour = 0
         this.dirty = true
         this.lastVersion = -1

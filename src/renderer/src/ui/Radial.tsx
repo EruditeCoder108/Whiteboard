@@ -2,7 +2,7 @@ import type { JSX } from 'preact'
 import { PEN_CHOICES } from '@/engine/ink'
 import { RADIAL, RADIAL_ACTIONS, RADIAL_SIZE, STYLE_ANGLES, colorAngle, radialState } from '@/engine/radial'
 import { RADIAL_COLORS, S, activeTool, currentColor, isShapeTool, luminance } from '@/state/store'
-import { Redo2, Undo2, artUrl } from './icons'
+import { Eraser, Highlighter, MousePointer2, Paintbrush, Pen, Pencil, PenTool, Redo2, Shapes, SquarePen, Type, Undo2, artUrl } from './icons'
 
 /** Which picture stands for each tool and pen style. */
 const PICTURE: Record<string, string> = { pen: 'pen', marker: 'highlighter', eraser: 'eraser', select: 'select', shape: 'shapes', text: 'text' }
@@ -22,9 +22,14 @@ function sector(r0: number, r1: number, a0: number, a1: number): string {
   return `M${x0} ${y0} A${r1} ${r1} 0 0 1 ${x1} ${y1} L${x2} ${y2} A${r0} ${r0} 0 0 0 ${x3} ${y3}Z`
 }
 
+/** The same tools for a pack without pictures. The x and y props keep each one drawn in the ring's own coordinates. */
+const MARKS: Record<string, typeof Pen> = { pen: Pen, highlighter: Highlighter, eraser: Eraser, select: MousePointer2, shapes: Shapes, text: Type, pencil: Pencil, paintbrush: Paintbrush, chalk: SquarePen, 'felt-marker': PenTool }
+
 function Picture({ name, x, y, size }: { name: string; x: number; y: number; size: number }): JSX.Element | null {
   const href = artUrl(name)
-  return href ? <image href={href} x={x - size / 2} y={y - size / 2} width={size} height={size} /> : null
+  if (href) return <image href={href} x={x - size / 2} y={y - size / 2} width={size} height={size} />
+  const Mark = MARKS[name]
+  return Mark ? <Mark x={x - size * .35} y={y - size * .35} size={size * .7} /> : null
 }
 
 /**

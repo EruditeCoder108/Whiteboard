@@ -153,6 +153,8 @@ export const S = {
   selectionWidth: signal<number | null>(null),
   /** the app's own look: light, dark, or following the board */
   uiTheme: signal<'auto' | 'light' | 'dark'>('auto'),
+  /** which set of icons the app wears */
+  iconPack: signal<'pictures' | 'modern' | 'plain'>('pictures'),
   popover: signal<PopoverName>(null),
   /** prepared reveals: hidden objects show faded so they can be arranged (never saved: class mode is the default) */
   preparing: signal(false),
@@ -207,7 +209,7 @@ export function showToast(text: string, ms = 2200, action?: ToastAction): void {
 const PERSISTED = [
   'tool', 'lastShape', 'penColor', 'penSize', 'penStyle', 'markerColor', 'markerSize', 'eraserSize',
   'eraserMode', 'defaultPaper', 'defaultColor', 'defaultTexture', 'defaultSpacing', 'defaultStrength', 'defaultLines', 'windowed', 'smoothing', 'pressure', 'fingerDraw', 'onTop',
-  'radialEnabled', 'radialDelay', 'barSide', 'palmErase', 'palmSize', 'tipRole', 'thickRole', 'fingerRole', 'tipInk', 'thickInk', 'fingerInk', 'tipMax', 'thickMax', 'pickerNames', 'pickerMax', 'uiTheme'
+  'radialEnabled', 'radialDelay', 'iconPack', 'barSide', 'palmErase', 'palmSize', 'tipRole', 'thickRole', 'fingerRole', 'tipInk', 'thickInk', 'fingerInk', 'tipMax', 'thickMax', 'pickerNames', 'pickerMax', 'uiTheme'
 ] as const
 
 export function snapshotSettings(): Record<string, unknown> {
@@ -230,7 +232,7 @@ export function applySettings(raw: unknown): void {
     const enums: Partial<Record<typeof PERSISTED[number], readonly string[]>> = {
       tool: ['select', 'lasso', 'text', 'sticky', 'hand', 'pen', 'marker', 'eraser', 'laser', ...SHAPE_TOOLS],
       lastShape: SHAPE_TOOLS, penStyle: ['pen', 'pencil', 'brush', 'chalk', 'felt'], eraserMode: ['stroke', 'pixel'], defaultPaper: PAPERS, defaultTexture: TEXTURES,
-      barSide: ['left', 'center', 'right'], uiTheme: ['auto', 'light', 'dark'],
+      barSide: ['left', 'center', 'right'], uiTheme: ['auto', 'light', 'dark'], iconPack: ['pictures', 'modern', 'plain'],
       tipRole: INPUT_ROLES, thickRole: INPUT_ROLES, fingerRole: INPUT_ROLES
     }
     if (enums[k] && !enums[k]!.includes(value as string)) continue

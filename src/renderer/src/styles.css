@@ -141,7 +141,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 }
 .zoombar {
   position: absolute;
-  right: 8px; top: 8px;
+  right: 8px; top: calc(var(--topbar) + 8px);
   display: flex; align-items: center; padding: 3px;
 }
 .zoomval {
@@ -703,7 +703,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
   max-height: calc((100vh - 120px) / 1.25);
 }
 .window.board :is(.popover:is(.settings, .insert-menu, .present, .equation-editor, .graph-editor, .help, .menu, .recovery), .agent-panel, .replay-panel) {
-  top: auto; bottom: calc(var(--sheet-bottom) / 1.25); zoom: 1.25; max-height: calc((100vh - 130px) / 1.25);
+  top: auto; bottom: calc(var(--sheet-bottom) / 1.25); zoom: 1.25; max-height: calc((100vh - var(--sheet-bottom) - var(--topbar) - 12px) / 1.25);
 }
 .window.board.bar-center :is(.popover:is(.settings, .insert-menu, .present, .equation-editor, .graph-editor, .help, .menu, .recovery), .agent-panel, .replay-panel) { left: 50%; right: auto; transform: translateX(-50%); }
 .window.board.bar-left :is(.popover:is(.settings, .insert-menu, .present, .equation-editor, .graph-editor, .help, .menu, .recovery), .agent-panel, .replay-panel) { left: 13px; right: auto; transform: none; }
@@ -828,7 +828,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .align-grid button.on { box-shadow: inset 0 0 0 1.5px var(--accent); }
 .align-grid button.on span { background: var(--accent); opacity: 1; }
 .chip.danger { color: var(--danger); }
-.paper-sheet { width: 440px; padding: 10px 12px 12px; gap: 6px; max-height: calc((100vh - 130px) / 1.25); overflow-y: auto; }
+.paper-sheet { width: 440px; padding: 10px 12px 12px; gap: 6px; max-height: calc((100vh - var(--sheet-bottom) - var(--topbar) - 12px) / 1.25); overflow-y: auto; }
 .paper-sheet .swatch { width: 34px; height: 34px; }
 .window.board .tune-row { min-height: 44px; }
 .paper-tune .seg { height: 36px; }

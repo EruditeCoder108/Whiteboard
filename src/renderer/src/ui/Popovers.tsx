@@ -1,4 +1,4 @@
-import { ArrowUpRight, Circle, Plus, Slash, Square, Diamond, Triangle } from './icons'
+import { ArrowUpRight, Circle, ICON_PACKS, Plus, Slash, Square, Diamond, Triangle } from './icons'
 import type { JSX } from 'preact'
 import { useEffect, useLayoutEffect, useState } from 'preact/hooks'
 import type { BackupInfo } from '@shared/api'
@@ -132,6 +132,8 @@ export function SettingsPopover(): JSX.Element {
         value={S.uiTheme.value}
         onChange={(v) => { S.uiTheme.value = v as typeof S.uiTheme.value }}
       />
+      <div class="pop-sub">Icons</div>
+      <Segmented options={ICON_PACKS} value={S.iconPack.value} onChange={(v) => { S.iconPack.value = v as typeof S.iconPack.value }} />
       <div class="pop-sub">This board <i>(converts, nothing is lost)</i></div>
       <Segmented
         options={[{ value: 'notebook', label: 'Notebook' }, { value: 'canvas', label: 'Canvas' }]}
