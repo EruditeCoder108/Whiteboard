@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.7.0-beta.4 — Audited science parts, icon packs, easier pouring — 2026-11-02
+
+- **Physics and chemistry parts corrected and redrawn** after a full audit of all 58 parts. A concave lens now shows a negative focal length, zero force reads zero, an empty vessel shows no pH, a spring balance's pointer agrees with its number, and an empty burette is really empty.
+- **A resistor's colour bands** now follow its value.
+- **The balance** weighs each kind of glassware at its own typical mass.
+- **New pictures** for the papers, axes, table, worksheet, Templates and Apparatus.
+- **Icon packs:** Settings › Icons offers Pictures or Simple lines. A new pack dropped into `assets/art-<name>` can join them.
+- **Pouring:** a reagent bottle can now also fill another bottle or a burette, and tapping its cap works with any tool in hand, even near the edge of the page. The message says what to do when nothing is under it.
+- A part's settings no longer run under the toolbar. Sheets such as Settings no longer slide under the window strip in a small window, and the zoom buttons sit below it. The smallest window is now 720 × 480.
+
 ## 1.7.0-beta.2 — One layout, a clear page, writing on the screen — 2026-11-01
 
 - **One layout on every screen.** The separate laptop mode and the first-launch question are gone. The same toolbar fits from a classroom panel down to a small laptop, on one row or two.

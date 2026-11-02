@@ -16,7 +16,7 @@ cd "D:\Projects 2\whiteboard\app-icon-pack"
 npm install
 ```
 
-Check that `package.json` says version `1.7.0-beta.2`. If it does not, stop and say so. Commit to `feature/icon-pack` and push it. Do not open a PR or merge. `e2e/shots` is tracked and tests rewrite it, so never commit that folder. Do not change any code under `src/` in either part. Do the two parts in order.
+Check that `package.json` says version `1.7.0-beta.4`. If it does not, stop and say so. Commit to `feature/icon-pack` and push it. Do not open a PR or merge. `e2e/shots` is tracked and tests rewrite it, so never commit that folder. Do not change any code under `src/` in either part. Do the two parts in order.
 
 ## Part 1: a guide to the board's features
 
@@ -50,7 +50,7 @@ Save them as transparent PNGs in `D:\Projects 2\whiteboard\art-masters-modern\te
 
 **After approval, make the rest.** Save each one as `D:\Projects 2\whiteboard\art-masters-modern\<name>.png`, with exactly these names:
 
-assistant, axes, background, calculator, canvas-board, capture, chalk, clock, compass, copy, dice, equation, eraser, exit, export, felt-marker, file-pdf, frame, geometry-box, graph, hand, hide, hide-toolbar, highlighter, keyboard, laser, lasso, link, lock, magnifier, mind-map, minimise, more, my-lessons, my-shelf, name-picker, new-lesson, notebook-board, number-line, open-folder, paintbrush, pdf-worksheet, pen, pencil, periodic-table, picture, pin, poll, protractor, record, recovery, redo, rename, reveal, ruler, save, save-copy, science-labs, scoreboard, screen-cover, search, select, set-square, settings, shapes, share-phones, show, slides, split-board, spotlight, sticky, subject-biology, subject-chemistry, subject-english, subject-hindi, subject-maths, subject-physics, subjects, table, tag, text, timeline, timer, trash, undo, unlock, use-apps-below, video, write-over-screen
+apparatus, assistant, axes, background, calculator, canvas-board, capture, chalk, clock, compass, copy, dice, equation, eraser, exit, export, felt-marker, file-pdf, frame, geometry-box, graph, hand, hide, hide-toolbar, highlighter, keyboard, laser, lasso, link, lock, magnifier, mind-map, minimise, more, my-lessons, my-shelf, name-picker, new-lesson, notebook-board, number-line, open-folder, paintbrush, pdf-worksheet, pen, pencil, periodic-table, picture, pin, poll, protractor, record, recovery, redo, rename, reveal, ruler, save, save-copy, science-labs, scoreboard, screen-cover, search, select, set-square, settings, shapes, share-phones, show, slides, split-board, spotlight, sticky, subject-biology, subject-chemistry, subject-english, subject-hindi, subject-maths, subject-physics, subjects, table, tag, templates, text, timeline, timer, trash, undo, unlock, use-apps-below, video, write-over-screen
 
 To see what each one is for, look it up in `src/renderer/src/ui/icons.tsx`. For `subject-english` and `subject-hindi`, draw a clean letter A and अ, and check that the letter is correct. Make `redo` the exact mirror of `undo`.
 

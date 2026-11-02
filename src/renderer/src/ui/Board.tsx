@@ -1,4 +1,4 @@
-import { Lasso, Hand, StickyNote, History, Keyboard, ArtClock, ArtDice, ArtMagnifier, ArtMindMap, ArtNamePicker, ArtPoll, ArtScoreboard, ArtSlides, ArtSplitBoard, ArtTimeline, ArtVideo, TestTubes } from './icons'
+import { ArtApparatus, ArtTemplates, Lasso, Hand, StickyNote, History, Keyboard, ArtClock, ArtDice, ArtMagnifier, ArtMindMap, ArtNamePicker, ArtPoll, ArtScoreboard, ArtSlides, ArtSplitBoard, ArtVideo } from './icons'
 import { PeriodicTable, WriteOverScreen, RevealArt, HideToolbar, MinimiseArt, GeometryBox } from './icons'
 import { Archive, Axis3d, Blinds, Calculator, Table2, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, FileText, FlaskConical, GripVertical, FilePlus2, Library, RenameArt, SaveAll, Share2, Highlighter, MoveHorizontal, Image as ImageIcon, Laptop, LayoutGrid, LineChart, LogOut, MousePointer2, Pen, Plus, GraduationCap, Redo2, ArrowDownToLine, ArrowUpToLine, Infinity as InfinityIcon, BookOpen, Frame, Focus, Shapes, SlidersHorizontal, Sigma, Sparkles, Spotlight, Timer, Trash2, Type, Undo2, MonitorUp, Layers } from './icons'
 import type { JSX } from 'preact'
@@ -207,14 +207,14 @@ function BoardMenu(): JSX.Element {
         <Tile icon={Table2} label="Table" onClick={() => (S.popover.value = 'table')} />
         <Tile icon={StickyNote} label="Sticky note" onClick={close(() => board.setTool('sticky'))} />
         <Tile icon={ArtMindMap} label="Mind map" onClick={close(() => board.startMindMap())} />
-        <Tile icon={ArtTimeline} label="Templates" onClick={() => (S.popover.value = 'templates')} />
+        <Tile icon={ArtTemplates} label="Templates" onClick={() => (S.popover.value = 'templates')} />
         <Tile icon={Sigma} label="Equation" onClick={() => editEquation(null)} />
         <Tile icon={LineChart} label="Graph" onClick={() => editGraph(null)} />
         <Tile icon={MoveHorizontal} label="Number line" onClick={() => editScale(null, 'line')} />
         <Tile icon={Axis3d} label="Axes" onClick={() => editScale(null, 'axes')} />
         <Tile icon={PeriodicTable} label="Periodic table" onClick={() => (S.popover.value = 'periodic')} />
         <Tile icon={GeometryBox} label="Ruler & compass" on={instrumentsShown.value.length > 0} onClick={() => (S.popover.value = 'maths')} />
-        <Tile icon={TestTubes} label="Apparatus" on={trayOn.value} onClick={() => openTray()} />
+        <Tile icon={ArtApparatus} label="Apparatus" on={trayOn.value} onClick={() => openTray()} />
         <Tile icon={FlaskConical} label="Science labs" onClick={() => (S.popover.value = 'science')} />
       </Section>
       <Section title="Teach">

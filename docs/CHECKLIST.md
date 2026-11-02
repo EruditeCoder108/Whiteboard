@@ -88,7 +88,10 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - [x] Write on the screen, as clean as Note 3's: only a small bar, on a page of its own. No opacity slider.
 - [x] Panel check, radial menu, brush fix, quieter edge handles, toolbar at every width.
 - [ ] Try all of it on the real board (2 Nov 2026) and bring back the Panel check report.
-- [ ] Merge the second agent's `feature/tools-audit` and act on its report.
+- [x] Icon packs in Settings: Pictures and Simple lines.
+- [x] Merge the second agent's `feature/tools-audit`; fix toolbar overlap, balance masses and resistor bands.
+- [ ] Biology findings from `docs/audit/tools-audit.md` (owner kept biology out of the audit pass).
+- [ ] Review and merge the third icon pack and `docs/BOARD-GUIDE.md` from `feature/icon-pack`.
 
 ## Step 3: the animation library (Lesson Kit)
 

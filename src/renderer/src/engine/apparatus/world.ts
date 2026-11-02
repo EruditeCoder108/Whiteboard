@@ -68,8 +68,9 @@ export function buildCircuit(items: Item[], time: number): { parts: CircuitPart[
 
 const inside = (b: Rect, x: number, y: number): boolean => x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3]
 const isVessel = (it: ApparatusItem): boolean => 'ml' in it.params && it.kind !== 'burette' && it.kind !== 'reagent-bottle'
-/** Glass with its liquid, in grams, for the balance. */
-const massOf = (it: ApparatusItem): number => isVessel(it) ? 90 + it.params.ml : it.kind === 'burette' ? 120 + it.params.ml : 0
+/** Glass with its liquid, in grams, for the balance: typical school glassware, with liquids as dense as water. */
+const GLASS_GRAMS: Record<string, number> = { beaker: 90, 'conical-flask': 110, 'round-flask': 130, 'test-tube': 20, 'measuring-cylinder': 140, 'evaporating-dish': 120, burette: 120 }
+const massOf = (it: ApparatusItem): number => isVessel(it) || it.kind === 'burette' ? (GLASS_GRAMS[it.kind] ?? 90) + it.params.ml : 0
 
 /**
  * Everything on a page that depends on something else on the page: currents, the beam through a lens, a compass

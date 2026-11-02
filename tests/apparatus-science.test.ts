@@ -4,10 +4,21 @@ import type { CircuitPart } from '@/engine/apparatus/circuit'
 import { traceRays } from '@/engine/apparatus/optics'
 import type { Optic } from '@/engine/apparatus/optics'
 import { CONTENTS, liquidColor, phOf, pour, shellsOf } from '@/engine/apparatus/chem'
+import { resistorBands } from '@/engine/apparatus/parts-electric'
 import type { Liquid } from '@/engine/apparatus/chem'
 
 const cell = (id: string, a: string, b: string, volts = 6, r = 0): CircuitPart => ({ id, kind: 'source', a, b, volts, r })
 const res = (id: string, a: string, b: string, ohms: number): CircuitPart => ({ id, kind: 'resistor', a, b, ohms })
+
+describe('a resistor shows its value', () => {
+  const BROWN = '#7a3b16', BLACK = '#111', RED = '#d43b33', VIOLET = '#8a4fd6', YELLOW = '#f5c518', GOLD = '#c9a227'
+  it('reads two digits and a multiplier', () => {
+    expect(resistorBands(10)).toEqual([BROWN, BLACK, BLACK])
+    expect(resistorBands(1000)).toEqual([BROWN, BLACK, RED])
+    expect(resistorBands(47)).toEqual([YELLOW, VIOLET, BLACK])
+    expect(resistorBands(5)[2]).toBe(GOLD)
+  })
+})
 
 describe('circuits', () => {
   it("Ohm's law", () => {

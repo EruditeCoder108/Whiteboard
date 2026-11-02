@@ -1,6 +1,6 @@
 # Next chat handoff
 
-**Updated 1 November 2026 (Checklist 2: Step 2 done; Step 2b polish built as 1.7.0-beta.2 on `feature/tools-polish`).** Read this first in every new chat, then update it before the chat ends
+**Updated 1 November 2026 (Checklist 2: Step 2 done; Step 2b polish built as 1.7.0-beta.4 on `feature/tools-polish`).** Read this first in every new chat, then update it before the chat ends
 (see the last section). Paths are relative to the repository root
 `D:\Projects 2\whiteboard\app` unless they start with a drive letter.
 
@@ -24,6 +24,9 @@
 - **One layout (owner, 1 Nov).** Laptop mode, `S.layout`, `layoutChosen`, `boardMode`, the chooser, TopBar, Dock, HistoryBar, PageBar and the menu, insert and present popovers are gone. `S.windowed` remembers full screen or a window; `WindowBar` is the strip shown in a window. In e2e, `launch()` still means a window on a canvas (`layout: 'laptop'`), and `layout: 'board'` means what a fresh install opens to.
 - **Page and toolbar.** `board.setPageInset(px)` and `board.areaH`: a notebook page fits above the toolbar (`barHeight` is measured in BoardBar); the inset is 0 when the toolbar is hidden. `board.offPage` keeps pens out of the margin. `paintDesk` draws the margin.
 - **Write on the screen.** `actions.enterScreen/exitScreen`, `S.screenMode`, `ScreenBar` in `ui/Panels.tsx`. `S.bgAlpha` is no longer saved or user-set: 100, or 0 in this mode. A notebook gets a page titled "Written on the screen", removed by `board.removeEmptyPage` if nothing was written; a canvas moves to `board.clearStretch()` and back.
+- **Icon packs (owner, 2 Nov).** `S.iconPack`, `ICON_PACKS` and `artUrl` in `ui/icons.tsx`: Pictures, Simple lines (the Lucide marks), and any pack found in `assets/art-modern/`, which appears in Settings by itself. A name a pack lacks falls back to the plain mark. The owner finds the current pictures too loud and a little childish. A new agent is making the third pack and `docs/BOARD-GUIDE.md` from `docs/agent-tasks/icon-pack.md`, on `feature/icon-pack`; it shows a six-icon test sheet first.
+- **Pouring rules.** A reagent bottle pours 10 mL per tap on its cap, into whatever stands right below it (beaker, flask, tube, cylinder, dish, another bottle, burette): the bottle's bottom centre must be over the vessel and within 260 units above its mouth. Nothing tilts or drags; beakers and flasks have no pour control of their own.
+- **Tools audit merged (2 Nov):** `docs/audit/`. Physics and chemistry are corrected. Biology findings (microscope magnification, DNA backbones, leaf stoma, labels out of bounds, "lungs empty" wording) are still open: the owner kept biology out of that pass. A science teacher should still review the ideal models listed there.
 - **Real board day: 2 Nov 2026, college.** Bring the installer on a USB stick. Run Settings › Panel check there and bring back the report. It tunes tip, thick-end, finger and palm sizes.
 - **The GitHub repository is going private** (owner, 1 Nov). The app does not use it at run time.
 
@@ -58,10 +61,12 @@ The gesture ring is a separate college project and is **not** part of the produc
 | **The owner's progress checklist (plain language)** | `docs/CHECKLIST.md` (Checklist 2). **Work through it in order; tick it after every milestone.** The finished first list: `docs/CHECKLIST-1-done.md`. |
 | GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#16 merged, `main` = 1.7.0-beta.1 |
 | Installed app (owner's laptop) | `%LOCALAPPDATA%\Programs\Floating Whiteboard` (per-user NSIS install, Start menu + desktop shortcut) |
-| Latest installer | `dist\Floating Whiteboard Setup 1.7.0-beta.1.exe` (ignored by git). **Rebuilt per whole checklist step: see §6.** |
+| Latest installer | `dist\Floating Whiteboard Setup 1.7.0-beta.4.exe` (ignored by git). **Rebuilt per whole checklist step: see §6.** |
 | Older unrelated projects in the parent folder | `..\android-library`, `..\*.pyw` (the original Python board). Leave them alone. |
 
 ## 3. State right now
+
+- **Second-agent tools audit (2 Nov, `feature/tools-audit`, separate worktree):** report and physics/chemistry drawing pass are pushed; biology is unchanged at the owner's request. Ten final picture assets and the `ArtTemplates` / `ArtApparatus` exports are prepared for the lead. See `docs/audit/HANDOFF.md` for checks, evidence and remaining issues. This branch is not merged or installed.
 
 - **`docs/CHECKLIST.md` is the owner's plain-language progress list and the plan.** Checklist 1 is finished and archived. Tick items (✅ / 🔄 / ⬜) whenever a milestone starts or finishes; keep it
   short and jargon-free. `FEATURES.md` stays the detailed feature list.
@@ -101,6 +106,8 @@ The gesture ring is a separate college project and is **not** part of the produc
   unverified on hardware (Step 3).
 
 ## 4. What to do next
+
+- **Lead review:** `feature/tools-audit`, with the short handoff in `docs/audit/HANDOFF.md`. Wire `ArtTemplates` and `ArtApparatus` into the buttons when reviewing the picture pass. The settings panel obstruction, balance assumptions and resistor colour bands are reported for the lead; the protected UI/solver files were not edited by the second agent.
 
 **Checklist 2, in order ("Start here" above).** The notes below are background.
 

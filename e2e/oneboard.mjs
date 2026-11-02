@@ -176,6 +176,19 @@ try {
   check('and into another bottle', await poursInto('reagent-bottle'))
   check('and into a burette', await poursInto('burette'))
 
+  // A part's settings stay above the toolbar on the owner's laptop screen (tools audit, finding 6).
+  await fw(page, w => { w.board.newLesson('notebook'); w.board.setTool('select') })
+  await page.waitForTimeout(150)
+  await sized(app, 1280, 720)
+  await place('evaporating-dish', 500, 500)
+  await fw(page, w => { w.board.setSelection([w.board.doc.items[0]]) })
+  await page.waitForTimeout(200)
+  await page.locator('.selection-tools').getByRole('button', { name: 'Set', exact: true }).click()
+  await page.waitForTimeout(200)
+  const settings = await page.evaluate(() => { const d = document.querySelector('.selection-detail').getBoundingClientRect(), b = document.querySelector('.boardbar').getBoundingClientRect(); return { detail: d.bottom, bar: b.top, top: d.top } })
+  check('a part\'s settings end above the toolbar', clear.detail <= clear.bar, JSON.stringify(clear))
+  await fw(page, w => { w.board.setSelection([]) })
+
   check('no renderer errors', !logs.some(l => /pageerror|\[error\]/.test(l)), logs.filter(l => /pageerror|\[error\]/.test(l)).slice(0, 4).join(' | '))
 } catch (error) {
   check('the suite ran to the end', false, String(error).slice(0, 700))

@@ -10,6 +10,16 @@ const board = (c: CanvasRenderingContext2D, w = 200, h = 110): void => box(c, 6,
 const nice = (v: number): number[] => [0, v / 2, v]
 const scaleLabels = (range: number): string[] => nice(range).map(v => Number(v.toFixed(2)).toString())
 
+const BAND_COLOURS = ['#111', '#7a3b16', '#d43b33', '#ef8a1f', '#f5c518', '#2fa66a', '#2f6bff', '#8a4fd6', '#8a8f98', '#f4f4f4']
+/** The first three colour bands of a resistor, to two significant figures. A value below 10 Ω has a gold multiplier band (× 0.1). */
+export function resistorBands(ohms: number): [string, string, string] {
+  const r = Math.max(1, Math.round(ohms))
+  if (r < 10) return [BAND_COLOURS[r], BAND_COLOURS[0], '#c9a227']
+  const power = Math.floor(Math.log10(r)) - 1
+  const digits = Math.min(99, Math.round(r / 10 ** power))
+  return [BAND_COLOURS[Math.floor(digits / 10)], BAND_COLOURS[digits % 10], BAND_COLOURS[power]]
+}
+
 export const ELECTRIC: Part[] = [
   { ...base, kind: 'cell', name: 'Cell', w: 200, h: 110, params: { v: 1.5 }, polar: true, terminals: [[176, 55], [24, 55]],
     settings: [{ key: 'v', label: 'Voltage', min: 1, max: 2, step: .1, unit: 'V' }],
@@ -61,7 +71,8 @@ export const ELECTRIC: Part[] = [
       board(c)
       line(c, 34, 80, 166, 80, '#7f8a96', 5)
       box(c, 60, 62, 80, 36, 14, shade(c, 0, 62, 0, 98, ['#e6c893', '#c9a56c', '#a07f4c']))
-      for (const [x, col] of [[72, '#7a3b16'], [86, '#111'], [100, '#111'], [122, '#c9a227']] as [number, string][]) box(c, x, 62, 7, 36, 0, col, '')
+      const bands = resistorBands(q.r)
+      for (const [x, col] of [[72, bands[0]], [86, bands[1]], [100, bands[2]], [122, '#c9a227']] as [number, string][]) box(c, x, 62, 7, 36, 0, col, '')
       text(c, `${q.r} Ω`, 100, 24, 22, l.dark ? '#f4f6fb' : '#172033', 'center', 700)
     } },
   { ...base, kind: 'rheostat', name: 'Rheostat', w: 240, h: 130, params: { max: 50, pos: .5 }, terminals: [[30, 108], [210, 108]],

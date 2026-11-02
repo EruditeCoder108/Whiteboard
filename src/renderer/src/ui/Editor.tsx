@@ -248,7 +248,7 @@ export function SelectionToolbar(): JSX.Element | null {
   // On the board the bar must stay clear of the toolbar along the bottom, or its buttons cannot be reached.
   const reserve = big ? barHeight + 112 : 50
   const top = clamp(above >= 38 ? above : below + (big ? 0 : 46) < vh - reserve ? below : 38, 38, Math.max(38, vh - (big ? reserve : 98)))
-  const toolbarTop = panel ? Math.min(top, Math.max(38, vh - (big ? 420 : 330))) : top
+  const toolbarTop = panel ? Math.min(top, Math.max(38, vh - (big ? 520 : 330))) : top
   const left = clamp(cx - width / 2, big ? 12 : dockEdge, Math.max(big ? 12 : dockEdge, vw - width - 12))
   const locked = items.some(it => it.locked), allLocked = items.every(it => it.locked)
   const single = items.length === 1 && editable(items[0]) ? items[0] : null
@@ -293,7 +293,7 @@ export function SelectionToolbar(): JSX.Element | null {
       <Act icon={Trash2} label="Delete" title="Delete selection  (Delete)" disabled={allLocked} danger onClick={() => board.deleteSelection()} />
       <Act icon={Ellipsis} label="More" title="More selection actions" active={panel === 'more'} onClick={() => setPanel(panel === 'more' ? null : 'more')} />
     </div>
-    {panel && <div class={`selection-detail panel ${panel}`} style={{ maxHeight: Math.max(80, vh - toolbarTop - 102) }}>
+    {panel && <div class={`selection-detail panel ${panel}`} style={{ maxHeight: `max(120px, calc(100vh - var(--topbar) - var(--sheet-bottom) - ${toolbarTop + barHeight + 8}px))` }}>
       {panel === 'style' ? <ObjectStyles items={items} /> : panel === 'reveal' ? <RevealOptions items={items} /> : panel === 'link' ? <LinkOptions link={only?.link} onDone={() => setPanel(null)} /> : panel === 'part' && only?.t === 'a' ? <PartOptions it={only} /> : <>
         {only?.t === 'b' && !locked && <>
           <MenuItem icon={Rows3} label="Add row" onClick={() => board.shapeTable('add-row')} />
