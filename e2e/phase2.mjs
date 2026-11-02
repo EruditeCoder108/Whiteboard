@@ -163,7 +163,7 @@ try {
   await fw(page, w => { w.board.setView({ x: 120, y: 340, zoom: .65 }); w.board.setTool('select'); w.board.setSelection([w.board.doc.items.find(it => it.note)]) })
   await page.getByRole('button', { name: 'Object style', exact: true }).click()
   check('context controls stay within the minimum window', await page.locator('.selection-tools').evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1 && r.top >= 0 && r.bottom <= innerHeight + 1 }))
-  check('all dock tools remain visible in a small window', await page.locator('.dock').evaluate(el => { const r = el.getBoundingClientRect(); return r.top >= 28 && r.bottom < innerHeight - 25 }))
+  check('the toolbar stays inside a small window', await page.locator('.boardbar').evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1 }))
   await screenshot('phase2-small-window')
   check('no renderer errors occurred', errors.length === 0, errors.join('\n'))
 } finally { await app.close().catch(() => {}) }

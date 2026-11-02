@@ -6,14 +6,13 @@ import { join } from 'node:path'
 const { app, page, logs } = await launch({ layout: null })
 const offscreen = () => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setBounds({ x: 4000, y: 60, width: 1920, height: 1080 }))
 try {
-  check('first launch asks smart board or laptop', await page.locator('.chooser').isVisible())
-  await page.getByRole('button', { name: /Smart board/ }).click()
+  check('first launch asks nothing', await page.locator('.chooser').count() === 0)
   await page.waitForTimeout(400)
-  const chosen = await fw(page, w => ({ layout: w.S.layout.value, chosen: w.S.layoutChosen.value, fullscreen: w.S.fullscreen.value, alpha: w.S.bgAlpha.value }))
-  check('choosing smart board goes full screen with a solid board', chosen.layout === 'board' && chosen.chosen && chosen.fullscreen && chosen.alpha === 100, JSON.stringify(chosen))
+  const chosen = await fw(page, w => ({ kind: w.S.kind.value, fullscreen: w.S.fullscreen.value, alpha: w.S.bgAlpha.value }))
+  check('a fresh install opens full screen on a solid notebook', chosen.kind === 'notebook' && chosen.fullscreen && chosen.alpha === 100, JSON.stringify(chosen))
   await offscreen()
   await page.waitForTimeout(300)
-  check('board toolbar replaces the laptop chrome', await page.locator('.boardbar').isVisible() && !(await page.locator('.topbar').count()) && !(await page.locator('.dock').count()))
+  check('the board toolbar is the only toolbar', await page.locator('.boardbar').isVisible() && !(await page.locator('.topbar').count()) && !(await page.locator('.dock').count()))
   await page.screenshot({ path: join(shotDir, 'board-toolbar.png') })
 
   // Soft pen: touch has no pressure, so a slow-then-fast finger stroke still varies in width.
@@ -44,9 +43,12 @@ try {
   await page.locator('.edge-tab.left').click()
   check('left edge tab brings the toolbar left and opens the menu', await page.locator('.board-sheet').isVisible() && await fw(page, w => w.S.barSide.value) === 'left')
   await page.screenshot({ path: join(shotDir, 'board-menu.png') })
-  await page.getByRole('button', { name: 'Write over screen' }).click()
-  check('write over screen makes the board see-through', await fw(page, w => w.S.bgAlpha.value) < 20)
-  await fw(page, w => { w.S.bgAlpha.value = 100; w.S.barSide.value = 'center' })
+  await page.getByRole('button', { name: 'Write on screen' }).click()
+  check('write on screen makes the board see-through', await fw(page, w => w.S.bgAlpha.value) === 0)
+  await page.getByRole('button', { name: 'Back to board' }).click()
+  await offscreen()
+  await page.waitForTimeout(300)
+  await fw(page, w => { w.S.barSide.value = 'center' })
 
   // Palm erase: a finger-sized touch draws, a palm-sized one wipes and then hands the pen back.
   const start = await fw(page, w => { w.board.goToPage(0); w.board.setTool('pen'); return w.board.doc.items.length })

@@ -2,7 +2,7 @@ import type { Board } from './board'
 import { radial } from './radial'
 import type { RadialPick } from './radial'
 import type { Ptr, Tool } from './tool-types'
-import { S, activeTool } from '@/state/store'
+import { S, activeTool, isShapeTool } from '@/state/store'
 import { inputKind, rolesApply } from './roles'
 
 const LONG_PRESS_SLOP = 9
@@ -163,6 +163,11 @@ export class InputRouter {
     }
     this.toolSince = performance.now()
     const instruments = this.board.instruments
+    const hand = activeTool.value
+    if ((hand === 'pen' || hand === 'marker' || hand === 'text' || hand === 'sticky' || isShapeTool(hand)) && this.board.offPage(p.wx, p.wy)) {
+      this.primary = null
+      return
+    }
     // A switch, a slider or a terminal answers to whatever is in hand, except the tools meant to pass over things.
     const part = activeTool.value === 'eraser' || activeTool.value === 'laser' ? null : this.board.partTool(p)
     this.tool = part ?? (instruments.active ? instruments.intercept(p) ?? instruments.snapTool(this.board.currentTool(), p) : this.board.currentTool())

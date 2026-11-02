@@ -78,12 +78,16 @@ const reg = await app.evaluate(({ globalShortcut }) => ({
 check('global hotkeys registered (pass-through, hide window)', reg.pass && reg.hide, JSON.stringify(reg))
 
 // pass-through toggles cleanly from the UI; a pill window exists only while it is on
-await page.getByRole('button', { name: /Pass-through: click/ }).click(); await sleep(500)
+await page.getByRole('button', { name: 'More', exact: true }).click()
+await page.getByRole('button', { name: 'Write on screen', exact: true }).click(); await sleep(300)
+await page.getByRole('button', { name: 'Use the apps underneath', exact: true }).click(); await sleep(500)
 check('pass-through button turns the mode on', await fw(page, (w) => w.S.passthrough.value))
 check('pill window opened', (await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)) === 2)
-check('board hides its chrome while click-through', (await page.locator('.dock').count()) === 0)
+check('board hides its chrome while click-through', (await page.locator('.boardbar, .screen-bar').count()) === 0)
 await page.evaluate(() => window.api.win.setPassthrough(false)); await sleep(500)
-check('turning it off closes the pill and restores the UI', (await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)) === 1 && (await page.locator('.dock').count()) === 1)
+check('turning it off closes the pill and restores the UI', (await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)) === 1 && (await page.locator('.screen-bar').count()) === 1)
+await page.getByRole('button', { name: 'Back to board', exact: true }).click(); await sleep(400)
+check('the board and its toolbar come back', (await page.locator('.boardbar').count()) === 1 && (await page.locator('.screen-bar').count()) === 0)
 
 // ── single instance ──────────────────────────────────────────────────────────────────────
 const exe = createRequire(import.meta.url)(join(appDir, 'node_modules', 'electron'))

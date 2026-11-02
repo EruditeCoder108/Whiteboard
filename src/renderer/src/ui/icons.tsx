@@ -16,8 +16,10 @@ export function art(name: string, Fallback: typeof Lucide.Pen = Lucide.Image): t
     const [failed, setFailed] = useState(false)
     const src = artUrl(name)
     // Radial icons live inside SVG; preserve their exact SVG coordinate system.
-    if (failed || !src || props.x !== undefined || props.y !== undefined) return <Fallback {...props} />
     const requested = Number(props.size ?? 24)
+    const { plain, pic, ...rest } = props as Props & { plain?: boolean; pic?: boolean }
+    // Pictures are for what a teacher reaches for. Text rows, small buttons and window controls stay plain marks.
+    if (failed || !src || rest.x !== undefined || rest.y !== undefined || plain || (requested < 18 && !pic)) return <Fallback {...rest} />
     const size = Math.min(38, Math.max(24, requested * 1.5))
     return <img class={('art ' + (props.class ?? '')).trim()} src={src} alt="" draggable={false} width={size} height={size} style={props.style as JSX.CSSProperties} onError={() => setFailed(true)} />
   }) as typeof Lucide.Pen
@@ -87,7 +89,7 @@ export const Clapperboard = art('record', Lucide.Clapperboard)
 export const WriteOverScreen = art('write-over-screen', Lucide.Image)
 export const MousePointerClick = art('use-apps-below', Lucide.MousePointerClick)
 export const Sparkles = art('assistant', Lucide.Sparkles)
-export const SlidersHorizontal = art('settings', Lucide.SlidersHorizontal)
+export const SlidersHorizontal = art('settings', Lucide.Settings)
 export const Layers = art('background', Lucide.Layers)
 export const Infinity = art('canvas-board', Lucide.Infinity)
 export const BookOpen = art('notebook-board', Lucide.BookOpen)

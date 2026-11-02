@@ -137,15 +137,15 @@ try {
   await fw(page, async w => { w.board.convertTo('canvas'); w.board.convertTo('notebook') })
   check('notebook ⇄ canvas keeps it', await fw(page, w => w.board.doc.items.some(it => it.t === 'n')) && !!dark)
 
-  // ── double tap, laptop menu ────────────────────────────────────────────────
+  // ── double tap, on a canvas ────────────────────────────────────────────────
   await app.close()
   ;({ app, page, logs } = await launch())
-  await fw(page, w => { w.S.popover.value = 'insert' })
-  await page.getByRole('button', { name: 'Coordinate axes' }).click()
+  await fw(page, w => { w.S.popover.value = 'board-menu' })
+  await page.getByRole('button', { name: 'Axes', exact: true }).click()
   await page.waitForSelector('.scale-card')
   await shot('laptop-editor')
   await put()
-  check('the laptop Insert menu adds axes', !!(await scale())?.y)
+  check('a canvas takes axes too', !!(await scale())?.y)
   await fw(page, w => { const it = w.board.doc.items[0]; w.board.setSelection([]); w.board.onEditMedia(it) })
   await page.waitForSelector('.scale-card')
   check('tapping twice opens the same editor', await page.getByRole('heading', { name: 'Change the scale' }).count() === 1)

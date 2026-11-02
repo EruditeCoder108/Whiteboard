@@ -152,13 +152,13 @@ try {
   await fw(page, w => w.board.setSelection([]))
   await shot('on-chalkboard')
 
-  // ── on the laptop ──────────────────────────────────────────────────────────
+  // ── on a canvas ────────────────────────────────────────────────────────────
   await app.close()
   ;({ app, page, logs } = await launch())
-  await fw(page, w => { w.S.popover.value = 'insert' })
+  await fw(page, w => { w.S.popover.value = 'board-menu' })
   await page.getByRole('button', { name: 'Table', exact: true }).click()
   await page.getByRole('button', { name: 'Put on the board' }).click()
-  check('the laptop Insert menu makes one too', (await table())?.rows.length === 3)
+  check('a canvas makes one too', (await table())?.rows.length === 3)
   await page.getByRole('button', { name: 'Type in the table' }).click()
   await page.waitForTimeout(60)
   check('the pencil opens the first cell', (await cell().getAttribute('aria-label')) === 'Row 1, column 1')

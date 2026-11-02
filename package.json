@@ -37,6 +37,8 @@
     "e2e:export": "electron-vite build && node e2e/export.mjs",
     "e2e:tools": "electron-vite build && node e2e/tools.mjs",
     "e2e:ink": "electron-vite build && node e2e/ink.mjs",
+    "e2e:polish": "electron-vite build && node e2e/polish.mjs",
+    "e2e:oneboard": "electron-vite build && node e2e/oneboard.mjs",
     "e2e:apparatus": "electron-vite build && node e2e/apparatus.mjs",
     "e2e:labels": "electron-vite build && node e2e/labels.mjs",
     "e2e:recognize": "electron-vite build && node e2e/recognize.mjs",

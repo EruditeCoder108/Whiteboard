@@ -13,10 +13,12 @@ interface BtnProps {
   onClick?: (e: MouseEvent) => void
   class?: string
   keep?: boolean
+  /** show the picture even at this small size: the laptop's tool dock */
+  pic?: boolean
 }
 
 /** Compact icon button. */
-export function Btn({ icon: Icon, title, active, danger, disabled, size = 17, onClick, class: cls, keep }: BtnProps): JSX.Element {
+export function Btn({ icon: Icon, title, active, danger, disabled, size = 17, onClick, class: cls, keep, pic }: BtnProps): JSX.Element {
   return (
     <button
       type="button"
@@ -28,7 +30,7 @@ export function Btn({ icon: Icon, title, active, danger, disabled, size = 17, on
       data-popover-keep={keep ? '' : undefined}
       onClick={onClick as never}
     >
-      <Icon size={size} strokeWidth={1.8} />
+      <Icon size={size} strokeWidth={1.8} {...({ pic } as object)} />
     </button>
   )
 }

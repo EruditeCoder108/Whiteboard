@@ -43,7 +43,7 @@ The core drawing and science workflows run locally, without an account, API key 
 | Make your thinking visible | Keep the work yours |
 | --- | --- |
 | **Natural ink.** Pressure-sensitive pen strokes, mouse drawing, optional finger drawing and two-finger pan/zoom. | **Editable objects.** Text, notes, shapes, labels, groups, locks, transforms and object styling. |
-| **A floating canvas.** Adjust opacity, write over your screen and switch to pointer pass-through when you need the app underneath. | **Local files.** Native saves, visible save status, recovery snapshots and PNG export. |
+| **Write on the screen.** The board disappears and a small bar stays, so you can write over anything and use the apps underneath when you need them. | **Local files.** Native saves, visible save status, recovery snapshots and PNG export. |
 | **Tools within reach.** A press-and-hold radial menu, stroke/pixel erasers, a fading laser and keyboard shortcuts. | **Reusable explanations.** Record ink and edits, replay a lesson, keep an editable frame or export a silent WebM. |
 
 ## See it move

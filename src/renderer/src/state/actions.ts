@@ -3,14 +3,14 @@ import { radial } from '@/engine/radial'
 import type { RadialPick } from '@/engine/radial'
 import { clipboardImage } from './insert'
 import { S, showToast, styleKey, SIZE_RANGE } from './store'
-import type { BoardKind, GridMode, Layout, ToolName } from './store'
+import type { BoardKind, GridMode, ToolName } from './store'
 import type { PictureScope } from '@/engine/board'
 import type { Texture } from '@/engine/texture'
+import type { View } from '@/engine/types'
 import { clamp } from '@/engine/geometry'
 import { exportName, lesson } from './lesson'
 
 /** Below this board opacity (percent) the board counts as "writing over the screen". */
-export const OVERLAY_ALPHA = 20
 
 /** How the paper in view is drawn becomes how new lessons start. */
 function rememberPaperStyle(): void {
@@ -21,6 +21,8 @@ function rememberPaperStyle(): void {
 }
 
 /** Everything a user can *do*.  Buttons, shortcuts and the radial menu all call these. */
+let screenReturn: { page: number; windowed: boolean; kind: string; view: View } | null = null
+
 export const actions = {
   retrySave(): void {
     void S.retrySave.value?.()
@@ -126,20 +128,8 @@ export const actions = {
   },
 
   toggleFullscreen(): void {
+    S.windowed.value = S.fullscreen.value
     window.api.win.toggleFullscreen()
-  },
-
-  /** Smart board: full screen, solid board. Laptop: the compact floating window. */
-  chooseLayout(layout: Layout): void {
-    S.popover.value = null
-    S.layout.value = layout
-    S.layoutChosen.value = true
-    // An empty board takes the kind that suits the screen; a board with work on it keeps its kind.
-    if (board.isEmpty) board.convertTo(layout === 'board' ? 'notebook' : 'canvas')
-    if (layout === 'board') {
-      if (S.bgAlpha.value < 100) S.bgAlpha.value = 100
-      window.api.win.setFullscreen(true)
-    } else window.api.win.setFullscreen(false)
   },
 
   /** Turn this board into a notebook (fixed pages) or a canvas (endless, with frames). Nothing is lost. */
@@ -152,29 +142,58 @@ export const actions = {
   },
 
   /** Write over the screen: the board turns see-through (and back to solid). */
-  toggleOverlay(): void {
+  /**
+   * Write over whatever is on the screen. The notes get a page of their own, so nothing lands on the lesson's
+   * pages by accident, and it goes away again if nothing was written.
+   */
+  enterScreen(): void {
     S.popover.value = null
-    const on = S.bgAlpha.value >= OVERLAY_ALPHA
-    S.bgAlpha.value = on ? 1 : 100
-    showToast(on ? 'Writing over the screen · to click the apps underneath, use More → Use apps below' : 'Back to the board', 3600)
+    screenReturn = { page: S.page.value, windowed: !S.fullscreen.value, kind: S.kind.value, view: board.view }
+    board.commitText()
+    board.setSelection([])
+    if (S.kind.value === 'notebook') {
+      board.addPage()
+      board.setTitle(S.page.value, 'Written on the screen')
+    } else board.setView(board.clearStretch())
+    S.screenMode.value = true
+    S.bgAlpha.value = 0
+    board.setTool('pen')
+    window.api.win.setFullscreen(true)
+  },
+
+  exitScreen(): void {
+    const back = screenReturn
+    actions.setPassthrough(false)
+    S.screenMode.value = false
+    S.bgAlpha.value = 100
+    if (back?.kind === 'notebook') {
+      if (board.removeEmptyPage()) board.goToPage(back.page)
+      else {
+        const notes = S.page.value + 1
+        board.goToPage(back.page)
+        showToast(`What you wrote is kept on page ${notes}`, 4000)
+      }
+    } else if (back) board.setView(back.view)
+    if (back?.windowed) window.api.win.setFullscreen(false)
+    screenReturn = null
   },
 
   runRadial(pick: RadialPick): void {
     if (pick.kind === 'color') return actions.setColor(pick.color)
+    if (pick.kind === 'style') { S.penStyle.value = pick.style; return board.setTool('pen') }
     switch (pick.key) {
       case 'pen':
       case 'marker':
       case 'eraser':
       case 'select':
+      case 'text':
         return board.setTool(pick.key)
+      case 'shape':
+        return board.setTool(S.lastShape.value)
       case 'undo':
         return board.undo()
       case 'redo':
         return board.redo()
-      case 'clear':
-        return board.clearBoard()
-      case 'grid':
-        return actions.cycleGrid()
     }
   },
 

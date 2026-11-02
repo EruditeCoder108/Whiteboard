@@ -1,11 +1,12 @@
-import {
-  Eraser, Grid3x3, Highlighter, MousePointer2, Pen, Redo2, Trash2, Undo2
-} from './icons'
 import type { JSX } from 'preact'
-import { RADIAL, RADIAL_ACTIONS, RADIAL_SIZE, radialState } from '@/engine/radial'
-import { RADIAL_COLORS, S, activeTool, currentColor, luminance } from '@/state/store'
+import { PEN_CHOICES } from '@/engine/ink'
+import { RADIAL, RADIAL_ACTIONS, RADIAL_SIZE, STYLE_ANGLES, colorAngle, radialState } from '@/engine/radial'
+import { RADIAL_COLORS, S, activeTool, currentColor, isShapeTool, luminance } from '@/state/store'
+import { Redo2, Undo2, artUrl } from './icons'
 
-const ICONS = { pen: Pen, marker: Highlighter, eraser: Eraser, select: MousePointer2, clear: Trash2, grid: Grid3x3, redo: Redo2, undo: Undo2 }
+/** Which picture stands for each tool and pen style. */
+const PICTURE: Record<string, string> = { pen: 'pen', marker: 'highlighter', eraser: 'eraser', select: 'select', shape: 'shapes', text: 'text' }
+const STYLE_PICTURE: Record<string, string> = { pen: 'pen', pencil: 'pencil', brush: 'paintbrush', chalk: 'chalk', felt: 'felt-marker' }
 
 /** point on a circle; angle in degrees, 0 = top, clockwise */
 const pt = (r: number, a: number): [number, number] => {
@@ -21,68 +22,78 @@ function sector(r0: number, r1: number, a0: number, a1: number): string {
   return `M${x0} ${y0} A${r1} ${r1} 0 0 1 ${x1} ${y1} L${x2} ${y2} A${r0} ${r0} 0 0 0 ${x3} ${y3}Z`
 }
 
-/** Press-and-hold menu: inner ring = tools & actions, outer ring = quick colours. */
+function Picture({ name, x, y, size }: { name: string; x: number; y: number; size: number }): JSX.Element | null {
+  const href = artUrl(name)
+  return href ? <image href={href} x={x - size / 2} y={y - size / 2} width={size} height={size} /> : null
+}
+
+/**
+ * Press and hold anywhere: tools in the middle ring, pen styles above them, colours below.
+ * Everything stays in the same place each time, so the hand soon learns it. Nothing here can lose work:
+ * clearing the board is not a flick away.
+ */
 export function Radial(): JSX.Element | null {
   const st = radialState.value
   if (!st) return null
-  const gap = 1.6
   const hv = st.hover
   const tool = activeTool.value
   const cur = currentColor.value.toLowerCase()
-  const showColor = !['eraser', 'select', 'hand', 'laser'].includes(tool)
-  const label =
-    hv.kind === 'action' ? RADIAL_ACTIONS[hv.index].label : hv.kind === 'color' ? 'Colour' : ''
   const half = RADIAL_SIZE / 2
-
+  const gap = 1.4
+  const dot = (RADIAL.out0 + RADIAL.out1) / 2
+  const label = hv.kind === 'action' ? RADIAL_ACTIONS[hv.index].label : hv.kind === 'style' ? PEN_CHOICES[hv.index].label : hv.kind === 'color' ? 'Colour' : ''
+  const inHand = (key: string): boolean => key === tool || (key === 'shape' && isShapeTool(tool))
+  const hub = tool === 'pen' ? STYLE_PICTURE[S.penStyle.value] : PICTURE[isShapeTool(tool) ? 'shape' : tool] ?? ''
   return (
     <svg class="radial ui" width={RADIAL_SIZE} height={RADIAL_SIZE} viewBox={`${-half} ${-half} ${RADIAL_SIZE} ${RADIAL_SIZE}`}
-         style={{ left: st.cx - half + 'px', top: st.cy - half + 'px' }}>
+      style={{ left: st.cx - half + 'px', top: st.cy - half + 'px' }}>
       <defs>
         <filter id="rshadow" x="-30%" y="-30%" width="160%" height="160%">
-          <feDropShadow dx="0" dy="3" stdDeviation="7" flood-color="#0f172a" flood-opacity="0.28" />
+          <feDropShadow dx="0" dy="4" stdDeviation="9" flood-color="#0f172a" flood-opacity="0.3" />
         </filter>
       </defs>
-      <g class="radial-in" filter="url(#rshadow)">
-        <circle r={RADIAL.in1 + 2.5} fill="rgba(255,255,255,0.94)" />
+      <g class="radial-in">
+        <circle class="rdisc" r={RADIAL.out1 + 4} filter="url(#rshadow)" />
         {RADIAL_ACTIONS.map((a, i) => {
-          const a0 = i * 45 - 22.5 + gap
-          const a1 = a0 + 45 - 2 * gap
-          const hov = hv.kind === 'action' && hv.index === i
-          const active = a.key === tool || (a.key === 'grid' && S.grid.value !== 'none')
+          const a0 = i * 45 - 22.5 + gap, a1 = a0 + 45 - 2 * gap
           const [ix, iy] = pt((RADIAL.in0 + RADIAL.in1) / 2, i * 45)
-          const Icon = ICONS[a.key]
+          const hov = hv.kind === 'action' && hv.index === i
+          const Mark = a.key === 'undo' ? Undo2 : a.key === 'redo' ? Redo2 : null
           return (
             <g key={a.key}>
-              <path d={sector(RADIAL.in0, RADIAL.in1, a0, a1)} class={`rs ${hov ? 'hov' : ''} ${active ? 'act' : ''}`} />
-              <Icon x={ix - 11} y={iy - 11} size={22} strokeWidth={1.8} class={`ri ${hov ? 'hov' : ''} ${active ? 'act' : ''}`} />
+              <path d={sector(RADIAL.in0, RADIAL.in1, a0, a1)} class={`rs ${hov ? 'hov' : ''} ${inHand(a.key) ? 'act' : ''}`} />
+              {Mark
+                ? <Mark x={ix - 12} y={iy - 12} size={24} strokeWidth={2} class={`ri ${(a.key === 'undo' ? S.canUndo.value : S.canRedo.value) ? '' : 'off'}`} />
+                : <Picture name={PICTURE[a.key]} x={ix} y={iy} size={hov ? 40 : 36} />}
+            </g>
+          )
+        })}
+        {PEN_CHOICES.map((c, i) => {
+          const [x, y] = pt(dot, STYLE_ANGLES[i])
+          const hov = hv.kind === 'style' && hv.index === i
+          const on = S.penStyle.value === c.id
+          return (
+            <g key={c.id}>
+              <circle cx={x} cy={y} r={hov ? 20 : 17} class={`rstyle ${on ? 'act' : ''} ${hov ? 'hov' : ''}`} />
+              <Picture name={STYLE_PICTURE[c.id]} x={x} y={y} size={hov ? 32 : 26} />
             </g>
           )
         })}
         {RADIAL_COLORS.map((c, i) => {
-          const a0 = i * 45 - 22.5 + gap
-          const a1 = a0 + 45 - 2 * gap
+          const [x, y] = pt(dot, colorAngle(i))
           const hov = hv.kind === 'color' && hv.index === i
-          const r1 = RADIAL.out1 + (hov ? 5 : 0)
-          const [dx, dy] = pt((RADIAL.out0 + RADIAL.out1) / 2, i * 45)
-          const selected = showColor && c.toLowerCase() === cur
+          const on = c.toLowerCase() === cur
           return (
             <g key={c}>
-              <path d={sector(RADIAL.out0, r1, a0, a1)} fill={c} stroke={luminance(c) > 0.85 ? 'rgba(0,0,0,0.22)' : 'rgba(0,0,0,0.08)'} stroke-width="1" />
-              {selected && <circle cx={dx} cy={dy} r="3.4" fill={luminance(c) < 0.7 ? '#fff' : '#1b2030'} />}
+              {on && <circle cx={x} cy={y} r={17} class="rcolor-on" />}
+              <circle cx={x} cy={y} r={hov ? 15 : 12} fill={c} stroke={luminance(c) > .85 ? 'rgba(0,0,0,.35)' : 'rgba(0,0,0,.12)'} stroke-width="1.2" />
             </g>
           )
         })}
-        <circle r={RADIAL.hub} fill="#fff" stroke="rgba(20,26,50,0.12)" />
-        {label ? (
-          <text class="rlabel" text-anchor="middle" dominant-baseline="central">{label}</text>
-        ) : showColor ? (
-          <>
-            <circle r="9" fill={currentColor.value} stroke="rgba(20,26,50,0.25)" />
-            <circle r="13" fill="none" stroke="rgba(20,26,50,0.2)" stroke-width="1.3" />
-          </>
-        ) : (
-          <circle r="3" fill="rgba(20,26,50,0.35)" />
-        )}
+        <circle class="rhub" r={RADIAL.hub} />
+        {label
+          ? <text class="rlabel" text-anchor="middle" dominant-baseline="central">{label}</text>
+          : hub ? <Picture name={hub} x={0} y={0} size={34} /> : <circle r="9" fill={currentColor.value} />}
       </g>
     </svg>
   )

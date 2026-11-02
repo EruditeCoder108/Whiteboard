@@ -17,11 +17,9 @@ import type { InputRole } from '@/engine/roles'
 export { luminance } from '@/engine/colour'
 /** the visible page's background paper */
 export type GridMode = Paper
-/** board: big classroom touch panel (bottom toolbar, pages); laptop: compact side dock */
-export type Layout = 'board' | 'laptop'
 export type BarSide = 'left' | 'center' | 'right'
 export type { BoardKind } from '@/engine/pages'
-export type PopoverName = 'props' | 'shapes' | 'menu' | 'settings' | 'help' | 'recovery' | 'agent' | 'replay' | 'science' | 'insert' | 'equation' | 'graph' | 'maths' | 'present' | 'board-menu' | 'pages' | 'paper' | 'subjects' | 'lessons' | 'new-lesson' | 'export' | 'shelf' | 'shelf-save' | 'scale' | 'export-preview' | 'periodic' | 'table' | 'inputs' | 'templates' | 'crop' | 'zones' | 'poll' | 'recognize' | null
+export type PopoverName = 'props' | 'shapes' | 'settings' | 'help' | 'recovery' | 'agent' | 'replay' | 'science' | 'equation' | 'graph' | 'maths' | 'board-menu' | 'pages' | 'paper' | 'subjects' | 'lessons' | 'new-lesson' | 'export' | 'shelf' | 'shelf-save' | 'scale' | 'export-preview' | 'periodic' | 'table' | 'inputs' | 'templates' | 'crop' | 'zones' | 'poll' | 'recognize' | 'select-tools' | null
 
 export const SHAPE_TOOLS: ShapeKind[] = ['line', 'arrow', 'rect', 'ellipse', 'diamond', 'triangle']
 export const isShapeTool = (t: ToolName): t is ShapeKind => (SHAPE_TOOLS as string[]).includes(t)
@@ -80,17 +78,14 @@ export const S = {
   defaultSpacing: signal(1),
   defaultStrength: signal(1),
   defaultLines: signal(''),
-  /** board opacity, percent */
-  bgAlpha: signal(96),
+  /** the app opens full screen unless it was last left in a window */
+  windowed: signal(false),
   smoothing: signal(4),
   pressure: signal(true),
   fingerDraw: signal(true),
   onTop: signal(true),
   radialEnabled: signal(true),
   radialDelay: signal(450),
-  layout: signal<Layout>('board'),
-  /** false until the first-launch "smart board or laptop?" question is answered */
-  layoutChosen: signal(false),
   barSide: signal<BarSide>('center'),
   /** a touch at least this wide (CSS px) is a palm and erases */
   palmErase: signal(true),
@@ -109,6 +104,10 @@ export const S = {
   pickerMax: signal(40),
 
   // ── transient ───────────────────────────────────────────────────────────────
+  /** how solid the window is: 100, or next to nothing while writing on the screen */
+  bgAlpha: signal(100),
+  /** writing over whatever is on the screen: the board has gone and only a small bar remains */
+  screenMode: signal(false),
   /** The visible page's paper and board colour. They belong to the lesson (see Board), not to settings. */
   grid: signal<GridMode>('none'),
   bgColor: signal('#ffffff'),
@@ -165,8 +164,6 @@ export const S = {
   retrySave: signal<(() => Promise<void>) | null>(null)
 }
 
-export const boardMode = computed(() => S.layout.value === 'board')
-
 export const activeTool = computed<ToolName>(() => S.override.value ?? S.tool.value)
 
 /** which colour/size family the active tool edits */
@@ -209,8 +206,8 @@ export function showToast(text: string, ms = 2200, action?: ToastAction): void {
 // ── persistence ───────────────────────────────────────────────────────────────
 const PERSISTED = [
   'tool', 'lastShape', 'penColor', 'penSize', 'penStyle', 'markerColor', 'markerSize', 'eraserSize',
-  'eraserMode', 'defaultPaper', 'defaultColor', 'defaultTexture', 'defaultSpacing', 'defaultStrength', 'defaultLines', 'bgAlpha', 'smoothing', 'pressure', 'fingerDraw', 'onTop',
-  'radialEnabled', 'radialDelay', 'layout', 'layoutChosen', 'barSide', 'palmErase', 'palmSize', 'tipRole', 'thickRole', 'fingerRole', 'tipInk', 'thickInk', 'fingerInk', 'tipMax', 'thickMax', 'pickerNames', 'pickerMax', 'uiTheme'
+  'eraserMode', 'defaultPaper', 'defaultColor', 'defaultTexture', 'defaultSpacing', 'defaultStrength', 'defaultLines', 'windowed', 'smoothing', 'pressure', 'fingerDraw', 'onTop',
+  'radialEnabled', 'radialDelay', 'barSide', 'palmErase', 'palmSize', 'tipRole', 'thickRole', 'fingerRole', 'tipInk', 'thickInk', 'fingerInk', 'tipMax', 'thickMax', 'pickerNames', 'pickerMax', 'uiTheme'
 ] as const
 
 export function snapshotSettings(): Record<string, unknown> {
@@ -233,7 +230,7 @@ export function applySettings(raw: unknown): void {
     const enums: Partial<Record<typeof PERSISTED[number], readonly string[]>> = {
       tool: ['select', 'lasso', 'text', 'sticky', 'hand', 'pen', 'marker', 'eraser', 'laser', ...SHAPE_TOOLS],
       lastShape: SHAPE_TOOLS, penStyle: ['pen', 'pencil', 'brush', 'chalk', 'felt'], eraserMode: ['stroke', 'pixel'], defaultPaper: PAPERS, defaultTexture: TEXTURES,
-      layout: ['board', 'laptop'], barSide: ['left', 'center', 'right'], uiTheme: ['auto', 'light', 'dark'],
+      barSide: ['left', 'center', 'right'], uiTheme: ['auto', 'light', 'dark'],
       tipRole: INPUT_ROLES, thickRole: INPUT_ROLES, fingerRole: INPUT_ROLES
     }
     if (enums[k] && !enums[k]!.includes(value as string)) continue
@@ -247,7 +244,7 @@ export function applySettings(raw: unknown): void {
       if (f) { sig.value = Math.max(f[0], Math.min(f[1], value)); continue }
       const ranges: Partial<Record<typeof PERSISTED[number], readonly [number, number]>> = {
         penSize: SIZE_RANGE.pen, markerSize: SIZE_RANGE.marker, eraserSize: SIZE_RANGE.eraser,
-        bgAlpha: [0, 100], smoothing: [0, 10], radialDelay: [300, 1500], palmSize: [12, 400], tipMax: [0, 400], thickMax: [0, 400], pickerMax: [2, 200]
+        smoothing: [0, 10], radialDelay: [300, 1500], palmSize: [12, 400], tipMax: [0, 400], thickMax: [0, 400], pickerMax: [2, 200]
       }
       const range = ranges[k]
       sig.value = range ? Math.max(range[0], Math.min(range[1], Math.round(value))) : value

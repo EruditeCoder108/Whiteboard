@@ -194,10 +194,10 @@ try {
     await shot(`part-${kind}`)
   }
 
-  // Laptop layout: the same cupboard, clear of its top bar.
+  // In a window: the same cupboard, clear of the window's own strip.
   const laptop = await launch({ layout: 'laptop' })
   try {
-    await laptop.page.getByRole('button', { name: /^Insert picture/ }).click()
+    await laptop.page.getByRole('button', { name: 'More', exact: true }).click()
     await laptop.page.getByRole('button', { name: /^Apparatus/ }).click()
     await laptop.page.waitForSelector('.apparatus-tray')
     const box = await laptop.page.locator('.apparatus-tray').boundingBox()

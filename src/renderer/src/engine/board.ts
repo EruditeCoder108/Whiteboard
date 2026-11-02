@@ -216,12 +216,32 @@ export class Board implements ToolHost {
     }
   }
 
+  // ── the page and the toolbar ─────────────────────────────────────────────
+  /** Room the toolbar takes at the foot of the screen. A notebook page fits above it, so it never covers writing. */
+  private bottomInset = 88
+  get pageRect(): Rect { return frameRect(this.sheet) }
+  get areaH(): number { return Math.max(200, this.h - (this.paged ? this.bottomInset : 0)) }
+  setPageInset(px: number): void {
+    if (px === this.bottomInset) return
+    const scroll = scrollOf(this.view, this.sheet, this.areaH)
+    this.bottomInset = px
+    this.gridKey = ''
+    if (this.paged && this.w > 0) this.setView(frameView(this.sheet, this.w, this.areaH, scroll))
+  }
+
+  /** Off the page, in the margin: a pen there would write on nothing that is saved or shown. */
+  offPage(wx: number, wy: number): boolean {
+    if (!this.paged || S.screenMode.value) return false
+    const [x0, y0, x1, y1] = frameRect(this.sheet)
+    return wx < x0 || wx > x1 || wy < y0 || wy > y1
+  }
+
   private resize(): void {
     const r = this.stage.getBoundingClientRect()
     const dpr = window.devicePixelRatio || 1
     if (Math.abs(r.width - this.w) < 0.5 && Math.abs(r.height - this.h) < 0.5 && dpr === this.dpr) return
     // A notebook page fills the new screen at the same scroll position.
-    const scroll = scrollOf(this.view, this.sheet, this.h)
+    const scroll = scrollOf(this.view, this.sheet, this.areaH)
     this.w = r.width
     this.h = r.height
     this.dpr = dpr
@@ -233,7 +253,7 @@ export class Board implements ToolHost {
     }
     this.cv0 = null
     this.gridKey = ''
-    if (this.paged) this.setView(frameView(this.sheet, this.w, this.h, scroll))
+    if (this.paged) this.setView(frameView(this.sheet, this.w, this.areaH, scroll))
     S.viewRevision.value++
     this.refresh(null)
     this.requestOverlay()
@@ -365,7 +385,7 @@ export class Board implements ToolHost {
 
   // ── view ────────────────────────────────────────────────────────────────────
   setView(v: View): void {
-    if (this.paged && this.w > 0) v = clampToFrame(v, this.sheet, this.w, this.h)
+    if (this.paged && this.w > 0) v = clampToFrame(v, this.sheet, this.w, this.areaH)
     const changed = v.x !== this.view.x || v.y !== this.view.y || v.zoom !== this.view.zoom
     this.view = v
     S.zoom.value = v.zoom
@@ -407,7 +427,7 @@ export class Board implements ToolHost {
   }
 
   resetZoom(): void {
-    if (this.paged) return this.animateTo(frameView(this.sheet, this.w, this.h, scrollOf(this.view, this.sheet, this.h)))
+    if (this.paged) return this.animateTo(frameView(this.sheet, this.w, this.areaH, scrollOf(this.view, this.sheet, this.areaH)))
     this.animateTo(zoomAboutCentre(this.view, 1, this.w, this.h))
   }
 
@@ -578,14 +598,20 @@ export class Board implements ToolHost {
 
   private blit(preview: boolean): void {
     const f = this.sheet
-    const gridKey = `${this.view.x},${this.view.y},${this.view.zoom},${S.bgColor.value},${S.bgAlpha.value},${this.lookRev},${this.boardKind},${f.x},${f.y},${f.extent},${this.framesRev}`
+    const gridKey = `${this.view.x},${this.view.y},${this.view.zoom},${S.bgColor.value},${S.bgAlpha.value},${S.screenMode.value},${this.lookRev},${this.boardKind},${f.x},${f.y},${f.extent},${this.framesRev}`
     if (gridKey !== this.gridKey) {
       // The texture, picture and paper of this page (or of the canvas) over the board colour, which the
       // window supplies. A see-through board fades its texture along with its colour.
       const back = { ...(this.paged ? this.pageBackdrop(this.look, this.sheet) : { ...this.surfaceBackdrop(), adapt: true }), textureAlpha: S.bgAlpha.value / 100 }
-      paintBackdrop(this.gctx, this.view, this.w, this.h, this.dpr, back, false)
-      if (this.paged) this.paintDesk()
-      else if (this.frames.length) this.paintFrames()
+      if (S.screenMode.value) {
+        // Writing on the screen: no paper, picture, margin or frame, only what is behind the window.
+        this.gctx.setTransform(1, 0, 0, 1, 0, 0)
+        this.gctx.clearRect(0, 0, this.gctx.canvas.width, this.gctx.canvas.height)
+      } else {
+        paintBackdrop(this.gctx, this.view, this.w, this.h, this.dpr, back, false)
+        if (this.paged) this.paintDesk()
+        else if (this.frames.length) this.paintFrames()
+      }
       this.gridKey = gridKey
     }
     const ctx = this.bctx
@@ -1496,7 +1522,7 @@ export class Board implements ToolHost {
     if (!this.paged && !items.length) return this.addFrame() // a canvas has no pages: the next frame instead
     const snap = this.structure()
     if (!this.leavePage()) return
-    const start = view ?? (this.paged ? frameView(frame, this.w, this.h) : { x: -80, y: -80, zoom: 1 })
+    const start = view ?? (this.paged ? frameView(frame, this.w, this.areaH) : { x: -80, y: -80, zoom: 1 })
     this.pages.splice(at, 0, { items, view: start, history: { undo: [], redo: [] }, ...this.inherited(), frame })
     this.showPage(at)
     this.changed({ label: 'Added a page', snap })
@@ -1510,6 +1536,21 @@ export class Board implements ToolHost {
     this.showPage(Math.min(this.pageIndex, this.pages.length - 1))
     this.changed({ label: `Deleted page ${n}`, snap })
     showToast(`Page ${n} deleted`, 7000, { label: 'Undo', run: () => this.undoStructure() })
+  }
+
+  /** Somewhere on a canvas with nothing on it: beside everything already there. */
+  clearStretch(): View {
+    const b = this.doc.bounds()
+    return { x: (b ? b[2] : 0) + 400, y: b ? b[1] : 0, zoom: 1 }
+  }
+
+  /** Take away the page in view if nothing was put on it, quietly: nobody asked for it. Returns whether it went. */
+  removeEmptyPage(): boolean {
+    if (!this.paged || this.pages.length < 2 || this.doc.items.length || !this.leavePage()) return false
+    this.pages.splice(this.pageIndex, 1)
+    this.showPage(Math.min(this.pageIndex, this.pages.length - 1))
+    this.changed()
+    return true
   }
 
   /** Copy a page (items are immutable, so sharing them is safe) and show the copy after it. */
@@ -1756,12 +1797,12 @@ export class Board implements ToolHost {
   // ── notebook pages ─────────────────────────────────────────────────────────
   get pageFrame(): Frame { return this.sheet }
   /** True when the whole width of the sheet is on screen (not zoomed in). */
-  get atFit(): boolean { return this.view.zoom <= fitZoom(this.w, this.h) * 1.002 }
+  get atFit(): boolean { return this.view.zoom <= fitZoom(this.w, this.areaH) * 1.002 }
 
   /** Scroll the visible page (page mode), 0 = top, 1 = bottom. */
   scrollPage(t: number, animate = false): void {
-    const room = PAGE_H * this.sheet.extent - this.h / this.view.zoom
-    const v = clampToFrame({ x: this.view.x, y: this.sheet.y + Math.max(0, room) * clamp(t, 0, 1), zoom: this.view.zoom }, this.sheet, this.w, this.h)
+    const room = PAGE_H * this.sheet.extent - this.areaH / this.view.zoom
+    const v = clampToFrame({ x: this.view.x, y: this.sheet.y + Math.max(0, room) * clamp(t, 0, 1), zoom: this.view.zoom }, this.sheet, this.w, this.areaH)
     if (animate) this.animateTo(v)
     else this.setView(v)
   }

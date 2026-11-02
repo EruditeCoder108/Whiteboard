@@ -11,14 +11,13 @@ afterEach(() => {
 
 describe('settings persistence', () => {
   it('rejects invalid tools, colours and non-finite values, and bounds numeric settings', () => {
-    applySettings({ tool: 'unknown', defaultPaper: 'invalid', defaultColor: 'red', penColor: '#12345', penSize: NaN, markerSize: 999, bgAlpha: -10, smoothing: Infinity, pressure: 'false', radialDelay: 50 })
+    applySettings({ tool: 'unknown', defaultPaper: 'invalid', defaultColor: 'red', penColor: '#12345', penSize: NaN, markerSize: 999, smoothing: Infinity, pressure: 'false', radialDelay: 50 })
     expect(S.tool.value).toBe(original.tool)
     expect(S.defaultPaper.value).toBe(original.defaultPaper)
     expect(S.defaultColor.value).toBe(original.defaultColor)
     expect(S.penColor.value).toBe(original.penColor)
     expect(S.penSize.value).toBe(original.penSize)
     expect(S.markerSize.value).toBe(60)
-    expect(S.bgAlpha.value).toBe(0)
     expect(S.smoothing.value).toBe(original.smoothing)
     expect(S.pressure.value).toBe(true)
     expect(S.radialDelay.value).toBe(300)

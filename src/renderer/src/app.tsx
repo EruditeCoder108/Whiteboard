@@ -4,10 +4,11 @@ import { board } from '@/engine/instance'
 import { InputRouter } from '@/engine/input'
 import { actions } from '@/state/actions'
 import { installShortcuts } from '@/state/shortcuts'
-import { S, applySettings, boardMode, darkUi, showToast, startPersisting } from '@/state/store'
-import { BoardBar, BoardSaveChip, EdgeTabs, LayoutChooser } from '@/ui/Board'
+import { S, applySettings, darkUi, showToast, startPersisting } from '@/state/store'
+import { BoardBar, BoardSaveChip, EdgeTabs, barHeight } from '@/ui/Board'
 import { PalmCalibration } from '@/ui/Calibrate'
 import { InputsSheet } from '@/ui/Inputs'
+import { PanelCheck } from '@/ui/PanelCheck'
 import { ApparatusTray } from '@/ui/Apparatus'
 import { RecognizeSheet } from '@/ui/Recognize'
 import { ClipPlayer, playing } from '@/ui/Clips'
@@ -20,7 +21,7 @@ import { CropSheet } from '@/ui/Crop'
 import { Autosave } from '@/state/autosave'
 import { Radial } from '@/ui/Radial'
 import { ResizeHandles, Toast } from '@/ui/Chrome'
-import { Dock, HistoryBar, MiniBar, TopBar, ZoomBar } from '@/ui/Panels'
+import { MiniBar, ScreenBar, WindowBar, ZoomBar } from '@/ui/Panels'
 import { Popovers, PropsPopover, ShapesPopover } from '@/ui/Popovers'
 import { Editor, SelectionToolbar } from '@/ui/Editor'
 import { BoardAgent } from '@/engine/agent'
@@ -34,7 +35,7 @@ import { ShelfSaveSheet, ShelfSheet } from '@/ui/Shelf'
 import { CapturePanel } from '@/ui/Capture'
 import { lesson } from '@/state/lesson'
 import { ScienceUI } from '@/ui/science/Science'
-import { PageBar, ImportStatus } from '@/ui/Insert'
+import { ImportStatus } from '@/ui/Insert'
 import { CurtainLayer, SpotlightLayer, TimerWidget } from '@/ui/Present'
 import { editEquation, editGraph, editScale, insertFiles, scaleTarget } from '@/state/insert'
 import { ScaleEditor } from '@/ui/Scale'
@@ -127,7 +128,7 @@ export function App(): JSX.Element {
         if (!active) return
         applySettings(rawSettings)
         if (saved.json) board.load(saved.json, { undoable: false })
-        else if (S.layoutChosen.value && boardMode.value) board.convertTo('notebook')
+        else board.convertTo('notebook')
         saveBoardOnClose = saved.json !== null || !saved.message
         settings = startPersisting((d) => window.api.store.saveSettings(d))
         S.ready.value = true
@@ -137,7 +138,7 @@ export function App(): JSX.Element {
         S.saveStatus.value = 'saved'
         S.saveError.value = ''
         window.api.win.setOnTop(S.onTop.value)
-        if (S.layoutChosen.value && boardMode.value) window.api.win.setFullscreen(true)
+        if (!S.windowed.value) window.api.win.setFullscreen(true)
         if (saved.message) showToast(saved.message, 7000)
       } catch (error) {
         S.saveStatus.value = 'error'
@@ -220,10 +221,13 @@ export function App(): JSX.Element {
 
   const [r, g, b] = hexToRgb(S.bgColor.value)
   const alpha = Math.max(0.004, S.bgAlpha.value / 100) // never fully 0 → stays hit-testable
+  // A notebook page sits above the toolbar; hide the toolbar and it fills the screen.
+  const chromeGone = S.uiHidden.value || S.passthrough.value || S.screenMode.value
+  useEffect(() => { board.setPageInset(chromeGone ? 0 : barHeight.value + 20) }, [chromeGone, barHeight.value])
   // pass-through hides the chrome too: nothing on the board is clickable in that mode
   const hidden = S.uiHidden.value || S.passthrough.value
-  const onBoard = boardMode.value && S.layoutChosen.value
-  const cls = ['window', onBoard ? `board bar-${S.barSide.value}` : '', S.fullscreen.value || S.zoomed.value ? 'flat' : '', darkUi.value ? 'dark' : '', hidden ? 'ui-hidden' : '', !S.ready.value ? 'loading' : '', S.replaying.value ? 'replaying' : '']
+  const windowed = !S.fullscreen.value && !S.screenMode.value
+  const cls = ['window', `board bar-${S.barSide.value}`, windowed ? 'windowed' : '', S.fullscreen.value || S.zoomed.value ? 'flat' : '', darkUi.value ? 'dark' : '', hidden ? 'ui-hidden' : '', !S.ready.value ? 'loading' : '', S.replaying.value ? 'replaying' : '']
     .filter(Boolean)
     .join(' ')
 
@@ -238,9 +242,11 @@ export function App(): JSX.Element {
       <SpotlightLayer />
       <CurtainLayer />
 
-      {!hidden && (
+      {windowed && <WindowBar />}
+      {S.screenMode.value && !S.passthrough.value && <ScreenBar />}
+      {!hidden && !S.screenMode.value && (
         <>
-          {S.zones.value ? null : onBoard ? <><BoardBar /><EdgeTabs /><BoardSaveChip /></> : <><TopBar /><Dock /><HistoryBar />{S.kind.value === 'canvas' && <ZoomBar />}<PageBar /></>}
+          {!S.zones.value && <><BoardBar /><EdgeTabs /><BoardSaveChip />{S.kind.value === 'canvas' && <ZoomBar />}</>}
           <Popovers />
           <AgentPanel agent={agentForPanel} />
           <ReplayPanel />
@@ -264,6 +270,7 @@ export function App(): JSX.Element {
       <ZonesLayer />
       <ClipPlayer />
       <ApparatusTray />
+      <PanelCheck />
       <ImportStatus />
       <Toast />
       <PalmCalibration />
@@ -284,7 +291,6 @@ export function App(): JSX.Element {
       <Dialog />
       <SharePanel />
       <CapturePanel />
-      {S.ready.value && !S.layoutChosen.value && <LayoutChooser />}
       {(!S.ready.value || S.closing.value) && <div class="loading-cover" role="status">
         <span>{S.closing.value ? 'Saving before closing…' : S.saveError.value ? 'Could not load your board' : 'Loading your board…'}</span>
         {!S.closing.value && S.saveError.value && <button type="button" onClick={() => { void S.retrySave.value?.() }}>Retry loading</button>}

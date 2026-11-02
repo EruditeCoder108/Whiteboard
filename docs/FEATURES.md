@@ -184,7 +184,8 @@ Plan and reasons: [MASTER-PLAN.md](../MASTER-PLAN.md) · [SMARTBOARD-RESEARCH.md
 
 | Feature | Status |
 |---|---|
-| **Board mode** (big touch panels) and **laptop mode**, chosen at first launch | ✅ |
+| **One layout on every screen**, from a big touch panel to a small laptop; the page sits clear of the toolbar | ✅ |
+| **Write on the screen:** the board disappears, a small bar remains, and the writing is kept on its own page | ✅ |
 | **Bottom toolbar that snaps to the teacher's side**, plus menus from the left and right edges | ✅ |
 | Colours and pen sizes **on the toolbar**: one tap, no popover | ✅ |
 | Buttons 4–6 cm across on the panel, labels under icons | ✅ |

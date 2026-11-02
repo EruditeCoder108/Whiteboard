@@ -24,7 +24,7 @@
 | **Hold timing** | Settings → *Hold for menu* and *Hold delay*. Disable it or increase the delay for deliberate handwriting. |
 | **Everything else** | `F1` |
 
-Set the board **Opacity** to 0 in Settings to write directly over whatever is on screen.
+Choose **More › Write on screen** to write directly over whatever is on screen. Only a small bar stays, and **Back to board** returns to your lesson.
 
 **Open board** also imports Python v10 `.wbd`/JSON files, including shapes and variable-width ink.
 Saving the imported board uses the current format; the original file is left intact. Ink appearance

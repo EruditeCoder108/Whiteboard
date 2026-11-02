@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bristleLines, chiselPressures, grainAlpha, grainValue, inkVaries, inkWidth, outlineOptions } from '@/engine/ink'
+import { chiselPressures, grainAlpha, grainValue, inkVaries, inkWidth, outlineOptions } from '@/engine/ink'
 import { contactLimits, inputKind, isInputRole, rolesApply } from '@/engine/roles'
 import { itemBounds, splitErase, strokeOutline } from '@/engine/items'
 import { itemFromJson as parseItem, itemToJson } from '@/engine/serialize'
@@ -41,11 +41,6 @@ describe('pen styles', () => {
     expect(grainAlpha('chalk', 0, 0)).toBe(0)
     expect(grainAlpha('pencil', 0, 0)).toBeGreaterThan(0)
     expect(grainAlpha('chalk', 1, 1)).toBe(1)
-  })
-
-  it('bristles stay inside the stroke and leave a dab alone', () => {
-    expect(bristleLines(line('brush', 2).p, 10, .75)).toEqual([])
-    for (const l of bristleLines(line('brush').p, 10, .75)) for (let i = 1; i < l.length; i += 2) expect(Math.abs(l[i] - 100)).toBeLessThanOrEqual(5)
   })
 
   it('the style survives saving, erasing part of a stroke, and an unknown style loses nothing', () => {

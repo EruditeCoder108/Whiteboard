@@ -12,8 +12,8 @@ mkdirSync(shotDir, { recursive: true })
 /** Launch the built app with a throw-away profile; returns { app, page, logs, userData }. */
 export async function launch({ userData, executablePath, inputIsolated = process.env.FW_QA_ISOLATE === '1', layout = 'laptop' } = {}) {
   const dir = userData ?? mkdtempSync(join(tmpdir(), 'fw-e2e-'))
-  // A fresh profile answers the first-launch layout question (layout: null leaves it unanswered).
-  if (!userData && layout) writeFileSync(join(dir, 'settings.json'), JSON.stringify({ layout, layoutChosen: true }))
+  // 'laptop' is the app in a window on an endless canvas; 'board' is what a fresh install opens to.
+  if (!userData && layout === 'laptop') writeFileSync(join(dir, 'settings.json'), JSON.stringify({ windowed: true }))
   const app = await electron.launch({
     ...(executablePath ? { executablePath } : {}),
     args: [...(executablePath ? [] : [appDir]), `--user-data-dir=${dir}`],
@@ -34,6 +34,7 @@ export async function launch({ userData, executablePath, inputIsolated = process
   page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`))
   await page.waitForSelector('.stage', { timeout: 15000 })
   await page.waitForFunction(() => window.__fw?.S.ready.value)
+  if (!userData && layout === 'laptop') await page.evaluate(() => window.__fw.board.convertTo('canvas'))
   await page.waitForTimeout(600)
   if (inputIsolated) await isolate()
   return { app, page, logs, userData: dir }

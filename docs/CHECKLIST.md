@@ -81,6 +81,15 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - 🔄 Panel check screen for the real board
 - 🔄 Audit of every tool and part; science accuracy *(second agent)*
 
+### Done in 2b (1.7.0-beta.2, 1 Nov 2026)
+
+- [x] One layout: laptop mode and the first-launch question removed.
+- [x] The notebook page sits clear of the toolbar with a slim margin; a pen in the margin writes nothing; Hide toolbar gives the full screen.
+- [x] Write on the screen, as clean as Note 3's: only a small bar, on a page of its own. No opacity slider.
+- [x] Panel check, radial menu, brush fix, quieter edge handles, toolbar at every width.
+- [ ] Try all of it on the real board (2 Nov 2026) and bring back the Panel check report.
+- [ ] Merge the second agent's `feature/tools-audit` and act on its report.
+
 ## Step 3: the animation library (Lesson Kit)
 
 - ⬜ 3D heart, mitosis, ray optics, 3D glassware

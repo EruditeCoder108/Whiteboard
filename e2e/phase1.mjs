@@ -79,8 +79,8 @@ try {
   // Create a controlled snapshot using the real store IPC, then restore through the menu UI.
   const snapshot = await page.evaluate(() => window.api.store.listBackups())
   check('recovery snapshots are available', snapshot.length > 0)
-  await page.getByRole('button', { name: 'Menu', exact: true }).click()
-  await page.getByRole('button', { name: 'Earlier saves…' }).click()
+  await page.getByRole('button', { name: 'More', exact: true }).click()
+  await page.getByRole('button', { name: 'Earlier saves' }).click()
   await page.waitForSelector('.backup-row')
   await shot('phase1-recovery')
   const currentCount = await itemCount(page)

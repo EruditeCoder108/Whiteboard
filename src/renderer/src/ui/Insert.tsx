@@ -1,70 +1,9 @@
-import { PeriodicTable } from './icons'
-import { ArtMindMap, ArtSlides, ArtTimeline, ArtVideo, TestTubes } from './icons'
-import { Archive, Axis3d, MoveHorizontal, Table2, ArrowDownToLine, ChevronLeft, ChevronRight, Focus, FilePlus2, FileText, Image as ImageIcon, LineChart, Plus, Sigma, Trash2, FileDown } from './icons'
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { board } from '@/engine/instance'
 import { compile, GRAPH_COLORS, paintGraph } from '@/engine/graph'
 import { S, currentColor } from '@/state/store'
-import { editEquation, editGraph, editScale, equationTarget, graphTarget, importing, insertFiles, loadTypesetter, pickFiles, svgDataUrl } from '@/state/insert'
-import { Btn, MenuItem, Sep } from './kit'
-import { capture } from '@/state/capture'
-import { openTray } from './Apparatus'
-
-export function InsertPopover(): JSX.Element {
-  const close = (fn: () => void) => () => { S.popover.value = null; fn() }
-  return (
-    <div class="popover panel ui menu insert-menu" data-popover-keep="">
-      <MenuItem icon={ImageIcon} label="Picture…" hint="or paste / drop" onClick={close(() => void pickFiles('image/*').then(files => insertFiles(files)))} />
-      <MenuItem icon={ImageIcon} label="Capture screen…" hint="Ctrl+Shift+C" onClick={() => { void capture.open() }} />
-      <MenuItem icon={Archive} label="My shelf…" hint="your saved diagrams" onClick={() => { S.popover.value = 'shelf' }} />
-      <MenuItem icon={FileText} label="PDF worksheet…" hint="one page each" onClick={close(() => void pickFiles('application/pdf,.pdf', false).then(files => insertFiles(files)))} />
-      <MenuItem icon={ArtSlides} label="PowerPoint or OpenBoard…" hint=".pptx, .ubz" onClick={close(() => void pickFiles('.pptx,.ppt,.ubz', false).then(files => insertFiles(files)))} />
-      <MenuItem icon={ArtVideo} label="Video or audio clip…" onClick={close(() => void pickFiles('video/*,audio/*,.mp4,.webm,.mp3,.m4a,.wav,.ogg,.aac', false).then(files => insertFiles(files)))} />
-      <MenuItem icon={TestTubes} label="Apparatus…" hint="circuits, glassware, models" onClick={() => openTray()} />
-      <MenuItem icon={Table2} label="Table" onClick={() => { S.popover.value = 'table' }} />
-      <MenuItem icon={ArtMindMap} label="Mind map" onClick={close(() => board.startMindMap())} />
-      <MenuItem icon={ArtTimeline} label="Templates…" hint="Venn, KWL, timeline" onClick={() => { S.popover.value = 'templates' }} />
-      <MenuItem icon={Sigma} label="Equation" hint="maths & chemistry" onClick={() => editEquation(null)} />
-      <MenuItem icon={LineChart} label="Graph of a function" onClick={() => editGraph(null)} />
-      <MenuItem icon={MoveHorizontal} label="Number line" onClick={() => editScale(null, 'line')} />
-      <MenuItem icon={Axis3d} label="Coordinate axes" onClick={() => editScale(null, 'axes')} />
-      <MenuItem icon={PeriodicTable} label="Periodic table" onClick={() => { S.popover.value = 'periodic' }} />
-      <Sep />
-      <MenuItem icon={FilePlus2} label="New page" hint="PgDn to move" onClick={close(() => board.addPage())} />
-      <MenuItem icon={FileDown} label="Export picture or PDF…" onClick={() => { S.popover.value = 'export' }} />
-    </div>
-  )
-}
-
-export function PageBar(): JSX.Element | null {
-  const page = S.page.value, count = S.pageCount.value
-  if (S.kind.value === 'canvas') {
-    const frame = S.frameIndex.value, frames = S.frameCount.value
-    return (
-      <div class="pagebar panel ui">
-        {frames > 0 && <>
-          <Btn icon={ChevronLeft} title="Previous frame  (PgUp)" disabled={frame === 0} onClick={() => board.turnFrame(-1)} />
-          <span class="pageval" title="Frame">{frame < 0 ? '–' : frame + 1} / {frames}</span>
-          <Btn icon={ChevronRight} title="Next frame  (PgDn)" disabled={frame >= frames - 1} onClick={() => board.turnFrame(1)} />
-        </>}
-        {frame >= 0
-          ? <Btn icon={Trash2} title="Remove this frame (your drawing stays)" onClick={() => board.removeFramesHere()} />
-          : <Btn icon={Focus} title="Add a frame around what's on screen (step through frames like slides)" onClick={() => board.addFrame('here')} />}
-      </div>
-    )
-  }
-  return (
-    <div class="pagebar panel ui">
-      <Btn icon={ChevronLeft} title="Previous page  (PgUp)" disabled={page === 0} onClick={() => board.turnPage(-1)} />
-      <span class="pageval" title="Page">{page + 1} / {count}</span>
-      <Btn icon={ChevronRight} title="Next page  (PgDn)" disabled={page >= count - 1} onClick={() => board.turnPage(1)} />
-      <Btn icon={Plus} title="New page after this one" onClick={() => board.addPage()} />
-      <Btn icon={ArrowDownToLine} title="More space below on this page" onClick={() => board.extendPage()} />
-      {count > 1 && <Btn icon={Trash2} title="Delete this page (Undo brings it back)" onClick={() => board.deletePage()} />}
-    </div>
-  )
-}
+import { equationTarget, graphTarget, importing, loadTypesetter, svgDataUrl } from '@/state/insert'
 
 export function ImportStatus(): JSX.Element | null {
   return importing.value ? <div class="import-status panel ui" role="status">{importing.value}</div> : null

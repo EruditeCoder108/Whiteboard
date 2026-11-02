@@ -8,6 +8,7 @@ function subscribe<T>(channel: string, cb: (v: T) => void): () => void {
 }
 
 const api: Api = {
+  savePanelReport: (text) => ipcRenderer.invoke('panel:report', text),
   openLink: (link) => ipcRenderer.invoke('link:open', link),
   slides: { toPdf: (bytes, name) => ipcRenderer.invoke('slides:to-pdf', bytes, name) },
   poll: {

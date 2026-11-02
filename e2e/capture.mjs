@@ -136,15 +136,15 @@ try {
   check('a black capture is rejected with an honest protected-window hint', (await page.getByRole('alert').innerText()) === 'That window could not be captured (it may be protected). Try capturing the whole screen instead.')
   await page.getByRole('button', { name: 'Cancel', exact: true }).click(); await closed(); await control({ black: false })
 
-  await fw(page, w => { w.board.newLesson('canvas'); w.S.layout.value = 'laptop'; w.board.setColor('#1f232b') })
+  await fw(page, w => { w.board.newLesson('canvas'); w.board.setColor('#1f232b') })
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setBounds({ width: 1100, height: 750 }))
   await page.evaluate(() => { const input = document.createElement('input'); input.id = 'capture-typing-test'; document.body.append(input); input.focus() })
   await page.keyboard.press('Control+Shift+c')
   check('the capture shortcut is ignored while typing', await page.locator('.capture-shade').count() === 0)
   await page.evaluate(() => document.getElementById('capture-typing-test').remove())
-  // The laptop Insert menu and the shortcut reach the same chooser.
-  await fw(page, w => { w.S.popover.value = 'insert' })
-  await page.getByRole('button', { name: 'Capture screen…', exact: false }).click()
+  // The menu and the shortcut reach the same chooser.
+  await fw(page, w => { w.S.popover.value = 'board-menu' })
+  await page.getByRole('button', { name: 'Capture', exact: true }).click()
   await screenTile().waitFor(); await screenTile().click(); await page.locator('.capture-picture').waitFor()
   await area([.15, .15], [.8, .8])
   const use = await page.getByRole('button', { name: 'Use this area', exact: true }).boundingBox()

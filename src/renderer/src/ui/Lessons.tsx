@@ -38,7 +38,7 @@ export function subjectsOf(list: { subject: string }[]): string[] {
 export function NewLessonSheet(): JSX.Element {
   const [name, setName] = useState('')
   const [subject, setSubject] = useState(lessonSubject.value)
-  const [kind, setKind] = useState<BoardKind>(S.layout.value === 'board' ? 'notebook' : 'canvas')
+  const [kind, setKind] = useState<BoardKind>('notebook')
   useEffect(() => { if (!library.value) void lesson.refreshLibrary() }, [])
   const subjects = subjectsOf(library.value ?? []).slice(0, 8)
   const start = (): void => { void lesson.newLesson({ name, subject, kind }) }

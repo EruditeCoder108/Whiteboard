@@ -11,7 +11,7 @@ import {
   shell
 } from 'electron'
 import { promises as fs } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import type { Bounds, MainCommand, WinState } from '../shared/api'
 import { DiskStore, MAX_FILE_BYTES, saveError } from './storage'
 import { Lessons } from './lessons'
@@ -469,6 +469,16 @@ function registerIpc(): void {
     try { return { ok: true, ...await capture.grab(id) } }
     catch (error) { return { ok: false, error: error instanceof CaptureError ? error.message : 'Could not capture that screen or window. Refresh and try again.' } }
     finally { capturing = false }
+  })
+  ipcMain.handle('panel:report', async (e, text: unknown) => {
+    if (e.sender !== w()?.webContents || typeof text !== 'string' || text.length > 20000) return null
+    try {
+      const folder = dirname(lessons.libraryDir)
+      await fs.mkdir(folder, { recursive: true })
+      const path = join(folder, `Panel check ${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.txt`)
+      await fs.writeFile(path, text, 'utf8')
+      return path
+    } catch { return null }
   })
   ipcMain.handle('slides:to-pdf', async (e, bytes: unknown, name: unknown) => {
     if (e.sender !== w()?.webContents || !(bytes instanceof ArrayBuffer) || typeof name !== 'string' || process.env.FW_E2E_OFFSCREEN) return null

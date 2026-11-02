@@ -94,7 +94,7 @@ try {
   await page.getByRole('dialog', { name: 'Share to phones' }).waitFor({ state: 'hidden' })
 
   // A smaller laptop viewport keeps Stop fixed while the body scrolls, including dark boards.
-  await fw(page, w => { w.S.layout.value = 'laptop'; w.board.setColor('#1f232b') })
+  await fw(page, w => { w.board.setColor('#1f232b') })
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setBounds({ width: 1100, height: 750 }))
   await page.keyboard.press('Control+e')
   await page.getByRole('button', { name: 'Share to phones', exact: true }).click()
@@ -106,7 +106,6 @@ try {
   await page.keyboard.press('Escape')
   await page.getByRole('dialog', { name: 'Share to phones' }).waitFor({ state: 'hidden' })
   check('Escape also stops sharing', await stopped(small))
-  await fw(page, w => { w.S.layout.value = 'board' })
 
   // Exercise the no-network UI without changing the host's network configuration.
   await app.evaluate(({ ipcMain }) => { ipcMain.removeHandler('share:addresses'); ipcMain.handle('share:addresses', () => []) })

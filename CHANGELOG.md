@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.7.0-beta.2 — One layout, a clear page, writing on the screen — 2026-11-01
+
+- **One layout on every screen.** The separate laptop mode and the first-launch question are gone. The same toolbar fits from a classroom panel down to a small laptop, on one row or two.
+- **The page sits clear of the toolbar,** with a slim quiet margin and no thick frame, so the toolbar never covers writing. A pen in the margin writes nothing. Hide the toolbar and the page takes the whole screen. A canvas still runs edge to edge.
+- **Write on the screen** (More › Write on screen): the board disappears, leaving only a small bar you can drag anywhere, with pen, highlighter, eraser, inks, undo, clear, use the apps underneath, and Back to board. Writing gets its own page in the lesson; if you wrote nothing, the page goes away. On a canvas it starts beside the lesson and comes back where you were.
+- **No more opacity slider.** The board is either solid or fully see-through.
+- **Opens full screen.** Choose More › In a window once and it remembers. In a window there is a slim strip to move, minimise and close it.
+- **Panel check** (Settings): six short steps measure a real board's stylus, finger, palm and touch points, and save a report to bring back.
+- **Radial menu rebuilt:** tools with real pictures, pen styles above and colours below.
+- **Tap Select again** for the lasso and, on a canvas, moving the board. Sticky note, Shortcuts and Earlier saves are in More.
+- The brush no longer draws a line down the middle of a stroke. Plain marks replace pictures on small buttons such as undo and redo, the edge handles are quieter, and the toolbar stays centred at every width.
+
 ## 1.7.0-beta.1 — Real pictures, working apparatus, classroom tools, PowerPoint — 2026-11-01
 
 - **Pen styles:** pencil, brush, chalk and a chisel marker. Tap the pen in hand to choose; the preview shows the real ink on your board colour. They survive erasing part of a stroke, saving and export.

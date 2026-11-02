@@ -1,13 +1,13 @@
-import { ArtClock, ArtDice, ArtMagnifier, ArtMindMap, ArtNamePicker, ArtPoll, ArtScoreboard, ArtSlides, ArtSplitBoard, ArtTimeline, ArtVideo, TestTubes } from './icons'
-import { PeriodicTable, WriteOverScreen, RevealArt, HideToolbar, MinimiseArt, GeometryBox, PageBack, PageNext, NewPage, ArtPicture } from './icons'
-import { Archive, Axis3d, Blinds, Calculator, Table2, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, FileText, FlaskConical, GripVertical, FilePlus2, Library, RenameArt, SaveAll, Share2, Highlighter, MoveHorizontal, Image as ImageIcon, Laptop, LayoutGrid, LineChart, LogOut, MousePointer2, MousePointerClick, Pen, Plus, GraduationCap, Redo2, ArrowDownToLine, ArrowUpToLine, Infinity as InfinityIcon, BookOpen, Frame, Focus, Shapes, SlidersHorizontal, Sigma, Sparkles, Spotlight, Timer, Trash2, Type, Undo2, MonitorUp, Layers } from './icons'
+import { Lasso, Hand, StickyNote, History, Keyboard, ArtClock, ArtDice, ArtMagnifier, ArtMindMap, ArtNamePicker, ArtPoll, ArtScoreboard, ArtSlides, ArtSplitBoard, ArtTimeline, ArtVideo, TestTubes } from './icons'
+import { PeriodicTable, WriteOverScreen, RevealArt, HideToolbar, MinimiseArt, GeometryBox } from './icons'
+import { Archive, Axis3d, Blinds, Calculator, Table2, Bookmark, X, ChevronLeft, ChevronRight, Clapperboard, Copy, Crosshair, Eraser, FileText, FlaskConical, GripVertical, FilePlus2, Library, RenameArt, SaveAll, Share2, Highlighter, MoveHorizontal, Image as ImageIcon, Laptop, LayoutGrid, LineChart, LogOut, MousePointer2, Pen, Plus, GraduationCap, Redo2, ArrowDownToLine, ArrowUpToLine, Infinity as InfinityIcon, BookOpen, Frame, Focus, Shapes, SlidersHorizontal, Sigma, Sparkles, Spotlight, Timer, Trash2, Type, Undo2, MonitorUp, Layers } from './icons'
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { signal } from '@preact/signals'
 import { board } from '@/engine/instance'
 import { MAX_EXTENT, PAGE_H, PAGE_W, scrollOf } from '@/engine/pages'
 import { instrumentsShown } from '@/engine/instruments'
-import { OVERLAY_ALPHA, actions } from '@/state/actions'
+import { actions } from '@/state/actions'
 import { S, activeTool, currentColor, currentSize, isDarkBg, isShapeTool, styleKey } from '@/state/store'
 import type { BarSide, ToolName } from '@/state/store'
 import { editEquation, editGraph, editScale, insertFiles, pickFiles } from '@/state/insert'
@@ -35,26 +35,44 @@ const SIZES = { pen: [3, 6, 12], marker: [16, 28, 44], eraser: [16, 40, 80] } as
 const toggle = (name: NonNullable<typeof S.popover.value>): void => { S.popover.value = S.popover.value === name ? null : name }
 
 /** A board button: big touch target, icon with its name underneath (there is no hover on a touch panel). */
-function BBtn({ icon: I, label, active, disabled, onClick, keep, danger }: {
-  icon: Icon; label: string; active?: boolean; disabled?: boolean; onClick: () => void; keep?: boolean; danger?: boolean
+function BBtn({ icon: I, label, active, disabled, onClick, keep, danger, plain }: {
+  icon: Icon; label: string; active?: boolean; disabled?: boolean; onClick: () => void; keep?: boolean; danger?: boolean; plain?: boolean
 }): JSX.Element {
   return (
     <button type="button" class={`bbtn nodrag ${active ? 'active' : ''} ${danger ? 'danger' : ''}`} aria-label={label} aria-pressed={active}
       disabled={disabled} data-popover-keep={keep ? '' : undefined} onClick={onClick}>
-      <I size={22} strokeWidth={1.9} />
+      <I size={22} strokeWidth={1.9} {...({ plain } as object)} />
       <span>{label}</span>
     </button>
   )
 }
 
 function ToolBtn({ tool, icon, label }: { tool: ToolName; icon: Icon; label: string }): JSX.Element {
-  // Tapping the pen or eraser already in hand opens its choices, right where the hand is.
-  const choices = tool === 'pen' || tool === 'eraser' || tool === 'marker'
-  return <BBtn icon={icon} label={label} keep={choices} active={activeTool.value === tool} onClick={() => {
-    if (choices && S.tool.value === tool) return toggle('props')
+  // Tapping a tool already in hand opens its choices, right where the hand is.
+  const choices = tool === 'pen' || tool === 'eraser' || tool === 'marker' || tool === 'select'
+  const inHand = S.tool.value === tool || (tool === 'select' && (S.tool.value === 'lasso' || S.tool.value === 'hand'))
+  return <BBtn icon={icon} label={label} keep={choices} active={activeTool.value === tool || (tool === 'select' && inHand)} onClick={() => {
+    if (choices && inHand) return toggle(tool === 'select' ? 'select-tools' : 'props')
     S.popover.value = null
     actions.setTool(tool)
   }} />
+}
+
+/** How tall the toolbar really is: on a narrow screen it can take two rows. The page sits above it. */
+export const barHeight = signal(68)
+
+/** The other ways of taking hold of things. */
+function SelectTools(): JSX.Element {
+  const pick = (tool: ToolName): void => { S.popover.value = null; actions.setTool(tool) }
+  return (
+    <div class="popover panel ui select-tools" data-popover-keep="">
+      <div class="tiles" style={{ gridTemplateColumns: `repeat(${S.kind.value === 'canvas' ? 3 : 2}, 1fr)` }}>
+        <Tile icon={MousePointer2} label="Select" on={S.tool.value === 'select'} onClick={() => pick('select')} />
+        <Tile icon={Lasso} label="Lasso" on={S.tool.value === 'lasso'} onClick={() => pick('lasso')} />
+        {S.kind.value === 'canvas' && <Tile icon={Hand} label="Move board" on={S.tool.value === 'hand'} onClick={() => pick('hand')} />}
+      </div>
+    </div>
+  )
 }
 
 /** The board toolbar: tools, ink colours and sizes, undo, pages and the main menu, all one tap away. */
@@ -66,6 +84,14 @@ export function BoardBar(): JSX.Element {
   const showInk = !['eraser', 'laser', 'hand'].includes(t)
   const drag = useRef(false)
   const p = S.popover.value
+  const bar = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = bar.current
+    if (!el) return
+    const measure = new ResizeObserver(() => { barHeight.value = el.getBoundingClientRect().height })
+    measure.observe(el)
+    return () => measure.disconnect()
+  }, [])
   const onGrip = (e: PointerEvent): void => {
     drag.current = true
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
@@ -83,10 +109,11 @@ export function BoardBar(): JSX.Element {
       {p === 'shapes' && <ShapesPopover />}
       {p === 'maths' && <MathsPopover />}
       {p === 'props' && <PropsPopover />}
+      {p === 'select-tools' && <SelectTools />}
       {p === 'paper' && <PaperPopover />}
       {p === 'subjects' && <SubjectsPopover />}
       {p === 'export' && <ExportSheet />}
-      <div class="boardbar panel ui" role="toolbar" aria-label="Board tools">
+      <div ref={bar} class="boardbar panel ui" role="toolbar" aria-label="Board tools">
         <button type="button" class="bb-grip nodrag" aria-label="Move the toolbar left or right" title="Drag to move the toolbar"
           onPointerDown={onGrip as never} onPointerMove={onGripMove as never} onPointerUp={() => (drag.current = false)} onPointerCancel={() => (drag.current = false)}>
           <GripVertical size={18} />
@@ -122,28 +149,28 @@ export function BoardBar(): JSX.Element {
           ))}
         </div>
         <div class="bb-sep" />
-        <BBtn icon={Undo2} label="Undo" disabled={!S.canUndo.value} onClick={() => board.undo()} />
-        <BBtn icon={Redo2} label="Redo" disabled={!S.canRedo.value} onClick={() => board.redo()} />
+        <BBtn plain icon={Undo2} label="Undo" disabled={!S.canUndo.value} onClick={() => board.undo()} />
+        <BBtn plain icon={Redo2} label="Redo" disabled={!S.canRedo.value} onClick={() => board.redo()} />
         <div class="bb-sep" />
         {S.kind.value === 'notebook' ? <>
-          <BBtn icon={PageBack} label="Back" disabled={S.page.value === 0} onClick={() => board.turnPage(-1)} />
+          <BBtn icon={ChevronLeft} label="Back" disabled={S.page.value === 0} onClick={() => board.turnPage(-1)} />
           <button type="button" class={`bb-page nodrag ${p === 'pages' ? 'active' : ''}`} data-popover-keep="" aria-label="All pages" onClick={() => toggle('pages')}>
             <b>{S.page.value + 1}<small> / {S.pageCount.value}</small></b><span>Pages</span>
           </button>
           {S.page.value < S.pageCount.value - 1
-            ? <BBtn icon={PageNext} label="Next" onClick={() => board.turnPage(1)} />
-            : <BBtn icon={NewPage} label="New page" onClick={() => board.addPage()} />}
+            ? <BBtn icon={ChevronRight} label="Next" onClick={() => board.turnPage(1)} />
+            : <BBtn icon={Plus} label="New page" onClick={() => board.addPage()} />}
         </> : S.frameCount.value ? <>
-          <BBtn icon={PageBack} label="Back" disabled={S.frameIndex.value === 0} onClick={() => board.turnFrame(-1)} />
+          <BBtn icon={ChevronLeft} label="Back" disabled={S.frameIndex.value === 0} onClick={() => board.turnFrame(-1)} />
           <button type="button" class={`bb-page nodrag ${p === 'pages' ? 'active' : ''}`} data-popover-keep="" aria-label="All frames" onClick={() => toggle('pages')}>
             <b>{S.frameIndex.value < 0 ? '–' : S.frameIndex.value + 1}<small> / {S.frameCount.value}</small></b><span>Frames</span>
           </button>
           {S.frameIndex.value < S.frameCount.value - 1
-            ? <BBtn icon={PageNext} label="Next" onClick={() => board.turnFrame(1)} />
+            ? <BBtn icon={ChevronRight} label="Next" onClick={() => board.turnFrame(1)} />
             : <BBtn icon={Frame} label="New frame" onClick={() => board.addFrame()} />}
         </> : <BBtn icon={Frame} label="Add frame" onClick={() => board.addFrame('here')} />}
         <div class="bb-sep" />
-        <BBtn icon={LayoutGrid} label="More" keep active={p === 'board-menu'} onClick={() => toggle('board-menu')} />
+        <BBtn plain icon={LayoutGrid} label="More" keep active={p === 'board-menu'} onClick={() => toggle('board-menu')} />
       </div>
     </div>
   )
@@ -159,7 +186,6 @@ export function FileStatus(): JSX.Element | null {
 /** Everything that is not a drawing tool, in large tiles grouped by what a teacher wants to do. */
 function BoardMenu(): JSX.Element {
   const close = (fn: () => unknown) => () => { S.popover.value = null; void fn() }
-  const overlay = S.bgAlpha.value < OVERLAY_ALPHA
   return (
     <div class="popover panel ui board-sheet" data-popover-keep="">
       <div class="sheet-head lesson-line">Lesson · <b>{lessonName.value}</b>{lessonSubject.value && <span class="lesson-subject">{lessonSubject.value}</span>}<FileStatus /></div>
@@ -179,6 +205,7 @@ function BoardMenu(): JSX.Element {
         <Tile icon={ArtSlides} label="PowerPoint" onClick={close(() => pickFiles('.pptx,.ppt,.ubz', false).then(files => insertFiles(files)))} />
         <Tile icon={ArtVideo} label="Video / audio" onClick={close(() => pickFiles('video/*,audio/*,.mp4,.webm,.mp3,.m4a,.wav,.ogg,.aac', false).then(files => insertFiles(files)))} />
         <Tile icon={Table2} label="Table" onClick={() => (S.popover.value = 'table')} />
+        <Tile icon={StickyNote} label="Sticky note" onClick={close(() => board.setTool('sticky'))} />
         <Tile icon={ArtMindMap} label="Mind map" onClick={close(() => board.startMindMap())} />
         <Tile icon={ArtTimeline} label="Templates" onClick={() => (S.popover.value = 'templates')} />
         <Tile icon={Sigma} label="Equation" onClick={() => editEquation(null)} />
@@ -204,8 +231,7 @@ function BoardMenu(): JSX.Element {
         <Tile icon={ArtSplitBoard} label="Students at board" onClick={() => (S.popover.value = 'zones')} />
         <Tile icon={ArtPoll} label="Ask the class" onClick={() => (S.popover.value = 'poll')} />
         <Tile icon={Clapperboard} label="Record & replay" onClick={() => (S.popover.value = 'replay')} />
-        <Tile icon={WriteOverScreen} label={overlay ? 'Back to board' : 'Write over screen'} on={overlay} onClick={actions.toggleOverlay} />
-        {overlay && <Tile icon={MousePointerClick} label="Use apps below" onClick={() => actions.setPassthrough(true)} />}
+        <Tile icon={WriteOverScreen} label="Write on screen" onClick={actions.enterScreen} />
         <Tile icon={Sparkles} label="Assistant" onClick={() => (S.popover.value = 'agent')} />
       </Section>
       <Section title="Board">
@@ -213,7 +239,9 @@ function BoardMenu(): JSX.Element {
           ? <Tile icon={InfinityIcon} label="Turn into canvas" onClick={() => actions.convertBoard('canvas')} />
           : <Tile icon={BookOpen} label="Turn into notebook" onClick={() => actions.convertBoard('notebook')} />}
         <Tile icon={HideToolbar} label="Hide toolbar" onClick={actions.toggleUi} />
-        <Tile icon={Laptop} label="Laptop layout" onClick={() => actions.chooseLayout('laptop')} />
+        <Tile icon={Laptop} label={S.fullscreen.value ? 'In a window' : 'Full screen'} onClick={close(actions.toggleFullscreen)} />
+        <Tile icon={History} label="Earlier saves" onClick={() => (S.popover.value = 'recovery')} />
+        <Tile icon={Keyboard} label="Shortcuts" onClick={() => (S.popover.value = 'help')} />
         <Tile icon={MinimiseArt} label="Minimise" onClick={close(() => window.api.win.minimize())} />
         <Tile icon={LogOut} label="Exit" danger onClick={() => window.api.win.close()} />
       </Section>
@@ -347,10 +375,10 @@ export function EdgeTabs(): JSX.Element {
   const paged = S.kind.value === 'notebook'
   return (
     <>
-      <button type="button" class="edge-tab left ui nodrag" data-popover-keep="" aria-label="Open the menu on this side" onClick={open('left')}><LayoutGrid size={20} /></button>
+      <button type="button" class="edge-tab left ui nodrag" data-popover-keep="" aria-label="Open the menu on this side" onClick={open('left')}><i /></button>
       {paged
         ? <PageRail onMenu={open('right')} />
-        : <button type="button" class="edge-tab right ui nodrag" data-popover-keep="" aria-label="Open the menu on this side" onClick={open('right')}><LayoutGrid size={20} /></button>}
+        : <button type="button" class="edge-tab right ui nodrag" data-popover-keep="" aria-label="Open the menu on this side" onClick={open('right')}><i /></button>}
     </>
   )
 }
@@ -368,7 +396,7 @@ function PageRail({ onMenu }: { onMenu: () => void }): JSX.Element {
   const total = PAGE_H * f.extent
   const mapH = Math.min(MAP_W * total / PAGE_W, window.innerHeight * .4)
   const mapW = mapH * PAGE_W / total
-  const v = board.view, { w, h } = board.size
+  const v = board.view, { w } = board.size, h = board.areaH
   const box = { top: (v.y - f.y) / total * mapH, height: Math.min(1, h / v.zoom / total) * mapH, left: (v.x - f.x) / PAGE_W * mapW, width: Math.min(1, w / v.zoom / PAGE_W) * mapW }
   useEffect(() => {
     const c = map.current
@@ -383,7 +411,7 @@ function PageRail({ onMenu }: { onMenu: () => void }): JSX.Element {
   }
   return (
     <div class="page-rail ui" data-popover-keep="">
-      <button type="button" class="rail-btn nodrag" aria-label="Open the menu on this side" onClick={onMenu}><LayoutGrid size={20} /></button>
+      <button type="button" class="edge-handle nodrag" aria-label="Open the menu on this side" onClick={onMenu}><i /></button>
       {f.extent > 1 && (
         <div class="rail-map nodrag" style={{ width: `${mapW}px`, height: `${mapH}px` }} role="scrollbar" aria-label="Page map" aria-orientation="vertical"
           aria-valuenow={Math.round(scrollOf(v, f, h) * 100)}
@@ -408,26 +436,3 @@ export function BoardSaveChip(): JSX.Element | null {
   return <button type="button" class="board-save-chip ui nodrag" title={error} onClick={actions.retrySave}>Not saved · tap to retry</button>
 }
 
-/** First launch: one question decides the whole layout. */
-export function LayoutChooser(): JSX.Element {
-  return (
-    <div class="chooser ui" role="dialog" aria-modal="true" aria-labelledby="chooser-title">
-      <div class="chooser-card panel">
-        <h1 id="chooser-title">Where are you teaching?</h1>
-        <p>This sets up the board for your screen. You can change it later in Settings.</p>
-        <div class="chooser-options">
-          <button type="button" class="chooser-option nodrag" onClick={() => actions.chooseLayout('board')}>
-            <ArtPicture name="welcome-board" />
-            <b>Smart board</b>
-            <span>A big classroom touch screen. Full screen, large buttons, toolbar at the bottom.</span>
-          </button>
-          <button type="button" class="chooser-option nodrag" onClick={() => actions.chooseLayout('laptop')}>
-            <ArtPicture name="welcome-laptop" />
-            <b>Laptop or PC</b>
-            <span>A floating window that can sit over other apps. Mouse, touch or pen tablet.</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}

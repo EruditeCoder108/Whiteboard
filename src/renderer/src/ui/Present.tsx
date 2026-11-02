@@ -1,14 +1,9 @@
-import { ArtClock, ArtDice, ArtMagnifier, ArtNamePicker, ArtPoll, ArtScoreboard, ArtSplitBoard } from './icons'
-import { RevealArt } from './icons'
-import { Blinds, Calculator, DraftingCompass, Gauge, LineChart, Pause, Play, RotateCcw, Ruler, Sigma, Spotlight, Timer, TriangleRight, X } from './icons'
-import { calculatorOn } from './Tools'
-import { clockOn, diceOn, magnifierOn, pickerOn, scoreOn } from './ClassTools'
+import { DraftingCompass, Gauge, LineChart, Pause, Play, RotateCcw, Ruler, Sigma, TriangleRight, X } from './icons'
 import { signal } from '@preact/signals'
 import type { JSX } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { board } from '@/engine/instance'
 import { instrumentsShown, type InstrumentKind } from '@/engine/instruments'
-import { S } from '@/state/store'
 import { editEquation, editGraph } from '@/state/insert'
 import { Btn } from './kit'
 
@@ -40,26 +35,6 @@ export function MathsPopover(): JSX.Element {
       <ToggleRow icon={Sigma} label="Equation…" on={false} onClick={() => editEquation(null)} />
       <ToggleRow icon={LineChart} label="Graph of a function…" on={false} onClick={() => editGraph(null)} />
       <div class="pop-hint">Shape snapping: hold the pen still at the end of a stroke and a rough line, circle, rectangle or triangle becomes a clean one.</div>
-    </div>
-  )
-}
-
-export function PresentPopover(): JSX.Element {
-  return (
-    <div class="popover panel ui present" data-popover-keep="">
-      <ToggleRow icon={Spotlight} label="Spotlight" hint="dims all but the pointer" on={spotlightOn.value} onClick={() => { spotlightOn.value = !spotlightOn.value; S.popover.value = null }} />
-      <ToggleRow icon={Calculator} label="Calculator" on={calculatorOn.value} onClick={() => { calculatorOn.value = !calculatorOn.value; S.popover.value = null }} />
-      <ToggleRow icon={RevealArt} label="Prepare reveals" hint="hide answers" on={S.preparing.value} onClick={() => { board.setPreparing(!S.preparing.value); S.popover.value = null }} />
-      <ToggleRow icon={Blinds} label="Screen cover" hint="drag to reveal" on={curtainOn.value} onClick={() => { curtainOn.value = !curtainOn.value; S.popover.value = null }} />
-      <ToggleRow icon={Timer} label="Timer" on={timerOn.value} onClick={() => { timerOn.value = !timerOn.value; S.popover.value = null }} />
-      <ToggleRow icon={ArtClock} label="Clock" on={clockOn.value} onClick={() => { clockOn.value = !clockOn.value; S.popover.value = null }} />
-      <ToggleRow icon={ArtMagnifier} label="Magnifier" on={magnifierOn.value} onClick={() => { magnifierOn.value = !magnifierOn.value; S.popover.value = null }} />
-      <ToggleRow icon={ArtNamePicker} label="Name picker" on={pickerOn.value} onClick={() => { pickerOn.value = !pickerOn.value; S.popover.value = null }} />
-      <ToggleRow icon={ArtDice} label="Dice" on={diceOn.value} onClick={() => { diceOn.value = !diceOn.value; S.popover.value = null }} />
-      <ToggleRow icon={ArtScoreboard} label="Scoreboard" on={scoreOn.value} onClick={() => { scoreOn.value = !scoreOn.value; S.popover.value = null }} />
-      <ToggleRow icon={ArtSplitBoard} label="Students at the board" on={S.zones.value > 0} onClick={() => { S.popover.value = 'zones' }} />
-      <ToggleRow icon={ArtPoll} label="Ask the class" hint="phones over Wi-Fi" on={false} onClick={() => { S.popover.value = 'poll' }} />
-      <div class="pop-hint">Esc closes the spotlight and curtain. PgUp/PgDn (or a presentation clicker) turns pages.</div>
     </div>
   )
 }

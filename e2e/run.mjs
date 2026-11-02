@@ -140,7 +140,7 @@ await setTool('pen')
 // radial colour ring
 await gesture(page, [[500, 460]], { up: false }); await sleep(650)
 const c2 = await page.evaluate(() => { const r = document.querySelector('.radial').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2] })
-const rr = 100, a2 = Math.PI / 4   // colour index 1 = red
+const rr = 104, a2 = 120 * Math.PI / 180   // colour index 1 = red
 await page.evaluate(({ x, y }) => {
   const el = document.querySelector('.stage')
   el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1, pointerType: 'mouse', clientX: x, clientY: y, buttons: 1, button: -1 }))
@@ -186,31 +186,31 @@ await key('Control+0'); await sleep(400)
 
 // ── hide interface & pass-through state ───────────────────────────────────────────────
 await key('Tab'); await sleep(150)
-check('Tab hides the interface', (await page.locator('.dock').count()) === 0 && (await page.locator('.minibar').count()) === 1)
+check('Tab hides the interface', (await page.locator('.boardbar').count()) === 0 && (await page.locator('.minibar').count()) === 1)
 await fw(page, (w) => { w.S.bgAlpha.value = 0 })
 await sleep(100)
 await shot('hidden-opacity0')
 const mini = await page.locator('.minibar').boundingBox()
 check('mini bar sits top-right', mini && mini.x > 1000 && mini.y < 20, JSON.stringify(mini))
 await page.locator('.minibar button').first().click()
-check('mini bar button restores the interface', (await page.locator('.dock').count()) === 1)
-await fw(page, (w) => { w.S.bgAlpha.value = 96 })
+check('mini bar button restores the interface', (await page.locator('.boardbar').count()) === 1)
+await fw(page, (w) => { w.S.bgAlpha.value = 100 })
 
 // ── panels & popovers (visual) ───────────────────────────────────────────────────────────
-await page.locator('.colordot').click(); await sleep(150); await shot('popover-props')
+await fw(page, (w) => { w.S.popover.value = 'props' }); await sleep(150); await shot('popover-props')
 check('colour popover opens', (await page.locator('.props').count()) === 1)
 await page.locator('.props .swatch').nth(7).click()
 check('picking a swatch sets the pen colour', (await state('penColor')) === '#2f6bff')
 await page.mouse.click(900, 600)
 check('clicking the board closes the popover', (await page.locator('.popover').count()) === 0)
-await page.getByRole('button', { name: 'Board settings', exact: true }).click(); await sleep(150); await shot('popover-settings')
+await fw(page, (w) => { w.S.popover.value = 'settings' }); await sleep(150); await shot('popover-settings')
 await page.keyboard.press('Escape')
-await page.locator('.topbar .btn').first().click(); await sleep(150); await shot('popover-menu')
+await page.getByRole('button', { name: 'More', exact: true }).click(); await sleep(150); await shot('popover-menu')
 await page.keyboard.press('Escape')
 await key('F1'); await sleep(150); await shot('popover-help')
 await key('Escape')
 await key('Control+z'); await key('Control+z'); await key('Control+z')
-await setTool('eraser'); await page.locator('.colordot').click(); await sleep(150); await shot('popover-eraser')
+await setTool('eraser'); await fw(page, (w) => { w.S.popover.value = 'props' }); await sleep(150); await shot('popover-eraser')
 await page.keyboard.press('Escape'); await page.mouse.click(900, 600)
 await setTool('pen')
 

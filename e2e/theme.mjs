@@ -32,7 +32,7 @@ const unreadable = (page, min = 3) => page.evaluate((min) => {
 
 const POPOVERS = {
   board: ['board-menu', 'pages', 'shapes', 'props', 'paper', 'subjects', 'export', 'settings', 'help', 'maths', 'lessons', 'new-lesson', 'shelf', 'scale', 'periodic', 'table', 'inputs', 'templates', 'zones', 'poll', 'agent', 'replay', 'science', 'equation', 'graph', 'recovery'],
-  laptop: ['menu', 'insert', 'present', 'settings', 'help', 'props', 'shapes', 'paper', 'export', 'lessons', 'shelf', 'scale', 'periodic', 'table', 'inputs', 'templates', 'zones', 'poll', 'agent', 'replay', 'science', 'equation', 'graph']
+  laptop: ['board-menu', 'select-tools', 'settings', 'help', 'props', 'shapes', 'paper', 'export', 'lessons', 'shelf', 'scale', 'periodic', 'table', 'inputs', 'templates', 'zones', 'poll', 'agent', 'replay', 'science', 'equation', 'graph']
 }
 
 for (const layout of ['board', 'laptop']) {

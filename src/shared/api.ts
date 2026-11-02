@@ -92,6 +92,8 @@ export type CaptureResult = ({ ok: true } & CapturedImage) | { ok: false; error:
 export interface PollStatus { active: boolean; url: string; question: string; options: string[]; counts: number[]; total: number; expiresAt: number }
 
 export interface Api {
+  /** Writes a panel check report beside the lessons; the path it was saved to, or null. */
+  savePanelReport(text: string): Promise<string | null>
   openLink(link: string): Promise<boolean>
   slides: { toPdf(bytes: ArrayBuffer, name: string): Promise<ArrayBuffer | null> }
   poll: {

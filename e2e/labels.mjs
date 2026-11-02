@@ -4,10 +4,10 @@ import { launch, check, summary, fw } from './lib.mjs'
 
 const SHEETS = {
   board: ['board-menu', 'pages', 'shapes', 'props', 'paper', 'subjects', 'export', 'settings', 'help', 'maths', 'lessons', 'new-lesson', 'shelf', 'scale', 'periodic', 'table', 'inputs', 'templates', 'zones', 'poll', 'agent', 'replay', 'science', 'equation', 'graph', 'recovery'],
-  laptop: ['menu', 'insert', 'present', 'settings', 'help', 'props', 'shapes', 'paper', 'export', 'lessons', 'shelf', 'scale', 'periodic', 'table', 'inputs', 'templates', 'zones', 'poll', 'agent', 'replay', 'science', 'equation', 'graph']
+  laptop: ['board-menu', 'select-tools', 'settings', 'help', 'props', 'shapes', 'paper', 'export', 'lessons', 'shelf', 'scale', 'periodic', 'table', 'inputs', 'templates', 'zones', 'poll', 'agent', 'replay', 'science', 'equation', 'graph']
 }
 
-for (const [layout, list] of Object.entries(SHEETS)) for (const size of [[1920, 1080], [1366, 768]]) {
+for (const [layout, list] of Object.entries(SHEETS)) for (const size of [[1920, 1080], [1366, 768], [1280, 720]]) {
   const { app, page, logs } = await launch({ layout })
   try {
     await app.evaluate(({ BrowserWindow }, s) => { for (const w of BrowserWindow.getAllWindows()) w.setContentSize(s[0], s[1]) }, size)

@@ -1,19 +1,25 @@
 import { signal } from '@preact/signals'
 import { RADIAL_COLORS } from '@/state/store'
+import { PEN_CHOICES } from './ink'
+import type { PenChoice } from './ink'
 
 /** Geometry of the two-ring radial menu (CSS px, centred on the press point). */
-export const RADIAL = { hub: 30, in0: 34, in1: 84, out0: 88, out1: 112 }
+export const RADIAL = { hub: 27, in0: 30, in1: 80, out0: 86, out1: 122 }
+/** Pen styles sit above the pen, colours below: fixed places the hand can learn. */
+export const STYLE_ANGLES = [-60, -30, 0, 30, 60]
+const COLOR_FROM = 96, COLOR_STEP = 24
+export const colorAngle = (i: number): number => COLOR_FROM + i * COLOR_STEP
 export const RADIAL_SIZE = (RADIAL.out1 + 18) * 2
 
-export type RadialKey = 'pen' | 'marker' | 'eraser' | 'select' | 'clear' | 'grid' | 'redo' | 'undo'
+export type RadialKey = 'pen' | 'marker' | 'eraser' | 'select' | 'shape' | 'text' | 'redo' | 'undo'
 /** clockwise from the top */
 export const RADIAL_ACTIONS: { key: RadialKey; label: string }[] = [
   { key: 'pen', label: 'Pen' },
   { key: 'marker', label: 'Highlighter' },
   { key: 'eraser', label: 'Eraser' },
   { key: 'select', label: 'Select' },
-  { key: 'clear', label: 'Clear board' },
-  { key: 'grid', label: 'Grid' },
+  { key: 'shape', label: 'Shapes' },
+  { key: 'text', label: 'Text' },
   { key: 'redo', label: 'Redo' },
   { key: 'undo', label: 'Undo' }
 ]
@@ -23,8 +29,9 @@ export type RadialHover =
   | { kind: 'hub' }
   | { kind: 'action'; index: number }
   | { kind: 'color'; index: number }
+  | { kind: 'style'; index: number }
 
-export type RadialPick = { kind: 'action'; key: RadialKey } | { kind: 'color'; color: string }
+export type RadialPick = { kind: 'action'; key: RadialKey } | { kind: 'color'; color: string } | { kind: 'style'; style: PenChoice }
 
 export function hitRadial(dx: number, dy: number): RadialHover {
   const d = Math.hypot(dx, dy)
@@ -33,7 +40,12 @@ export function hitRadial(dx: number, dy: number): RadialHover {
   const index = Math.floor((((ang % 360) + 360) % 360) / 45) % 8
   if (d < RADIAL.in0 - 2) return { kind: 'hub' }
   if (d <= RADIAL.in1 + 2) return { kind: 'action', index }
-  if (d >= RADIAL.out0 - 2 && d <= RADIAL.out1 + 8) return { kind: 'color', index }
+  if (d < RADIAL.out0 - 4 || d > RADIAL.out1 + 14) return { kind: 'none' }
+  // angle from the top, -180 to 180, clockwise positive
+  const from = ((Math.atan2(dy, dx) * 180) / Math.PI + 90 + 540) % 360 - 180
+  if (Math.abs(from) <= 76) return { kind: 'style', index: Math.max(0, Math.min(4, Math.round((from + 60) / 30))) }
+  const around = (from + 360) % 360
+  if (around >= COLOR_FROM - 14 && around <= colorAngle(7) + 14) return { kind: 'color', index: Math.max(0, Math.min(7, Math.round((around - COLOR_FROM) / COLOR_STEP))) }
   return { kind: 'none' }
 }
 
@@ -78,6 +90,7 @@ export const radial = {
     if (!s || !s.armed) return null
     if (s.hover.kind === 'action') return { kind: 'action', key: RADIAL_ACTIONS[s.hover.index].key }
     if (s.hover.kind === 'color') return { kind: 'color', color: RADIAL_COLORS[s.hover.index] }
+    if (s.hover.kind === 'style') return { kind: 'style', style: PEN_CHOICES[s.hover.index].id }
     return null
   },
 

@@ -181,7 +181,7 @@ export const lesson = {
   async newLesson(opts: { name?: string; subject?: string; kind?: BoardKind } = {}): Promise<boolean> {
     if (!(await guard())) return false
     await window.api.store.archiveBoard().catch(() => {})
-    board.newLesson(opts.kind ?? (S.layout.value === 'board' ? 'notebook' : 'canvas'))
+    board.newLesson(opts.kind ?? 'notebook')
     generation++
     lessonPath.value = null
     lessonSubject.value = (opts.subject ?? '').trim()

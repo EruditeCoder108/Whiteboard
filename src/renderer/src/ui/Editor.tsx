@@ -19,7 +19,7 @@ import { playing } from './Clips'
 import { readHandwriting } from './Recognize'
 import { PartOptions } from './Apparatus'
 import { partOf } from '@/engine/apparatus/parts'
-import { PALETTE, S, boardMode, showToast } from '@/state/store'
+import { PALETTE, S, showToast } from '@/state/store'
 import { shelf } from '@/state/shelf'
 import { RevealOptions } from './Reveal'
 import { Btn, MenuItem, Row, Slider, Swatch } from './kit'
@@ -187,11 +187,10 @@ type ActProps = Parameters<typeof Btn>[0] & { label: string }
 
 /** On the board a selected object's actions are big and named, right beside it; on a laptop they stay compact. */
 function Act({ label, icon: Icon, ...rest }: ActProps): JSX.Element {
-  if (!boardMode.value) return <Btn icon={Icon} {...rest} />
   const { title, active, danger, disabled, onClick } = rest
   return (
     <button type="button" class={`sel-act nodrag ${active ? 'active' : ''} ${danger ? 'danger' : ''}`} title={title} aria-label={title} aria-pressed={active === undefined ? undefined : active} disabled={disabled} onClick={onClick as never}>
-      <Icon size={22} strokeWidth={1.9} /><span>{label}</span>
+      <Icon size={22} strokeWidth={1.9} {...({ plain: true } as object)} /><span>{label}</span>
     </button>
   )
 }
@@ -242,7 +241,7 @@ export function SelectionToolbar(): JSX.Element | null {
   const box = items.reduce((r, it) => unionRect(r, itemBounds(it)), null as ReturnType<typeof itemBounds> | null)!
   const z = board.view.zoom, { w: vw, h: vh } = board.size
   const dockEdge = vh <= 540 ? 88 : 56
-  const big = boardMode.value
+  const big = true
   const width = Math.min(big ? 900 : 360, vw - (big ? 24 : dockEdge + 12)), cx = ((box[0] + box[2]) / 2 - board.view.x) * z
   const above = (box[1] - board.view.y) * z - (big ? barHeight + 26 : 86)
   const below = (box[3] - board.view.y) * z + 26

@@ -1,6 +1,6 @@
 # Next chat handoff
 
-**Updated 1 November 2026 (Checklist 2: Step 2 done, Step 1 done apart from panel testing; `main` is 1.7.0-beta.1).** Read this first in every new chat, then update it before the chat ends
+**Updated 1 November 2026 (Checklist 2: Step 2 done; Step 2b polish built as 1.7.0-beta.2 on `feature/tools-polish`).** Read this first in every new chat, then update it before the chat ends
 (see the last section). Paths are relative to the repository root
 `D:\Projects 2\whiteboard\app` unless they start with a drive letter.
 
@@ -21,6 +21,10 @@
   2. **Left out for now, by the owner's decision (1 Nov 2026):** outline maps. India's border must follow an official source; do not draw or download one without their say.
 - **Not verified, say so if asked:** the Office route for exact PowerPoint slides (no Office on this PC; `main/slides.ts` has never run against real Office); OpenBoard import (tested on a sample built to the format, not a real file); handwriting quality (tested on a stand-in model); contact sizes and simultaneous writers (simulated touches only).
 - **Next: Step 2b, the polish pass, before the animation library** (owner, 1 Nov). The lead is on `feature/tools-polish`; the second agent is on `feature/tools-audit` from `docs/agent-tasks/tools-audit.md`.
+- **One layout (owner, 1 Nov).** Laptop mode, `S.layout`, `layoutChosen`, `boardMode`, the chooser, TopBar, Dock, HistoryBar, PageBar and the menu, insert and present popovers are gone. `S.windowed` remembers full screen or a window; `WindowBar` is the strip shown in a window. In e2e, `launch()` still means a window on a canvas (`layout: 'laptop'`), and `layout: 'board'` means what a fresh install opens to.
+- **Page and toolbar.** `board.setPageInset(px)` and `board.areaH`: a notebook page fits above the toolbar (`barHeight` is measured in BoardBar); the inset is 0 when the toolbar is hidden. `board.offPage` keeps pens out of the margin. `paintDesk` draws the margin.
+- **Write on the screen.** `actions.enterScreen/exitScreen`, `S.screenMode`, `ScreenBar` in `ui/Panels.tsx`. `S.bgAlpha` is no longer saved or user-set: 100, or 0 in this mode. A notebook gets a page titled "Written on the screen", removed by `board.removeEmptyPage` if nothing was written; a canvas moves to `board.clearStretch()` and back.
+- **Real board day: 2 Nov 2026, college.** Bring the installer on a USB stick. Run Settings › Panel check there and bring back the report. It tunes tip, thick-end, finger and palm sizes.
 - **The GitHub repository is going private** (owner, 1 Nov). The app does not use it at run time.
 
 ---

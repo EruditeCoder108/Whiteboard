@@ -7,14 +7,14 @@ const loaded=async(page,selector)=>{
   await page.waitForFunction(selector=>[...document.querySelectorAll(selector)].every(i=>i.complete&&i.naturalWidth>0),selector)
   return page.locator(selector).count()
 }
-for(const layout of ['board','laptop']){
+for(const layout of ['board']){
  const {app,page,logs}=await launch({layout})
  try{
   await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows()[0];w.setFullScreen(false);w.setBounds({x:4000,y:60,width:1366,height:768})})
   for(const [theme,color]of [['light','#ffffff'],['dark','#1d3b33']]){
    await fw(page,(w,{theme,color})=>{w.S.uiTheme.value=theme;w.board.setColor(color);w.board.setSurface({color,texture:theme==='dark'?'chalk':'none'},false);w.S.popover.value=null},{theme,color})
    await page.waitForTimeout(250)
-   const bar=layout==='board'?'.boardbar':'.dock'
+   const bar='.boardbar'
    check(`${layout} ${theme}: toolbar images loaded`,await loaded(page,bar+' img.art')>=8)
    check(`${layout} ${theme}: toolbar fits 1366`,await page.locator(bar).evaluate(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth}))
    check(`${layout} ${theme}: images do not intercept taps`,await page.locator(bar+' img.art').first().evaluate(e=>getComputedStyle(e).pointerEvents==='none'))

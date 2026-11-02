@@ -1,20 +1,19 @@
-import { ArrowUpRight, Circle, FilePlus2, FolderOpen, Keyboard, Plus, Save, SaveAll, Share2, Slash, Square, Trash2, History, Diamond, Triangle, UnlockKeyhole, Clapperboard } from './icons'
+import { ArrowUpRight, Circle, Plus, Slash, Square, Diamond, Triangle } from './icons'
 import type { JSX } from 'preact'
 import { useEffect, useLayoutEffect, useState } from 'preact/hooks'
 import type { BackupInfo } from '@shared/api'
 import { board } from '@/engine/instance'
 import { actions } from '@/state/actions'
 import {
-  PALETTE, S, SIZE_RANGE, SHAPE_TOOLS, activeTool, boardMode, currentColor, currentSize, styleKey
+  PALETTE, S, SIZE_RANGE, SHAPE_TOOLS, activeTool, currentColor, currentSize, styleKey
 } from '@/state/store'
 import type { ShapeKind } from '@/engine/types'
-import { InsertPopover, EquationEditor, GraphEditor } from './Insert'
-import { PresentPopover } from './Present'
+import { EquationEditor, GraphEditor } from './Insert'
 import { equationTarget, graphTarget } from '@/state/insert'
-import { ExportSheet } from './Lessons'
-import { Btn, MenuItem, Row, Segmented, Sep, Slider, Swatch, Switch } from './kit'
+import { Btn, Row, Segmented, Sep, Slider, Swatch, Switch } from './kit'
 import { calibrating } from './Calibrate'
 import { PaperPicker } from './Paper'
+import { panelCheckOn } from './PanelCheck'
 import { InkPreview, PenStylePicker, SlideToClear, penLabel } from './PenStyles'
 
 const TOOL_TITLE: Record<string, string> = {
@@ -124,39 +123,9 @@ export function ShapesPopover(): JSX.Element {
   )
 }
 
-export function MenuPopover(): JSX.Element {
-  const close = (fn: () => unknown) => () => {
-    S.popover.value = null
-    void fn()
-  }
-  return (
-    <div class="popover panel ui menu" data-popover-keep="">
-      <MenuItem icon={FilePlus2} label="New lesson" hint="Ctrl+N" onClick={close(actions.newLesson)} />
-      <MenuItem icon={FolderOpen} label="My lessons…" hint="Ctrl+O" onClick={() => (S.popover.value = 'lessons')} />
-      <MenuItem icon={Save} label="Save now" hint="Ctrl+S · it also saves itself" onClick={close(actions.saveLesson)} />
-      <MenuItem icon={SaveAll} label="Save a copy…" hint="Ctrl+Shift+S" onClick={close(actions.saveLessonAs)} />
-      <Sep />
-      <MenuItem icon={Share2} label="Export picture or PDF…" hint="Ctrl+E" onClick={() => (S.popover.value = 'export')} />
-      <MenuItem icon={History} label="Earlier saves…" onClick={() => (S.popover.value = 'recovery')} />
-      <MenuItem icon={Clapperboard} label="Record and replay…" onClick={() => (S.popover.value = 'replay')} />
-      <MenuItem icon={UnlockKeyhole} label="Unlock all objects" onClick={close(() => board.unlockAll())} />
-      <Sep />
-      <MenuItem icon={Trash2} label="Clear board" hint="undoable" danger onClick={close(() => board.clearBoard())} />
-      <Sep />
-      <MenuItem icon={Keyboard} label="Keyboard shortcuts" hint="F1" onClick={() => (S.popover.value = 'help')} />
-    </div>
-  )
-}
-
 export function SettingsPopover(): JSX.Element {
   return (
     <div class="popover panel ui settings" data-popover-keep="">
-      <div class="pop-sub">Layout</div>
-      <Segmented
-        options={[{ value: 'board', label: 'Smart board' }, { value: 'laptop', label: 'Laptop' }]}
-        value={S.layout.value}
-        onChange={(v) => actions.chooseLayout(v)}
-      />
       <div class="pop-sub">Appearance <i>(Auto follows the board)</i></div>
       <Segmented
         options={[{ value: 'auto', label: 'Auto' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]}
@@ -170,10 +139,6 @@ export function SettingsPopover(): JSX.Element {
         onChange={(v) => actions.convertBoard(v)}
       />
       <PaperPicker />
-      <Row label="Board opacity" hint="Lower it to see the screen through the board">
-        <Slider min={0} max={100} value={S.bgAlpha.value} onChange={(v) => (S.bgAlpha.value = v)} />
-        <span class="val">{S.bgAlpha.value}%</span>
-      </Row>
       <Sep />
       <Row label="Steady hand" hint="Steadies shaky handwriting. 0 = raw input">
         <Slider min={0} max={10} value={S.smoothing.value} onChange={(v) => (S.smoothing.value = v)} />
@@ -193,6 +158,7 @@ export function SettingsPopover(): JSX.Element {
       </Row>
       {S.palmErase.value && <button type="button" class="link-btn nodrag" onClick={() => { S.popover.value = null; calibrating.value = true }}>Calibrate palm size…</button>}
       <button type="button" class="link-btn nodrag" onClick={() => (S.popover.value = 'inputs')}>Pen and finger: a tool for each…</button>
+      <button type="button" class="link-btn nodrag" onClick={() => { S.popover.value = null; panelCheckOn.value = true }}>Panel check: measure this board…</button>
       <Sep />
       <Row label="Press and hold for a menu">
         <span class="grow" />
@@ -265,17 +231,11 @@ export function HelpPopover(): JSX.Element {
 
 export function Popovers(): JSX.Element {
   const p = S.popover.value
-  const onBoard = boardMode.value && S.layoutChosen.value
   return (
     <>
-      {p === 'menu' && <MenuPopover />}
       {p === 'settings' && <SettingsPopover />}
       {p === 'help' && <HelpPopover />}
       {p === 'recovery' && <RecoveryPopover />}
-      {p === 'insert' && <InsertPopover />}
-      {/* on the smart board these sheets open above the toolbar (see BoardBar) */}
-      {!onBoard && p === 'export' && <ExportSheet />}
-      {p === 'present' && <PresentPopover />}
       {p === 'equation' && <EquationEditor key={equationTarget.value?.id ?? 'new'} />}
       {p === 'graph' && <GraphEditor key={graphTarget.value?.id ?? 'new'} />}
     </>

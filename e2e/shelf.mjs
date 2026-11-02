@@ -197,13 +197,13 @@ try {
   await open()
   await shot('shelf-dark')
 
-  // ── the laptop layout reaches it too ───────────────────────────────────────
+  // ── a canvas reaches it too ────────────────────────────────────────────────
   await app.close()
   ;({ app, page, logs } = await launch({ userData: undefined }))
-  await fw(page, w => { w.S.popover.value = 'insert' })
+  await fw(page, w => { w.S.popover.value = 'board-menu' })
   await page.getByRole('button', { name: /My shelf/ }).click()
   await page.waitForSelector('.library .shelf-empty')
-  check('the laptop Insert menu opens the shelf', true)
+  check('the menu opens the shelf on a canvas', true)
   await shot('laptop')
 
   check('no renderer errors', logs.filter(l => /pageerror|\[error\]/.test(l)).length === 0, logs.join(' | '))
