@@ -1,4 +1,4 @@
-import { Eraser, Eye, Highlighter, Maximize2, Minimize2, Minus, MousePointerClick, Pen, Plus, Scan, Trash2, Undo2, X } from './icons'
+import { Eraser, Eye, Highlighter, Maximize2, Minimize2, Minus, MousePointerClick, Pen, Pin, PinOff, Plus, Scan, Trash2, Undo2, X } from './icons'
 import type { JSX } from 'preact'
 import { useRef, useState } from 'preact/hooks'
 import { board } from '@/engine/instance'
@@ -23,6 +23,7 @@ export function WindowBar(): JSX.Element {
     <div class="window-bar ui drag">
       <SaveIndicator />
       <div class="grow" />
+      <Btn icon={S.onTop.value ? Pin : PinOff} title="Always on top  (Ctrl+T)" active={S.onTop.value} onClick={actions.togglePin} />
       <Btn icon={Minus} title="Minimise" onClick={() => window.api.win.minimize()} />
       <Btn icon={S.fullscreen.value ? Minimize2 : Maximize2} title="Full screen  (F11)" onClick={actions.toggleFullscreen} />
       <Btn icon={X} title="Close  (your board is saved automatically)" danger onClick={() => window.api.win.close()} />

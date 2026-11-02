@@ -89,11 +89,11 @@ try {
   const fit = await fw(page, w => {
     w.board.goToPage(0); w.board.zoomAt(.2, 500, 500); const out = w.board.view.zoom
     w.board.zoomAt(4, 500, 500); const into = w.board.view.zoom; w.board.panBy(-3000, 2000)
-    return { kind: w.board.kind, out, into, v: w.board.view, size: w.board.size }
+    return { kind: w.board.kind, out, into, v: w.board.view, size: w.board.size, area: w.board.areaH }
   })
-  const fixed = fit.size.w / 1600
+  const fixed = Math.min(fit.size.w / 1600, fit.area / 900)
   check('smart board starts a notebook whose pages have one fixed size: no zoom in or out, no panning off',
-    fit.kind === 'notebook' && Math.abs(fit.out - fixed) < .01 && Math.abs(fit.into - fixed) < .01 && Math.abs(fit.v.x) < .5 && Math.abs(fit.v.y) < .5, JSON.stringify(fit))
+    fit.kind === 'notebook' && Math.abs(fit.out - fixed) < .01 && Math.abs(fit.into - fixed) < .01 && Math.abs(-fit.v.x * fit.into * 2 + 1600 * fit.into - fit.size.w) < 1 && Math.abs(fit.v.y) < .5, JSON.stringify(fit))
   const swipe = async (dx) => page.evaluate(async (dx) => {
     const el = document.querySelector('.stage'), r = el.getBoundingClientRect(), sleep = (ms) => new Promise(res => setTimeout(res, ms))
     const ev = (type, id, x, y) => el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: id, pointerType: 'touch', isPrimary: id === 11, clientX: r.left + x, clientY: r.top + y, buttons: type === 'pointerup' ? 0 : 1, pressure: .5 }))

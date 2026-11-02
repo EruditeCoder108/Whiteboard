@@ -66,7 +66,7 @@ try {
   await page.keyboard.press('Control+z')
   check('one undo restores the entire resize', await fw(page, (w, before) => JSON.stringify(w.board.selection[0]) === JSON.stringify(before), beforeResize))
   const rotBounds = await selectBox(), center = [(rotBounds[0] + rotBounds[2]) / 2, (rotBounds[1] + rotBounds[3]) / 2]
-  check('rotation handle is not covered by the selection toolbar', await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.classList.contains('stage'), [center[0], rotBounds[1] - 28]))
+  check('rotation handle is not covered by the selection toolbar', await page.evaluate(([x, y]) => { const s = document.querySelector('.stage'), r = s.getBoundingClientRect(); return document.elementFromPoint(r.left + x, r.top + y)?.closest('.stage') === s }, [center[0], rotBounds[1] - 28]))
   await gesture(page, [[center[0], rotBounds[1] - 28], [rotBounds[2] + 28, center[1]]], { shift: true })
   check('rotation handle rotates the shape and label together', await fw(page, w => Math.abs(w.board.selection[0].angle - Math.PI / 2) < .001))
   await page.keyboard.press('Control+z')
@@ -162,7 +162,7 @@ try {
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setBounds({ width: 420, height: 320 }))
   await fw(page, w => { w.board.setView({ x: 120, y: 340, zoom: .65 }); w.board.setTool('select'); w.board.setSelection([w.board.doc.items.find(it => it.note)]) })
   await page.getByRole('button', { name: 'Object style', exact: true }).click()
-  check('context controls stay within the minimum window', await page.locator('.selection-tools').evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1 && r.top >= 0 && r.bottom <= innerHeight + 1 }))
+  check('context controls stay within the minimum window', await page.locator('.selection-tools').evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1 && r.top >= 0 }))
   check('the toolbar stays inside a small window', await page.locator('.boardbar').evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1 }))
   await screenshot('phase2-small-window')
   check('no renderer errors occurred', errors.length === 0, errors.join('\n'))

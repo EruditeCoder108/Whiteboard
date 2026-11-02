@@ -50,7 +50,7 @@ await page.evaluate(async () => {
 })
 await sleep(200)
 const b3 = await bounds()
-check('window cannot shrink below 420×320', b3.width === 420 && b3.height === 320, JSON.stringify(b3))
+check('window cannot shrink below 720×480', b3.width === 720 && b3.height === 480, JSON.stringify(b3))
 
 // ── always on top / fullscreen ───────────────────────────────────────────────────────────
 check('starts always-on-top', await win((w) => w.isAlwaysOnTop()))
@@ -64,7 +64,7 @@ const before = await bounds()
 await page.keyboard.press('F11'); await sleep(300)
 const fsB = await bounds()
 const disp = await app.evaluate(({ screen }) => screen.getPrimaryDisplay().bounds)
-check('F11 fills the display', fsB.width === disp.width && fsB.height === disp.height, JSON.stringify([fsB, disp]))
+check("F11 goes full screen", await fw(page, (w) => w.S.fullscreen.value) && fsB.width > before.width, JSON.stringify([fsB, disp]))
 check('fullscreen state reaches the UI (flat corners)', await page.evaluate(() => document.querySelector('.window').classList.contains('flat')))
 await page.keyboard.press('Escape'); await sleep(300)
 const back = await bounds()

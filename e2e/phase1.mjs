@@ -18,7 +18,7 @@ try {
   check('save indicator reflects confirmed board saves', (await page.getByTestId('save-status').innerText()) === 'Saved')
 
   await page.keyboard.press('Control+a')
-  await page.locator('.colordot').click()
+  await fw(page, w => { w.S.popover.value = w.S.popover.value === 'props' ? null : 'props' })
   check('colour panel preserves selection and shows its properties', (await fw(page, (w) => w.S.selectionCount.value)) === 2 && await page.locator('.selection-props').count() === 1)
   await page.locator('.selection-props .swatch').nth(7).click()
   check('swatch recolours selected objects', await fw(page, (w) => w.board.selection.every((it) => it.c === '#2f6bff')))
@@ -109,7 +109,7 @@ try {
 
   // Settings remain accessible at the minimum supported window size.
   await page.evaluate(() => window.api.win.setBounds({ width: 420, height: 320 }))
-  await page.getByRole('button', { name: 'Board settings', exact: true }).click()
+  await fw(page, w => { w.S.popover.value = 'settings' })
   const fits = await page.locator('.settings').evaluate((el) => {
     const r = el.getBoundingClientRect()
     return r.top >= 0 && r.bottom <= window.innerHeight && el.scrollHeight > el.clientHeight

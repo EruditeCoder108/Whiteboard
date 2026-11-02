@@ -26,8 +26,8 @@ import { AgentBridge } from './agent-bridge'
 import { Assistant } from './assistant'
 import type { AgentCall, AgentResult } from '../shared/agent'
 
-const MIN_W = 420
-const MIN_H = 320
+const MIN_W = 720
+const MIN_H = 480
 
 let win: BrowserWindow | null = null
 let quitting = false

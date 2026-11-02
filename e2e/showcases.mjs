@@ -29,7 +29,7 @@ try {
   await isolate(); await gesture(page, [[65,110],[110,130],[130,108]], { type: 'pen' })
   await scene('flux-studio',0.6,'flux-studio.png'); await scene('indicator-studio',8.8,'indicator-studio.png'); await scene('heart-studio',0.73,'heart-studio.png')
   const original = await fw(page, w => w.board.doc.items[0])
-  await page.getByRole('button', { name: 'Science labs', exact: true }).click()
+  await fw(page, w => { w.S.popover.value = 'science' })
   check('Library opens on exactly three featured showcases', await page.locator('.science-card').count() === 3)
   await ui('showcase-library.png')
   await page.getByRole('button', { name: 'Browse all', exact: true }).click()
@@ -94,7 +94,7 @@ try {
   const png = await fw(page, async w => { const bytes = new Uint8Array(await w.board.exportPng('#ffffff',true,1)), image = await createImageBitmap(new Blob([bytes], {type:'image/png'})); return { magic:[...bytes.slice(0,8)], size:bytes.length, width:image.width,height:image.height } })
   check('Board PNG decodes with three native labs and annotations', png.magic.join(',') === '137,80,78,71,13,10,26,10' && png.size > 30000 && png.width > 900); evidence.png = png
   const expected = await fw(page, w => JSON.parse(w.board.serialize()).items)
-  await page.getByRole('button', { name: 'Science labs', exact: true }).click()
+  await fw(page, w => { w.S.popover.value = 'science' })
   await app.evaluate(({BrowserWindow}) => BrowserWindow.getAllWindows()[0].setSize(420,320)); await page.waitForTimeout(150)
   const compact = await page.getByTestId('science-library').evaluate(el => { const r=el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight && el.scrollWidth <= el.clientWidth + 1 })
   check('Featured library fits the minimum window without horizontal scrolling',compact)
@@ -105,9 +105,9 @@ try {
   await app.close()
   const saved = JSON.parse(readFileSync(join(session.userData,'board.json'),'utf8')); check('Disk save includes the exact hand trace and all three models', ids.every(id => saved.items.some(x => x.id === id)) && JSON.stringify(saved.items.find(x => x.id === moved.id).gesture) === JSON.stringify(moved.gesture))
   session = await launch({userData:session.userData,inputIsolated:true,...(process.env.FW_QA_EXE ? {executablePath:process.env.FW_QA_EXE}: {})}); ({app,page}=session); await isolate()
-  const reopened = await fw(page,w => JSON.parse(w.board.serialize()).items)
+  const reopened = await fw(page,w => { const j = JSON.parse(w.board.serialize()); return j.items ?? j.pages[0].items })
   const canonical = value => JSON.stringify(value, (_,v) => v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a],[b]) => a.localeCompare(b))) : v)
-  check('Fresh process reopens all serialised native labs and annotations exactly', canonical(reopened) === canonical(expected))
+  check('Fresh process reopens all serialised native labs and annotations exactly', canonical(reopened) === canonical(expected), (() => { const i = reopened.findIndex((it, n) => canonical(it) !== canonical(expected[n])); return i < 0 ? `lengths ${reopened.length} ${expected.length}` : `item ${i}: ${canonical(reopened[i]).slice(0, 300)} vs ${canonical(expected[i]).slice(0, 300)}` })())
   check('No external renderer requests are needed', network.length === 0); check('No uncaught renderer errors',errors.length === 0)
 } finally { await app.close(); writeFileSync(join(target,process.env.FW_QA_EXE ? 'packaged-results.json' : 'results.json'),JSON.stringify(evidence,null,2)) }
 process.exitCode = summary() ? 1 : 0

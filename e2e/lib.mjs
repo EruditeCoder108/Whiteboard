@@ -34,7 +34,7 @@ export async function launch({ userData, executablePath, inputIsolated = process
   page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`))
   await page.waitForSelector('.stage', { timeout: 15000 })
   await page.waitForFunction(() => window.__fw?.S.ready.value)
-  if (!userData && layout === 'laptop') await page.evaluate(() => window.__fw.board.convertTo('canvas'))
+  if (!userData && layout === 'laptop') await page.evaluate(() => window.__fw.board.newLesson('canvas'))
   await page.waitForTimeout(600)
   if (inputIsolated) await isolate()
   return { app, page, logs, userData: dir }

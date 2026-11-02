@@ -112,7 +112,7 @@ try {
   const box = n.p
   const screen = await fw(page, (w, [x, y]) => { const v = w.board.view; return [(x - v.x) * v.zoom, (y - v.y) * v.zoom] }, [(box[0] + box[2]) / 2 + 40, (box[1] + box[3]) / 2 - 40])
   await fw(page, w => w.board.setTool('arrow'))
-  await gesture(page, [[40, 60], [120, 90], [screen[0], screen[1]]])
+  await gesture(page, [[140, 60], [220, 90], [screen[0], screen[1]]])
   const arrow = await fw(page, w => w.board.doc.items.find(it => it.k === 'arrow'))
   check('an arrow onto it holds that spot', arrow?.to?.id === n.id && !!arrow.to.at, JSON.stringify(arrow))
   await fw(page, (w, id) => { w.board.setTool('select'); w.board.setSelection([w.board.doc.items.find(it => it.id === id)]); w.board.nudgeSelection(60, 0) }, n.id)

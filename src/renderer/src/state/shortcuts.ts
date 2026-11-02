@@ -29,6 +29,7 @@ export function installShortcuts(cancelRadial: () => void): () => void {
       else if (board.currentTool().underway()) cancelRadial()
       else if (S.popover.value) S.popover.value = null
       else if (board.selection.length) board.setSelection([])
+      else if (S.screenMode.value) actions.exitScreen()
       else if (S.fullscreen.value) actions.toggleFullscreen()
       return
     }

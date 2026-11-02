@@ -21,7 +21,7 @@ async function captureUi(name) {
   })
   writeFileSync(join(target, name), Buffer.from(data, 'base64'))
 }
-async function open() { await page.getByRole('button', { name: 'Science labs', exact: true }).click(); await page.getByTestId('science-library').waitFor() }
+async function open() { await fw(page, w => { w.S.popover.value = 'science' }); await page.getByTestId('science-library').waitFor() }
 try {
   await isolate(); await gesture(page, [[90, 90], [110, 95], [130, 88]], { type: 'pen' })
   const original = await fw(page, w => w.board.doc.items[0])

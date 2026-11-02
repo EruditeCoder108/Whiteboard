@@ -232,7 +232,7 @@ export function App(): JSX.Element {
     .join(' ')
 
   return (
-    <div class={cls} style={{ '--bg': `rgba(${r},${g},${b},${alpha})` } as never}>
+    <div class={cls} style={{ '--bg': `rgba(${r},${g},${b},${alpha})`, '--sheet-bottom': `${chromeGone ? 16 : barHeight.value + 26}px` } as never}>
       <div class="stage" ref={stageRef}>
         <canvas ref={gridRef} class="cv grid-cv" aria-hidden="true" />
         <canvas ref={boardRef} class="cv" />

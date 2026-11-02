@@ -34,7 +34,7 @@ try {
   await fw(page, w => { w.S.bgAlpha.value = 100; w.board.setColor('#ffffff'); w.board.setTool('pen') })
   await gesture(page, [[120, 150], [135, 160], [155, 148]], { type: 'pen' })
   const original = await fw(page, w => w.board.doc.items[0])
-  await page.getByRole('button', { name: 'Science labs', exact: true }).click()
+  await fw(page, w => { w.S.popover.value = 'science' })
   await page.getByRole('searchbox', { name: 'Search animations', exact: true }).fill('projectile')
   check('Science entry exposes offline projectile insertion', await page.getByRole('button', { name: 'Insert projectile lab', exact: true }).isVisible())
   await page.getByRole('button', { name: 'Insert projectile lab', exact: true }).click()

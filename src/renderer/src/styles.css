@@ -395,7 +395,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 
 /* Lessons preview on a separate canvas, keeping the document and its undo history intact. */
 .replay-canvas { position:absolute; inset:0; width:100%; height:100%; z-index:12; pointer-events:none; }
-.replaying :is(.dock-wrap,.history,.zoombar,.selection-tools,.inline-editor,.agent-panel,.popover,.mini-bar,.toast) { visibility:hidden; pointer-events:none; }
+.replaying :is(.boardbar-wrap,.edge-tab,.page-rail,.zoombar,.selection-tools,.inline-editor,.agent-panel,.popover,.mini-bar,.toast) { visibility:hidden; pointer-events:none; }
 .replaying .stage { pointer-events:none; }
 .replaying .topbar .btn:not([title*="Record and replay"]):not([title*="Close"]):not([title*="Minimise"]):not([title*="Fullscreen"]):not([title*="Always on top"]) { pointer-events:none; opacity:.4; }
 .replay-panel { position:absolute; top:44px; right:12px; width:min(380px,calc(100% - 24px)); max-height:calc(100% - 60px); overflow:auto; z-index:95; padding:16px; background:var(--panel); touch-action:pan-y; }
@@ -436,7 +436,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 @media (max-width:700px) { .recording-controls { bottom:64px; } }
 
 /* Native science lab: readable controls, quiet chrome, no autoplay. */
-.science-inspector { position:absolute; z-index:22; top:40px; bottom:56px; right:12px; width:286px; display:flex; flex-direction:column; animation:science-enter .18s ease-out; }
+.science-inspector { position:absolute; z-index:22; top:calc(var(--topbar) + 12px); bottom:var(--sheet-bottom); right:12px; width:286px; display:flex; flex-direction:column; animation:science-enter .18s ease-out; }
 .science-inspector-body { padding:16px; overflow:auto; overscroll-behavior:contain; }
 .science-inspector .science-note { margin:10px 0; }
 .science-parameter { margin:15px 0; }
@@ -461,8 +461,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .science-utility-row button { display:flex; gap:4px; align-items:center; padding:6px 3px; color:var(--muted); font-size:11px; }
 .science-utility-row button:hover { color:#007c88; }
 .science-assumptions p { font-size:11px; color:var(--muted); line-height:1.6; }
-.science-transport { position:absolute; z-index:21; bottom:46px; left:76px; width:min(640px, calc(100vw - 92px)); padding:7px 10px; }
-.science-transport.with-inspector { width:min(640px, calc(100vw - 394px)); }
+.science-transport { position:absolute; z-index:21; bottom:var(--sheet-bottom); left:16px; width:min(640px, calc(100vw - 32px)); padding:7px 10px; }
+.science-transport.with-inspector { width:min(640px, calc(100vw - 334px)); }
 .science-transport-buttons { display:flex; align-items:center; gap:5px; }
 .science-transport-name { color:var(--muted); font-size:11px; padding-right:5px; }
 .science-transport select { width:57px; padding:3px; background:var(--hover); border:1px solid var(--line); color:var(--text); border-radius:5px; font:inherit; }
@@ -749,7 +749,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
   position: absolute; right: 0; top: 50%; transform: translateY(-50%); z-index: 24;
   display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 6px;
 }
-.rail-btn { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; color: var(--muted); touch-action: manipulation; }
+.rail-btn { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; color: var(--muted); background: var(--panel); touch-action: manipulation; }
 .rail-btn:hover:not(:disabled), .rail-btn:active { background: var(--hover); color: var(--accent); }
 .rail-btn:disabled { opacity: .35; }
 .rail-map { position: relative; border-radius: 6px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); touch-action: none; cursor: ns-resize; }
@@ -1214,8 +1214,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .table-count .scale-bump:disabled { opacity: .4; }
 .table-head-choice { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 16px; font-weight: 600; }
 /* ── apparatus ── */
-.apparatus-tray { position: absolute; z-index: 23; top: 12px; right: 12px; bottom: 96px; width: 340px; display: flex; flex-direction: column; padding: 8px 10px 10px; gap: 6px; }
-.window:not(.board) .apparatus-tray { top: 40px; bottom: 16px; }
+.apparatus-tray { position: absolute; z-index: 23; top: calc(var(--topbar) + 12px); right: 12px; bottom: 96px; width: 340px; display: flex; flex-direction: column; padding: 8px 10px 10px; gap: 6px; }
 .tray-head { display: flex; align-items: center; justify-content: space-between; font-size: 15px; padding-left: 4px; }
 .tray-tabs { display: flex; gap: 4px; }
 .tray-tabs .chip { flex: 1; justify-content: center; min-height: 40px; font-size: 13px; }

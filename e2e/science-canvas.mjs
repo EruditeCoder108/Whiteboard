@@ -76,6 +76,7 @@ try {
   // Pixel QA intentionally synchronizes the GPU. Reload before timing to discard
   // the temporary readback canvases and avoid measuring their memory/GC cost.
   await page.reload(); await page.waitForFunction(() => window.__fw?.S.ready.value, null, { polling: 100 })
+  await page.evaluate(() => window.__fw.board.newLesson('canvas'))
   const performanceEvidence = await page.evaluate(async () => {
     const { board, S } = window.__fw
     S.radialEnabled.value = false
