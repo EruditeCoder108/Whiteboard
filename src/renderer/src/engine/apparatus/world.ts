@@ -385,14 +385,12 @@ class WireTool implements Tool {
     const f = this.part.terminals![this.t], g = target.part.terminals![target.t]
     const polarFrom = this.part.polar && this.t === 0
     const wire: ShapeItem = {
-      t: 'h', id: newId(), c: polarFrom ? '#d43b33' : '#3a4656', w: 5, k: 'line', wire: true, p: [this.from[0], this.from[1], this.end[0], this.end[1]],
+      t: 'h', id: newId(), c: polarFrom ? '#c23a2e' : '#5b6875', w: 5, k: 'line', wire: true, p: [this.from[0], this.from[1], this.end[0], this.end[1]],
       from: { id: this.it.id, at: [f[0] / this.part.w, f[1] / this.part.h] }, to: { id: target.it.id, at: [g[0] / target.part.w, g[1] / target.part.h] }
     }
     const before = this.host.doc.snapshot()
-    // Wires go under the parts, so posts and needles stay in front.
-    const firstPart = before.findIndex(isPart)
-    const at = Math.max(0, firstPart)
-    this.host.doc.replaceAll([...before.slice(0, at), wire, ...before.slice(at)])
+    // Wires go over the parts, so each can be seen reaching its post.
+    this.host.doc.replaceAll([...before, wire])
     this.host.commit(this.host.doc.diff(before))
     this.host.refresh(null)
     void this.world

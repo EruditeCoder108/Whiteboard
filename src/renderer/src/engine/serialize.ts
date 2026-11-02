@@ -373,7 +373,8 @@ function parsePages(f: Record<string, unknown>, externalAssets: boolean): Parsed
       ids.add(it.id)
       items.push(it)
     }
-    pages.push({ items, view: parseView(pg.view, false), ...validLook(raw), ...art(raw), frame: validFrame(pg.frame) })
+    const wire = (it: Item): boolean => it.t === 'h' && !!it.wire
+    pages.push({ items: [...items.filter(it => !wire(it)), ...items.filter(wire)], view: parseView(pg.view, false), ...validLook(raw), ...art(raw), frame: validFrame(pg.frame) })
   }
   if (total && !pages.some(pg => pg.items.length)) return null
   const page = Number.isSafeInteger(f.page) && (f.page as number) >= 0 && (f.page as number) < pages.length ? f.page as number : 0

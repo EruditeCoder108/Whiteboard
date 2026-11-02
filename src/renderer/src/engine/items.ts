@@ -51,6 +51,8 @@ export function strokeOutline(it: StrokeItem): number[][] {
 
 // ── shape geometry ────────────────────────────────────────────────────────────
 const ELLIPSE_SEGMENTS = 72
+/** The cap of a part's terminal post, at full size. */
+const POST_CAP = 9.5
 
 /** Centre-line of a shape as polylines (flat x,y lists). */
 /** A connector's run: straight, or with square corners. */
@@ -312,7 +314,16 @@ function paintObject(ctx: CanvasRenderingContext2D, it: Item, alpha: number, lab
     ctx.lineJoin = it.k === 'rect' ? 'miter' : 'round'
     ctx.miterLimit = 4
     ctx.setLineDash(it.dash === 'dashed' ? [it.w * 4, it.w * 3] : it.dash === 'dotted' ? [it.w * 0.1, it.w * 2.5] : [])
-    ctx.stroke(path)
+    if (it.wire) {
+      const [x0, y0, x1, y1] = it.p, room = new Path2D(), far = Math.hypot(x1 - x0, y1 - y0) + 200
+      room.rect(x0 - far, y0 - far, far * 2, far * 2)
+      if (it.from) { room.moveTo(x0 + POST_CAP, y0); room.arc(x0, y0, POST_CAP, 0, Math.PI * 2) }
+      if (it.to) { room.moveTo(x1 + POST_CAP, y1); room.arc(x1, y1, POST_CAP, 0, Math.PI * 2) }
+      ctx.clip(room, 'evenodd')
+      ctx.strokeStyle = 'rgba(15,20,25,.7)'; ctx.lineWidth = it.w + 2; ctx.stroke(path)
+      ctx.strokeStyle = it.c; ctx.lineWidth = it.w; ctx.stroke(path)
+      ctx.strokeStyle = 'rgba(255,255,255,.28)'; ctx.lineWidth = it.w * .3; ctx.stroke(path)
+    } else ctx.stroke(path)
     paintText(ctx, it)
   }
   ctx.restore()

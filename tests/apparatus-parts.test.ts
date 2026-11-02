@@ -104,6 +104,13 @@ describe('circuits made of parts', () => {
     expect(stateOf(items, 'voltmeter').volts).toBeGreaterThan(0)
   })
 
+  it('wires lie over the parts, so each can be seen reaching its post', () => {
+    for (const e of EXAMPLES) {
+      const items = e.build(), lastPart = items.map(isPart).lastIndexOf(true), firstWire = items.findIndex(isWire)
+      if (firstWire >= 0) expect(firstWire, e.id).toBeGreaterThan(lastPart)
+    }
+  })
+
   it('every wire in every example joins real terminals', () => {
     for (const e of EXAMPLES) {
       const items = e.build(), ids = new Set(items.map(i => i.id))

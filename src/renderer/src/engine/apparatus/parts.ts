@@ -120,28 +120,13 @@ export const fmt = (v: number, unit: string): string => {
   return `${v.toFixed(a >= 100 ? 0 : a >= 10 ? 1 : 2)} ${unit}`
 }
 
-/** A meter face: an arc scale, a needle that swings, and the exact value printed under it. */
-export function meter(c: C, cx: number, cy: number, r: number, value: number, lo: number, hi: number, name: string, labels: string[], reading: string, redNeedle = '#c0261e'): void {
-  const from = Math.PI * 1.2, to = Math.PI * 1.8
-  disc(c, cx, cy, r + 14, shade(c, cx, cy - r, cx, cy + r, ['#fffdf6', '#f2ecdd']), 'rgba(30,25,20,.5)', 2)
-  c.beginPath(); c.arc(cx, cy + r * .28, r * .86, from, to); c.strokeStyle = '#2b2f36'; c.lineWidth = 2.5; c.stroke()
-  const point = (t: number, rad: number): [number, number] => { const a = from + (to - from) * t; return [cx + rad * Math.cos(a), cy + r * .28 + rad * Math.sin(a)] }
-  for (let i = 0; i <= 20; i++) {
-    const t = i / 20, [ax, ay] = point(t, r * .86), [bx, by] = point(t, r * (i % 5 === 0 ? .74 : .8))
-    line(c, ax, ay, bx, by, '#2b2f36', i % 5 === 0 ? 2.4 : 1.2)
-  }
-  labels.forEach((s, i) => { const [x, y] = point(i / (labels.length - 1), r * .62); text(c, s, x, y, r * .17, '#2b2f36') })
-  text(c, name, cx, cy + r * .1, r * .3, '#7a2f24', 'center', 700)
-  const t = (Math.max(lo, Math.min(hi, value)) - lo) / (hi - lo) * 1.02 - .01
-  const [nx, ny] = point(t, r * .92)
-  line(c, cx, cy + r * .28, nx, ny, redNeedle, 3)
-  disc(c, cx, cy + r * .28, 7, '#2b2f36')
-  plate(c, reading, cx, cy + r * .72, r * .22)
-}
-
 /** A screw post where a wire joins. */
 export function post(c: C, x: number, y: number, kind: 'plus' | 'minus' | 'plain'): void {
-  const color = kind === 'plus' ? '#d43b33' : kind === 'minus' ? '#2b2f36' : '#b58a3a'
-  disc(c, x, y, 13, shade(c, x - 10, y - 10, x + 10, y + 10, [kind === 'plain' ? '#f0d693' : '#fff', color, color]), 'rgba(20,15,10,.65)', 2)
-  if (kind !== 'plain') text(c, kind === 'plus' ? '+' : '−', x, y + 1, 19, '#fff', 'center', 800)
+  // A brass collar with a knurled edge, under a coloured cap.
+  disc(c, x, y, 13, shade(c, x - 10, y - 10, x + 10, y + 10, ['#f6e2a4', '#c9a24f', '#7a5c22']), '#1b2025', 1.5)
+  for (let i = 0; i < 20; i++) { const a = i * Math.PI / 10; line(c, x + 10.5 * Math.cos(a), y + 10.5 * Math.sin(a), x + 12.5 * Math.cos(a), y + 12.5 * Math.sin(a), 'rgba(60,40,10,.6)', 1) }
+  const cap = kind === 'plus' ? ['#e2665a', '#b83025'] : kind === 'minus' ? ['#555b63', '#15181b'] : ['#f6e2a4', '#a9843a']
+  disc(c, x, y, 9.5, shade(c, x - 7, y - 7, x + 7, y + 7, cap), '#1b2025', 1)
+  if (kind === 'plain') disc(c, x, y, 3, '#2b2115')
+  else text(c, kind === 'plus' ? '+' : '−', x, y + .5, 16, '#fff', 'center', 700)
 }

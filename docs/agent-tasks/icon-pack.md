@@ -1,5 +1,7 @@
 # Task for a new agent: a third icon pack, and a guide to the board's features
 
+**Paused by the owner (2 Nov 2026), for later.** Part 1, the board guide, is done and merged. When this resumes, check the version and branch named below first.
+
 Copy everything below the line into the new chat.
 
 ---

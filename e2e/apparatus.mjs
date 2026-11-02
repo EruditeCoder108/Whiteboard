@@ -62,6 +62,7 @@ try {
   await wire(await terminal('bulb', 0), await terminal('battery', 1))
   const wires = await fw(page, w => w.board.doc.items.filter(i => i.wire).length)
   check('dragging between terminals makes wires, with the pen in hand', wires === 4, String(wires))
+  check('the new wires lie over the parts', await fw(page, w => w.board.doc.items.slice(-4).every(i => i.wire)))
   check('and draws no ink', (await fw(page, w => w.board.doc.items.filter(i => i.t === 's').length)) === inkBefore)
   await page.waitForTimeout(100)
   const preview = await page.evaluate(() => { const cv = document.querySelectorAll('.stage canvas')[2], d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; let blue = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 200 && d[i] < 90 && d[i + 2] > 220) blue++; return blue })

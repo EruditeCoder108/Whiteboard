@@ -75,11 +75,11 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 
 *The owner tested 1.7.0-beta.1. The tools we have come first, then the 3D library.*
 
-- 🔄 Toolbar fits every screen, including 1280 wide
-- 🔄 Brush without the streak; quieter side tabs; pictures only where they help
-- 🔄 Radial menu rebuilt
-- 🔄 Panel check screen for the real board
-- 🔄 Audit of every tool and part; science accuracy *(second agent)*
+- ✅ Toolbar fits every screen, including 1280 wide
+- ✅ Brush without the streak; quieter side tabs; pictures only where they help
+- ✅ Radial menu rebuilt
+- ✅ Panel check screen for the real board
+- ✅ Audit of every tool and part; science accuracy *(second agent; biology findings still open)*
 
 ### Done in 2b (1.7.0-beta.2, 1 Nov 2026)
 
@@ -91,7 +91,11 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 - [x] Icon packs in Settings: Pictures and Simple lines.
 - [x] Merge the second agent's `feature/tools-audit`; fix toolbar overlap, balance masses and resistor bands.
 - [ ] Biology findings from `docs/audit/tools-audit.md` (owner kept biology out of the audit pass).
-- [ ] Review and merge the third icon pack and `docs/BOARD-GUIDE.md` from `feature/icon-pack`.
+- [x] Board guide merged: `docs/BOARD-GUIDE.md`.
+- [x] Physics apparatus redrawn in one professional look; wires visibly reach their terminals (owner, 2 Nov).
+- [ ] Chemistry apparatus in the same look.
+- [ ] Biology apparatus: use good open-licence art, not drawings made in code (owner, 2 Nov).
+- Paused by the owner (2 Nov), for later: the third icon pack. Its brief is `docs/agent-tasks/icon-pack.md`.
 
 ## Step 3: the animation library (Lesson Kit)
 
@@ -107,4 +111,4 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 **Not planned for now:** Flash, a built-in browser, novelty stamps, page-turn sounds, decorative frames, Word export.
 
 ---
-*Updated 2026-11-01 · version 1.7.0-beta.1.*
+*Updated 2026-11-02 · version 1.7.0-beta.4, with the physics redraw on `feature/tools-polish`.*
