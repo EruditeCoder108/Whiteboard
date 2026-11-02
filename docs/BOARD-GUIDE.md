@@ -694,7 +694,7 @@ There is no separate wire cupboard tile: terminal-to-terminal dragging makes it.
 | Voltmeter | Reads voltage. Set Scale up to: 3, 10 or 30 V. Use it across the part being measured. |
 | Galvanometer | Shows current and its direction around zero. Set Full swing at: 1, 10 or 100 mA. |
 | Fuse | Set Blows above, from 0.1–10 A. Excess current opens it. Correct the circuit, then tap the fuse to replace it. |
-| Motor | The fan turns with current; direction follows current direction. It is represented electrically as a fixed resistance. |
+| Motor | The propeller turns with current. The dot running round the M shows the direction, which follows the current. It is represented electrically as a fixed resistance. |
 | Buzzer | Positive current makes it wobble and display sound waves. **It does not generate a buzzer sound.** |
 
 **Check:** Wiring, source settings, meters, switches, burnout and short warning checked in app.
@@ -1127,7 +1127,7 @@ Change an option, then close the panel; there is no separate Apply button.
 | Option | What it does and how to use it | Rule |
 | --- | --- | --- |
 | Appearance: Auto / Light / Dark | Choose the look of menus and toolbars. | Auto follows the board background; it does not follow the clock or Windows theme. |
-| Icons | Choose Pictures or Simple lines. | Additional packs appear only when their assets are installed. Modern is not installed by this guide or its six-icon trial. |
+| Icons | Choose Pictures or Simple lines. | Another pack appears here only once it is added to the app. |
 | This board: Notebook / Canvas | Convert the current lesson's space. | See Notebook, canvas and frames above; this changes the current lesson. |
 | Board surface, Texture, Own colour, Only this page/frame | Choose its surface and scope. | Whole-lesson changes also become defaults for new lessons. |
 | Paper, All pages/frames | Choose every paper and field listed under Background. | Current page by default; its All pages control is independent of the surface and picture scope. |
