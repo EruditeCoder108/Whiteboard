@@ -14,6 +14,7 @@ All **28 parts** defined in `parts-physics.ts` and `parts-chem.ts` were checked 
 - **C2:** [NCERT Class XI Chemistry Laboratory Manual, Titrimetric Analysis](https://ncert.nic.in/pdf/publication/sciencelaboratorymanuals/classXI/chemistry/kelm206.pdf): burette graduation/readings, meniscus and conical-flask use.
 - **C3:** [NCERT Class IX laboratory manual, Materials](https://ncert.nic.in/pdf/publication/sciencelaboratorymanuals/classIX/science/ielm102.pdf): solution, heating and measuring context.
 - **C4:** [IIT Kanpur SATHEE's NCERT Structure of the Atom text](https://sathee.iitk.ac.in/pa/sathee-ssc/student-corner/ncert-books/class-09/nb-science-09/sci-09-chapter-4-structure-of-the-atom/): shell notation and the NCERT spelling “Sulphur”. The live NCERT Class IX PDF routes now point to the newer Exploration book, so this source is identified as a reproduction of the older NCERT chapter rather than the current chapter number.
+- **C5:** [NCERT Class XI Chemistry, Structure of Atom, §§2.6.5–2.6.6](https://ncert.nic.in/textbook/pdf/kech102.pdf): filling order through krypton and the chromium/copper exceptions. Their configurations give shell totals 2,8,13,1 and 2,8,18,1 respectively; the existing code agrees.
 
 These references informed the facts. Proportions, curves, material highlights and label placement were drawn independently in Canvas2D code.
 
@@ -48,14 +49,14 @@ These references informed the facts. Proportions, curves, material highlights an
 | Stand and clamp / `retort-stand` | Heavy base, vertical rod, sliding boss and gripping jaws (C1). | Padded jaw tips, clearer metal/boss details and base edge. Clamp height and interaction point unchanged. |
 | pH paper / `ph-strip` | Dry strip versus wetted indicator region; reading from the existing solution model (C3). | Paper shading, bounded compact reading and stronger edge on chalk. The indicator colour function is untouched. |
 | Balance / `balance` | Mass is labelled in grams; drawing must not imply a new tare or calibration control. | Softer display, pan and case detail; no fake buttons. Fixed vessel mass/density assumptions in `world.ts` are reported to the lead, not changed. |
-| Atomic shells / `atom` | Neutral electron count, shell totals up to Z=36, K/L/M/N notation; Cr and Cu exception code inspected (C4). | Contained footer, named shells, “Sulphur”, restrained electrons. All 36 elements rendered. Bohr-style paths remain a schematic, not literal quantum electron trajectories. |
+| Atomic shells / `atom` | Neutral electron count, shell totals up to Z=36, K/L/M/N notation and NCERT Cr/Cu exceptions (C4, C5). | Contained footer, named shells, “Sulphur”, restrained electrons. All 36 elements rendered. Bohr-style paths remain a schematic, not literal quantum electron trajectories. |
 
 ## Verification and evidence
 
 - Both surfaces were rendered in the real Electron renderer across **430 setting/edge states**, including all 36 atomic numbers. The sign, zero-force and empty-sample checks passed. No painted text escaped its part bounds in those states, and no renderer error was logged.
 - [White drawing sheet](../../../audit-shots/science-after/white-contact.png) and [chalk drawing sheet](../../../audit-shots/science-after/chalk-contact.png); individual native-unit renders and `metrics.json` are beside them. Full original interactive audit evidence stays in the parent `audit-shots` folder.
 - The before/after compatibility comparison reports **all 58 part contracts unchanged**. This includes the biology and electrical parts, which were deliberately left alone.
-- Required command results and final artwork handoff are recorded after the last stage of the task.
+- All six required final commands passed. The counts and artwork exports are in [HANDOFF.md](HANDOFF.md).
 
 ## For the lead and a science teacher to check
 

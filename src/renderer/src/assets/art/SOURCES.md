@@ -2,6 +2,8 @@
 
 Owner supplied ten ChatGPT-generated transparent sheets on 1 November 2026 and explicitly authorised cropping, corrections and use in this GPL-3.0 app. No Note 3 assets were used. Original sheets and 1024px padded masters are outside the repository. Original prompts for supplied sheets are unknown, so subject briefs below are not claimed as their actual prompts. T and Σ were checked visually. New-feature art is intentionally reserved for the lead.
 
+Second round (2 November 2026): eight replacement pictures and the new Templates and Apparatus pictures were generated individually with the built-in OpenAI image tool. Original PNG masters and per-picture prompt metadata are retained in ../art-masters. Export processing removes detached alpha speckles while retaining the main object and its transparency. The two new UI exports are reserved for the lead.
+
 ### select.webp
 - Tool: ChatGPT image generation, supplied by owner
 - Date: 2026-11-01
@@ -255,11 +257,11 @@ Owner supplied ten ChatGPT-generated transparent sheets on 1 November 2026 and e
 - Edited: Cropped from supplied sheet; low-alpha background speckles removed; transparent padding added. Exact original generation prompt was not supplied.
 
 ### table.webp
-- Tool: ChatGPT image generation, supplied by owner
-- Date: 2026-11-01
-- Source: sheet-4.png; crop 565, 575, 255, 410; SHA-256 35b9279896f769676ef6090ccb43ca3afd69c6469886bc86f8c906e56d8bf281
-- Prompt: Original generation prompt not supplied by owner. Subject brief: table. Shared direction: familiar front-facing classroom objects, bold silhouette, minimal detail, warm matte colours, transparent background.
-- Edited: Cropped from supplied sheet; low-alpha background speckles removed; transparent padding added. Exact original generation prompt was not supplied.
+- Tool: OpenAI built-in image_gen
+- Date: 2026-11-02
+- Source: table-replacement.png; SHA-256 0814e4d90b5da77eb9ee8a8fd2eb90467719bd2a11cfab9c0aa04407d7a57e18
+- Prompt: Use case: stylized-concept. ONE replacement small classroom TABLE toolbar icon. First reference is the old table icon to replace; second is the new worksheet illustrating the shared warm ivory paper, restrained material depth and clear thick slate-blue marks. Make one upright front-facing warm cream table card with softly rounded corners and a small folded upper-right corner. A prominent muted deep-blue header band over EXACTLY THREE columns and FOUR empty rows below it. Straight, confident, thick slate-blue table rules, clean right-angle intersections, substantial dark outline. The blank cells must be generous and the header visually solid, so this reads immediately at 36–60 px. No text, numbers, PDF badge, worksheet answer boxes, extra objects or tiny detail. Modern, natural and restrained matte classroom-object illustration, soft upper-left form shading, no glossy toy plastic, no aged paper. Single centred object with transparent margin, true transparent alpha background, no shadow or backdrop.
+- Edited: Generated individually; original PNG master retained. Removed 175 detached alpha pixels outside the connected icon. Alpha-trimmed and resized through make-art.cjs with transparent padding. Replaces the supplied picture after visual review.
 
 ### equation.webp
 - Tool: ChatGPT image generation, supplied by owner
@@ -283,11 +285,11 @@ Owner supplied ten ChatGPT-generated transparent sheets on 1 November 2026 and e
 - Edited: Cropped from supplied sheet; low-alpha background speckles removed; transparent padding added. Exact original generation prompt was not supplied.
 
 ### axes.webp
-- Tool: ChatGPT image generation, supplied by owner
-- Date: 2026-11-01
-- Source: sheet-5.png; crop 325, 185, 220, 360; SHA-256 ed8db89249cc47c460381e0b73c34fcc59b1794ae3a9c8c5def7ea2e4ef6f2f9
-- Prompt: Original generation prompt not supplied by owner. Subject brief: axes. Shared direction: familiar front-facing classroom objects, bold silhouette, minimal detail, warm matte colours, transparent background.
-- Edited: Cropped from supplied sheet; low-alpha background speckles removed; transparent padding added. Exact original generation prompt was not supplied.
+- Tool: OpenAI built-in image_gen (generation and material-colour revision)
+- Date: 2026-11-02
+- Source: axes-replacement.png; SHA-256 3714f33bad0d6cb8b37ab81f121e053bb1529f219f4de560ba4c1e8df2f7ecc8
+- Prompt: Use case: stylized-concept. Create ONE replacement classroom toolbar icon for coordinate axes, in the warm, restrained, matte classroom-object style of the second reference (the green glass flask). First reference is the old axes icon being replaced: keep the familiar upright horizontal/vertical coordinate cross with four arrow tips, but make the strokes substantially bolder and clearer at 36–60 px. Dark graphite metal/ink, subtly rounded bevelled edges, a few short generous tick marks; tiny muted teal accents only if useful. Symmetric front-facing 2D coordinate cross, flat to viewer, no perspective, no third axis. The whole symbol should form a confident substantial silhouette, with soft upper-left material shading, restrained depth and no glossy plastic. No sheet or frame behind it. No text, letters, numbers, curve, extra props, glow or cast shadow. Single centred object with generous empty transparent margin. True transparent alpha background; no white rectangle, no checkerboard drawn into the image. Material-colour revision prompt: Edit this axes toolbar icon ONLY to improve its material colour and contrast. Keep the exact four-arrow coordinate-cross silhouette, upright orientation, overall thickness, four small teal tick accents and transparent framing. Replace the very dark graphite body with MATTE MID-TONE PEWTER STEEL, approximately #87979b, with a slightly darker clean outer contour and soft light silver upper-left highlights. The filled shafts and arrowheads must be clearly visible on a dark charcoal #272d33 panel as well as warm white, at 38 px. Keep restrained natural material depth, no glossy plastic, no glow, no halo, no cast shadow. Do not add a page, outline frame, text, numbers, letters, axes or extra props. True transparent alpha background; preserve transparency. Make a single substantial simple small icon, not a large busy illustration.
+- Edited: Generated individually; original PNG master retained. Removed 3646 detached alpha pixels outside the connected icon. Alpha-trimmed and resized through make-art.cjs with transparent padding. Replaces the supplied picture after visual review.
 
 ### periodic-table.webp
 - Tool: ChatGPT image generation, supplied by owner
@@ -696,46 +698,46 @@ Owner supplied ten ChatGPT-generated transparent sheets on 1 November 2026 and e
 - Edited: Cropped from supplied sheet; low-alpha background speckles removed; transparent padding added. Exact original generation prompt was not supplied.
 
 ### paper-squared.webp
-- Tool: ChatGPT image generation, supplied by owner
-- Date: 2026-11-01
-- Source: sheet-10.png; crop 1000, 400, 310, 320; SHA-256 8c4b8a5bcba05028041918d60a54351ba7dc5814df3765cfa7323f59e4f92bf7
-- Prompt: Original generation prompt not supplied by owner. Subject brief: paper-squared. Shared direction: familiar front-facing classroom objects, bold silhouette, minimal detail, warm matte colours, transparent background.
-- Edited: Cropped from supplied sheet; low-alpha background speckles removed; transparent padding added. Exact original generation prompt was not supplied. Exact preview guides composited in code.
+- Tool: OpenAI built-in image_gen
+- Date: 2026-11-02
+- Source: paper-squared-replacement.png; SHA-256 191b88fc9921bbc3e16865edf2bae0bd2cb010c8be398fe46e2170d3311e33f9
+- Prompt: Use case: stylized-concept. ONE replacement small toolbar icon for SQUARED PAPER. First reference is the old pale squared sheet; second is the approved new table card for the shared warm cream paper, substantial edges and soft restrained material shading. Create a single upright front-facing ivory sheet with rounded corners and a small folded top-right corner. Its main face shows a COARSE regular square grid, approximately five columns by six rows, with confident dark slate-blue strokes and right-angle intersections. Squares must look square, not a table: every line has equal weight, no header band, no filled cells. Fill most of the usable sheet with the grid while leaving a modest clean paper margin. Strokes must remain strong and clear at 36–60 px; no faint thin lines or dense fine mesh. Minimal natural matte classroom illustration, subtle upper-left form shading, no old parchment, no gloss. No text, numbers, letters, badges, pencil or extra objects. Single centred object, generous transparent margin, genuinely transparent alpha background, no shadow or backdrop.
+- Edited: Generated individually; original PNG master retained. Removed 38 detached alpha pixels outside the connected icon. Alpha-trimmed and resized through make-art.cjs with transparent padding. Replaces the supplied picture after visual review.
 
 ### paper-graph.webp
-- Tool: ChatGPT image generation, supplied by owner
-- Date: 2026-11-01
-- Source: sheet-10.png; crop 1000, 400, 310, 320; SHA-256 8c4b8a5bcba05028041918d60a54351ba7dc5814df3765cfa7323f59e4f92bf7
-- Prompt: Original generation prompt not supplied by owner. Subject brief: paper-graph. Shared direction: familiar front-facing classroom objects, bold silhouette, minimal detail, warm matte colours, transparent background.
-- Edited: Cropped from supplied sheet; low-alpha background speckles removed; transparent padding added. Exact original generation prompt was not supplied. Exact preview guides composited in code.
+- Tool: OpenAI built-in image_gen
+- Date: 2026-11-02
+- Source: paper-graph-replacement.png; SHA-256 067e29bd2ca994fad7312e388224fa8d77f2424692d79ded8066b7f8056cb198
+- Prompt: Use case: stylized-concept. ONE replacement GRAPH PAPER classroom toolbar icon. First reference is the old dense pale graph sheet; second is the new coarse squared-paper icon for the exact shared warm ivory paper, dark-blue edge and restrained bevelled material style. Same upright front-facing cream sheet, rounded corners and small folded upper-right corner. Show a regular finer square graph grid: about TEN columns by TWELVE rows, with every fifth division clearly heavier. Use solid slate-blue grid marks with strong contrast, visible at 36–60 px; minor rules should still be deliberate, not faint hairlines. Cells square, lines straight, equal spacing. No header, no filled cells, no plotted curve, axes, words, letters or numbers. Fill the usable sheet with the grid and a modest paper margin. Matte natural classroom-object illustration, soft upper-left form shading, subtle depth, no gloss or aged paper. Single centred object with transparent margin. True transparent alpha background, no shadow or backdrop.
+- Edited: Generated individually; original PNG master retained. Removed 223 detached alpha pixels outside the connected icon. Alpha-trimmed and resized through make-art.cjs with transparent padding. Replaces the supplied picture after visual review.
 
 ### paper-ruled.webp
-- Tool: ChatGPT image generation, supplied by owner
-- Date: 2026-11-01
-- Source: sheet-10.png; crop 1000, 400, 310, 320; SHA-256 8c4b8a5bcba05028041918d60a54351ba7dc5814df3765cfa7323f59e4f92bf7
-- Prompt: Original generation prompt not supplied by owner. Subject brief: paper-ruled. Shared direction: familiar front-facing classroom objects, bold silhouette, minimal detail, warm matte colours, transparent background.
-- Edited: Cropped from supplied sheet; low-alpha background speckles removed; transparent padding added. Exact original generation prompt was not supplied. Exact preview guides composited in code.
+- Tool: OpenAI built-in image_gen
+- Date: 2026-11-02
+- Source: paper-ruled-replacement.png; SHA-256 9a71b94e7a2b3172c67834676c5ac45ef2ffc04dc466036207606e20760e581a
+- Prompt: Use case: stylized-concept. ONE replacement RULED PAPER classroom toolbar icon. First reference is the old pale ruled-paper sheet; second is the new squared-paper icon for the shared warm ivory paper, dark-blue edge and restrained material style. One upright front-facing cream sheet, softly rounded corners, small folded upper-right corner. Show SIX evenly spaced, straight, bold slate-blue horizontal writing rules, generous vertical spacing and clean side margins. No vertical lines and no grid. Strong dark outer contour and clear rules that remain visible at 36–60 px. Keep the paper natural and matte with subtle upper-left form shading, no aged texture and no glossy plastic. No text, letters, numbers, symbols, badges, pen or extra objects. Single centred object with a generous transparent margin, true transparent alpha background, no shadow, backdrop or checkerboard.
+- Edited: Generated individually; original PNG master retained. Removed 1235 detached alpha pixels outside the connected icon. Alpha-trimmed and resized through make-art.cjs with transparent padding. Replaces the supplied picture after visual review.
 
 ### paper-fourline.webp
-- Tool: ChatGPT image generation, supplied by owner
-- Date: 2026-11-01
-- Source: sheet-10.png; crop 1000, 400, 310, 320; SHA-256 8c4b8a5bcba05028041918d60a54351ba7dc5814df3765cfa7323f59e4f92bf7
-- Prompt: Original generation prompt not supplied by owner. Subject brief: paper-fourline. Shared direction: familiar front-facing classroom objects, bold silhouette, minimal detail, warm matte colours, transparent background.
-- Edited: Cropped from supplied sheet; low-alpha background speckles removed; transparent padding added. Exact original generation prompt was not supplied. Exact preview guides composited in code.
+- Tool: OpenAI built-in image_gen
+- Date: 2026-11-02
+- Source: paper-fourline-replacement.png; SHA-256 4a0bcb9c8ef5d7a560b9b34c7be468074ae19c6aeff5a3b316fbfbcaf49d2168
+- Prompt: Use case: stylized-concept. ONE replacement FOUR-LINE HANDWRITING PAPER classroom toolbar icon. First reference is the old four-line sheet; second is the approved new ruled-paper sheet for the exact shared warm ivory card, dark-blue contour and restrained bevelled paper style. One upright front-facing cream sheet, softly rounded corners, small folded upper-right corner. Its face shows exactly TWO widely separated groups of FOUR horizontal writing rules. Within EACH group, all four rules are equally spaced and the colour order from top to bottom is BLUE, BLUE, MUTED RED, BLUE. All rules straight, bold and strong enough to read at 36–60 px; groups distinctly separated by blank space. No vertical lines, grid, written letters, words, numbers, badges, pencil or extra objects. Natural matte classroom illustration with soft upper-left form shading, subtle depth, no aged paper or glossy plastic. Single centred object with transparent margin. True transparent alpha background, no shadow or backdrop.
+- Edited: Generated individually; original PNG master retained. Removed 559 detached alpha pixels outside the connected icon. Alpha-trimmed and resized through make-art.cjs with transparent padding. Replaces the supplied picture after visual review.
 
 ### paper-hindi.webp
-- Tool: ChatGPT image generation, supplied by owner
-- Date: 2026-11-01
-- Source: sheet-10.png; crop 1000, 400, 310, 320; SHA-256 8c4b8a5bcba05028041918d60a54351ba7dc5814df3765cfa7323f59e4f92bf7
-- Prompt: Original generation prompt not supplied by owner. Subject brief: paper-hindi. Shared direction: familiar front-facing classroom objects, bold silhouette, minimal detail, warm matte colours, transparent background.
-- Edited: Cropped from supplied sheet; low-alpha background speckles removed; transparent padding added. Exact original generation prompt was not supplied. Exact preview guides composited in code.
+- Tool: OpenAI built-in image_gen
+- Date: 2026-11-02
+- Source: paper-hindi-replacement.png; SHA-256 f5f3280d38330beec677270246c18301d0b70f6a8ede5664669a0a893faffe19
+- Prompt: Use case: stylized-concept. ONE replacement HINDI HANDWRITING PAPER classroom toolbar icon. First reference is the old pale Hindi guide sheet; second is the new four-line sheet for the exact shared warm ivory paper, dark-blue contour and restrained bevelled paper style. One upright front-facing cream sheet with softly rounded corners and a small folded upper-right corner. Show exactly THREE clearly separated pairs of horizontal guides. EACH pair has one straight bold muted-red SOLID headline above one slate-blue DASHED writing guide, with six or seven generous broad dashes. Preserve wide blank writing space between the solid and dashed guide. All marks strong and legible at 36–60 px, no faint hairlines. No vertical lines, grid, actual Hindi glyphs, written text, numbers, badges or extra objects. Natural matte classroom illustration, soft upper-left form shading, subtle depth, no aged paper or glossy plastic. Single centred object with transparent margin, true transparent alpha background, no shadow or backdrop.
+- Edited: Generated individually; original PNG master retained. Removed 5 detached alpha pixels outside the connected icon. Alpha-trimmed and resized through make-art.cjs with transparent padding. Replaces the supplied picture after visual review.
 
 ### pdf-worksheet.webp
-- Tool: ChatGPT image generation, supplied by owner
-- Date: 2026-11-01
-- Source: sheet-10.png; crop 1000, 400, 310, 320; SHA-256 8c4b8a5bcba05028041918d60a54351ba7dc5814df3765cfa7323f59e4f92bf7
-- Prompt: Original generation prompt not supplied by owner. Subject brief: pdf-worksheet. Shared direction: familiar front-facing classroom objects, bold silhouette, minimal detail, warm matte colours, transparent background.
-- Edited: Cropped from supplied sheet; low-alpha background speckles removed; transparent padding added. Exact original generation prompt was not supplied. Exact preview guides composited in code.
+- Tool: OpenAI built-in image_gen
+- Date: 2026-11-02
+- Source: pdf-worksheet-replacement.png; SHA-256 2357d2b71be46228bdf72f0a2ed940fd04ea261c50801833ff4258922fef7eef
+- Prompt: Use case: stylized-concept. ONE replacement PDF worksheet toolbar icon. First reference is the existing pale page icon; second reference is the green flask showing the shared warm matte classroom-object illustration style. A single substantial warm ivory worksheet, upright and directly front-facing, softly rounded corners, small folded top-right corner, restrained upper-left light and bevelled paper edges. Strong slate-blue writing lines and three small blank answer boxes, a compact muted terracotta PDF tab with exactly the uppercase text 'PDF' tucked at the bottom corner. Make the lines and outline clearly visible at 36–60 px: bold deliberate marks, no fine pale ruling, no tiny fake text. Keep generous blank paper space and a clear simple silhouette. Natural, modern, calm, polished material illustration with minimal detail, no photorealism, no aged parchment, no glossy plastic. Single centred object, large within the canvas with transparent margin. True transparent alpha background; no shadow, backdrop, checkerboard, extra objects or watermark.
+- Edited: Generated individually; original PNG master retained. Removed 1052 detached alpha pixels outside the connected icon. Alpha-trimmed and resized through make-art.cjs with transparent padding. Replaces the supplied picture after visual review.
 
 ### redo.webp
 - Tool: ChatGPT image generation, supplied by owner
@@ -750,3 +752,17 @@ Owner supplied ten ChatGPT-generated transparent sheets on 1 November 2026 and e
 - Source: sheet-2.png; crop 580, 160, 278, 355; SHA-256 f8e38aa4ab13035e12a3f9753aece464737d0ffb4a9f928e48b4d40a85c73955
 - Prompt: Original generation prompt not supplied by owner. Subject brief: page-next. Shared direction: familiar front-facing classroom objects, bold silhouette, minimal detail, warm matte colours, transparent background.
 - Edited: Cropped from supplied sheet; low-alpha background speckles removed; transparent padding added. Exact original generation prompt was not supplied. Mirrored horizontally.
+
+### templates.webp
+- Tool: OpenAI built-in image_gen
+- Date: 2026-11-02
+- Source: templates.png; SHA-256 a16719e49055a326958c2552a0b474419affc9ed79817109096be8b51e7afa21
+- Prompt: Use case: stylized-concept. Create ONE small classroom toolbar icon for TEMPLATES: exactly THREE blank layout cards fanned out, overlapping into one compact clear silhouette. Front card upright, rear cards turned gently left and right. Warm ivory thick paper, softly rounded corners, a restrained dark slate/teal edge, minimal empty layout framing on the FRONT card only (one small empty header rectangle and two large blank panels). Rear cards blank. No sample content, writing, letters, numbers, symbols or images. Match a polished natural classroom-object illustration set: warm matte cream paper, muted teal accents, soft upper-left form shading, subtle material depth, bold familiar silhouette readable at 36–60 px. Modern and restrained, not a cartoon toy, no glossy plastic, aged parchment, excessive detail, glow or drop shadow. All three cards clearly distinct but substantially overlapping, centred with generous transparent margin. True transparent alpha background, no backdrop or checkerboard.
+- Edited: Generated individually; original PNG master retained. Removed 5338 detached alpha pixels outside the connected icon. Alpha-trimmed and resized through make-art.cjs with transparent padding. New picture reserved for the lead to wire into the UI.
+
+### apparatus.webp
+- Tool: OpenAI built-in image_gen
+- Date: 2026-11-02
+- Source: apparatus.png; SHA-256 c213e2973a04977a56ee4a44850fa776b0d4445a9cd710e2fc7a97482c827fa4
+- Prompt: Use case: stylized-concept. Create ONE compact small classroom toolbar icon for APPARATUS: a modern simple wooden school laboratory cupboard with glassware visibly inside. Front-facing, upright, softly rounded rectangular silhouette, warm honey-brown matte wood frame, two glass-front doors with small understated handles, two simple shelves, muted dark teal back panel for contrast. Just FOUR bold familiar glassware silhouettes inside: a beaker, a conical flask, a round-bottom flask and a small rack of test tubes. Subtle clear pale-blue glass edges and a little muted teal or amber liquid; no bubbles or tiny graduations. Space the objects clearly so they remain recognisable at 36–60 px. Thick outer cupboard frame and clean simple shelves, restrained upper-left form shading, slight natural material depth. Match a warm matte classroom-object illustration set; modern, organic and calm, no ornate mouldings, photorealistic grain, shiny toy plastic, decorative clutter or oversized details. No text, labels, letters, numbers or logos. Single centred object with generous transparent margin. Genuinely transparent alpha background, no cast shadow, backdrop, ground or checkerboard.
+- Edited: Generated individually; original PNG master retained. Removed 12899 detached alpha pixels outside the connected icon. Alpha-trimmed and resized through make-art.cjs with transparent padding. New picture reserved for the lead to wire into the UI.

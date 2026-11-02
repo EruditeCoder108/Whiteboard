@@ -58,6 +58,8 @@ The gesture ring is a separate college project and is **not** part of the produc
 
 ## 3. State right now
 
+- **Second-agent tools audit (2 Nov, `feature/tools-audit`, separate worktree):** report and physics/chemistry drawing pass are pushed; biology is unchanged at the owner's request. Ten final picture assets and the `ArtTemplates` / `ArtApparatus` exports are prepared for the lead. See `docs/audit/HANDOFF.md` for checks, evidence and remaining issues. This branch is not merged or installed.
+
 - **`docs/CHECKLIST.md` is the owner's plain-language progress list and the plan.** Checklist 1 is finished and archived. Tick items (✅ / 🔄 / ⬜) whenever a milestone starts or finishes; keep it
   short and jargon-free. `FEATURES.md` stays the detailed feature list.
 - `main` = **1.7.0-beta.1**, installed on the owner's laptop. **All of Step 2 is built and merged** (PRs #11–#14): My shelf, attached arrows, number line and axes, tables, reveals, light/dark mode, print-friendly PDFs, export preview, calculator, periodic table, writing strips. Built before it (see `CHANGELOG.md`):
@@ -96,6 +98,8 @@ The gesture ring is a separate college project and is **not** part of the produc
   unverified on hardware (Step 3).
 
 ## 4. What to do next
+
+- **Lead review:** `feature/tools-audit`, with the short handoff in `docs/audit/HANDOFF.md`. Wire `ArtTemplates` and `ArtApparatus` into the buttons when reviewing the picture pass. The settings panel obstruction, balance assumptions and resistor colour bands are reported for the lead; the protected UI/solver files were not edited by the second agent.
 
 **Checklist 2, in order ("Start here" above).** The notes below are background.
 
