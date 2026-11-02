@@ -1,6 +1,6 @@
 # Changelog
 
-## Not yet released
+## 1.7.0-beta.5 — Physics apparatus redrawn, wires reach their terminals — 2026-11-02
 
 - **Physics apparatus redrawn in one look.** All 28 physics parts now look like real lab equipment: graphite plates, steel, brass, copper and glass, with crisp corners and labels printed on the part. A cell has its coloured band at the + end, a bulb has a proper filament and screw cap, a switch is a knife switch, a resistor has its real shape, and meters are panel meters.
 - **Wires reach their terminals.** They now lie over the parts and stop at the post, instead of seeming to come out of the edge of a part. A metal lead joins each terminal to its component. Lessons saved earlier open the same way.

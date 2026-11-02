@@ -111,4 +111,4 @@ The full feature list is in `FEATURES.md`; the details of each release are in `C
 **Not planned for now:** Flash, a built-in browser, novelty stamps, page-turn sounds, decorative frames, Word export.
 
 ---
-*Updated 2026-11-02 · version 1.7.0-beta.4, with the physics redraw on `feature/tools-polish`.*
+*Updated 2026-11-02 · version 1.7.0-beta.5 on `feature/tools-polish`.*

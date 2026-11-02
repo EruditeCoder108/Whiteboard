@@ -1,6 +1,6 @@
 # Next chat handoff
 
-**Updated 2 November 2026 (Checklist 2: Step 2 done; Step 2b polish built as 1.7.0-beta.4 on `feature/tools-polish`, with the physics redraw committed after it and not yet installed).** Read this first in every new chat, then update it before the chat ends
+**Updated 2 November 2026 (Checklist 2: Step 2 done; Step 2b polish and the physics redraw built as 1.7.0-beta.5 on `feature/tools-polish`).** Read this first in every new chat, then update it before the chat ends
 (see the last section). Paths are relative to the repository root
 `D:\Projects 2\whiteboard\app` unless they start with a drive letter.
 
@@ -62,7 +62,7 @@ The gesture ring is a separate college project and is **not** part of the produc
 | **The owner's progress checklist (plain language)** | `docs/CHECKLIST.md` (Checklist 2). **Work through it in order; tick it after every milestone.** The finished first list: `docs/CHECKLIST-1-done.md`. |
 | GitHub | `EruditeCoder108/Whiteboard` (public); PRs #1–#16 merged, `main` = 1.7.0-beta.1 |
 | Installed app (owner's laptop) | `%LOCALAPPDATA%\Programs\Floating Whiteboard` (per-user NSIS install, Start menu + desktop shortcut) |
-| Latest installer | `dist\Floating Whiteboard Setup 1.7.0-beta.4.exe` (ignored by git). **Rebuilt per whole checklist step: see §6.** |
+| Latest installer | `dist\Floating Whiteboard Setup 1.7.0-beta.5.exe` (ignored by git). **Rebuilt per whole checklist step: see §6.** |
 | Older unrelated projects in the parent folder | `..\android-library`, `..\*.pyw` (the original Python board). Leave them alone. |
 
 ## 3. State right now
